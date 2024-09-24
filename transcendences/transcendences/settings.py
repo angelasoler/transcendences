@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-3nny$q-t6*frjd7j7&4mweeb0-bb^+x-o4fz)l0@h8j@n@tqkl
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['0.0.0.0']
 
 
 # Application definition
@@ -76,8 +76,12 @@ WSGI_APPLICATION = 'transcendences.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'transcedences',
+        'USER': 'admin',
+        'PASSWORD': '123456',
+        'HOST': 'db',
+        'PORT': '5432',
     }
 }
 

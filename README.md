@@ -1,12 +1,9 @@
 # Transcendences
 
+Run:
 
-Como rodar:
+`docker compose up --build`
 
-`pythhon -m venv venv`
+Then access:
 
-`source venv/bin/activate`
-
-`pip install -r requirements.txt`
-
-`cd transcendences && python manage.py runserver`
+`http://00.0.0:8000/`
