@@ -22,6 +22,8 @@ let downPressed = false;
 let animationFrameId;
 
 
+////// GAME //////
+
 function initGame() {
     // Configurações do canvas
     canvas = document.getElementById('gameCanvas');
@@ -134,6 +136,7 @@ function resetBall() {
     ballSpeedX = -ballSpeedX;
 }
 
+////// ROUTES //////
 function showSection(route) {
     const sections = document.querySelectorAll('section');
     sections.forEach(section => {
@@ -162,6 +165,12 @@ function showSection(route) {
         stopGame();
         initGame();
     }
+    else if (sectionId == 'rankings')
+        getRankings();
+    else if (sectionId == 'profile')
+        getProfile();
+    // else if (sectionId == 'login')
+    //     loginUser();
     else
         stopGame();
 }
@@ -187,3 +196,138 @@ document.addEventListener('DOMContentLoaded', () => {
     const route = window.location.pathname;
     showSection(route);
 });
+
+////// FETCH API /////
+
+// Django CSRF Token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+//TO-DO RETIRAR EMAIL?
+async function registerUser(event) {
+    // const csrftoken = getCookie('csrftoken');
+    event.preventDefault();
+    const username = document.getElementById('registerUsername').value;
+    const email = document.getElementById('registerEmail').value;
+    const password = document.getElementById('registerPassword').value;
+    
+    const response = await fetch('/api/register/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            // 'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({username, email, password}),
+    });
+    
+    const result = await response.json();
+    if (response.ok) {
+        alert(result.message);
+        history.pushState({}, '', '/login');
+        showSection('/login');
+    } else {
+        alert(result.error);
+    }
+}
+
+document.getElementById('registerForm').addEventListener('submit', registerUser);
+
+async function loginUser(event) {
+    // const csrftoken = getCookie('csrftoken');
+    event.preventDefault();
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+
+    const response = await fetch('/api/login/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            // 'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({username, password}),
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+        alert(result.message);
+        history.pushState({}, '', '/profile');
+        showSection('/profile');
+        getProfile();
+    } else {
+        alert(result.error);
+    }
+}
+
+document.getElementById('loginForm').addEventListener('submit', loginUser);
+
+async function getProfile() {
+    const response = await fetch('/api/profile/', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store',
+        },
+        cache: 'no-store',
+    });
+    if (response.ok) {
+        const data = await response.json();
+        document.getElementById('profileUsername').textContent = data.username;
+        document.getElementById('profileEmail').textContent = data.email;
+    } else {
+        alert('Erro ao obter perfil do usuário.');
+        history.pushState({}, '', '/login');
+        showSection('/login');
+    }
+}
+
+async function logout() {
+    // const csrftoken = getCookie('csrftoken');
+    const response = await fetch('/api/logout/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            // 'X-CSRFToken': csrftoken,
+        },
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+        alert(result.message);
+        history.pushState({}, '', '/login');
+        showSection('/login');
+    } else {
+        alert(result.error);
+    }
+}
+
+async function getRankings() {
+    const response = await fetch('/api/rankings/');
+    if (response.ok) {
+        const data = await response.json();
+        const tableBody = document.getElementById('rankingsTableBody');
+        tableBody.innerHTML = '';
+        data.forEach(item => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${item.position}</td>
+                <td>${item.username}</td>
+                <td>${item.points}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    } else {
+        alert('Erro ao obter rankings.');
+    }
+}
