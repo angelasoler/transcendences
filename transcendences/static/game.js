@@ -1,8 +1,6 @@
-// game.js
 
-// Configurações do canvas
-const canvas = document.getElementById('gameCanvas');
-const context = canvas.getContext('2d');
+// vairaveis glabais para controle do jogo
+let canvas, context
 
 // Tamanhos
 const paddleWidth = 10;
@@ -10,12 +8,9 @@ const paddleHeight = 100;
 const ballRadius = 7;
 
 // Posições iniciais
-let paddle1Y = (canvas.height - paddleHeight) / 2;
-let paddle2Y = (canvas.height - paddleHeight) / 2;
-let ballX = canvas.width / 2;
-let ballY = canvas.height / 2;
+let paddle1Y, paddle2Y, ballX, ballY;
 
-// Velocidades
+// Velocidades;
 let ballSpeedX = 5;
 let ballSpeedY = 5;
 let paddleSpeed = 10;
@@ -24,9 +19,35 @@ let paddleSpeed = 10;
 let upPressed = false;
 let downPressed = false;
 
-// Adicionar event listeners para teclas
-document.addEventListener('keydown', keyDownHandler);
-document.addEventListener('keyup', keyUpHandler);
+let animationFrameId;
+
+
+function initGame() {
+    // Configurações do canvas
+    canvas = document.getElementById('gameCanvas');
+    context = canvas.getContext('2d');
+    
+    paddle1Y = (canvas.height - paddleHeight) / 2;
+    paddle2Y = (canvas.height - paddleHeight) / 2;
+    ballX = canvas.width / 2;
+    ballY = canvas.height / 2;
+
+    // Adicionar event listeners para teclas
+    document.addEventListener('keydown', keyDownHandler);
+    document.addEventListener('keyup', keyUpHandler);
+
+    // Iniciar o jogo
+    draw();
+}
+
+function stopGame() {
+    // Cancelar o loop de animação
+    cancelAnimationFrame(animationFrameId);
+
+    // Remover event listeners
+    document.removeEventListener('keydown', keyDownHandler);
+    document.removeEventListener('keyup', keyUpHandler);
+}
 
 function keyDownHandler(e) {
     if (e.key === 'ArrowUp') {
@@ -104,7 +125,7 @@ function draw() {
         paddle2Y -= paddleSpeed - 5;
     }
 
-    requestAnimationFrame(draw);
+    animationFrameId = requestAnimationFrame(draw);
 }
 
 function resetBall() {
@@ -113,5 +134,23 @@ function resetBall() {
     ballSpeedX = -ballSpeedX;
 }
 
-// Iniciar o jogo
-draw();
+function showSection(sectionId) {
+    const sections = document.querySelectorAll('section');
+    sections.forEach(section => {
+        section.style.display = 'none';
+    });
+    document.getElementById(sectionId).style.display = 'block';
+
+    if (sectionId === 'game') {
+        stopGame();
+        initGame();
+    }
+    else
+        stopGame();
+}
+
+// Exibir a seção inicial ao carregar a página
+document.addEventListener('DOMContentLoaded', () => {
+    showSection('home');
+});
+
