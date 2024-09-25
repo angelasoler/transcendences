@@ -146,6 +146,16 @@ function showSection(route) {
         sectionId = 'home';
     else if (route == '/game')
         sectionId = 'game';
+    else if (route == '/rankings')
+        sectionId = 'rankings'
+    else if (route == '/profile')
+        sectionId = 'profile'
+    else if (route == '/login')
+        sectionId = 'login'
+    else if (route == '/register')
+        sectionId = 'register'
+    else
+        sectionId = '404'
 
     document.getElementById(sectionId).style.display = 'block';
     if (sectionId === 'game') {

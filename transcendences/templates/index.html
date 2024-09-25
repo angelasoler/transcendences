@@ -36,25 +36,109 @@
                     <li class="nav-item">
                         <a class="nav-link active" href="/game" data-route onclick="showSection('game')">Jogar</a>
                     </li>
-                    <!-- Outros itens -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="/rankings" data-route onclick="showSection('rankings')">Rankings</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/profile" data-route onclick="showSection('perfil')">Perfil</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login" data-route onclick="showSection('login')">Login</a>
+                    </li>
                 </ul>
             </div>
         </div>
     </nav>
-    
+
     <!-- content -->
     <div class="p-3 mb-2 bg-dark text-white">
+        <!-- home -->
         <section id="home">
             <h1>Bem-vindo ao Pong Game</h1>
-            <!-- Conteúdo da página inicial -->
+            <p>Desafie outros jogadores e alcance o topo do ranking!</p>
+            <a href="/game" class="btn btn-primary mt-3" data-route>Começar a Jogar</a>
         </section>
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <section id="game" style="display:none;">
+        <!-- game -->
+        <section id="game" style="display:none;">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
                     <canvas id="gameCanvas" width="800" height="600"></canvas>
-                </section>
+                </div>
             </div>
-        </div>
+        </section>
+        <!-- login -->
+        <section id="login" style="display:none;">
+            <div class="container mt-5">
+                <h2>Login</h2>
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="loginUsername" class="form-label">Nome de Usuário</label>
+                        <input type="text" class="form-control" id="loginUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="loginPassword" class="form-label">Senha</label>
+                        <input type="password" class="form-control" id="loginPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Entrar</button>
+                </form>
+                <p class="mt-3">Não tem uma conta? <a href="/register" data-route>Registre-se aqui</a>.</p>
+            </div>
+        </section>
+        <!-- regitro -->
+        <section id="register" style="display:none;">
+            <div class="container mt-5">
+                <h2>Registro</h2>
+                <form id="registerForm">
+                    <div class="mb-3">
+                        <label for="registerUsername" class="form-label">Nome de Usuário</label>
+                        <input type="text" class="form-control" id="registerUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="registerEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="registerEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="registerPassword" class="form-label">Senha</label>
+                        <input type="password" class="form-control" id="registerPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Registrar</button>
+                </form>
+                <p class="mt-3">Já tem uma conta? <a href="/login" data-route>Faça login aqui</a>.</p>
+            </div>
+        </section>
+        <!-- user profile -->
+        <section id="profile" style="display:none;">
+            <div class="container mt-5">
+                <h2>Perfil do Usuário</h2>
+                <p><strong>Nome de Usuário:</strong> <span id="profileUsername"></span></p>
+                <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+                <!-- Adicione outras informações conforme necessário -->
+                <button class="btn btn-secondary" onclick="logout()">Sair</button>
+            </div>
+        </section>
+        <!-- ranking -->
+        <section id="rankings" style="display:none;">
+            <div class="container mt-5">
+                <h2>Rankings</h2>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Posição</th>
+                            <th>Nome de Usuário</th>
+                            <th>Pontuação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankingsTableBody">
+                        <!-- As linhas serão preenchidas dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <section id="404" style="display:none;">
+            <div class="container mt-5">
+                <h2>Page Not Found</h2>
+            </div>
+        </section>
     </div>
 
     <!-- Scripts -->
