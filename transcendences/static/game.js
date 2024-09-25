@@ -134,13 +134,20 @@ function resetBall() {
     ballSpeedX = -ballSpeedX;
 }
 
-function showSection(sectionId) {
+function showSection(route) {
     const sections = document.querySelectorAll('section');
     sections.forEach(section => {
         section.style.display = 'none';
     });
-    document.getElementById(sectionId).style.display = 'block';
+    
+    let sectionId = 'home';
+    
+    if (route == '/' || route == '/home')
+        sectionId = 'home';
+    else if (route == '/game')
+        sectionId = 'game';
 
+    document.getElementById(sectionId).style.display = 'block';
     if (sectionId === 'game') {
         stopGame();
         initGame();
@@ -149,8 +156,24 @@ function showSection(sectionId) {
         stopGame();
 }
 
-// Exibir a seção inicial ao carregar a página
-document.addEventListener('DOMContentLoaded', () => {
-    showSection('home');
+document.addEventListener('click', function(event) {
+    const target = event.target;
+    if (target.matches('a[data-route]')) {
+        event.preventDefault(); //evita recarregamento de pagina
+        const route = target.getAttribute('href');
+        history.pushState({}, '', route); //atualiza a url sem recarregar a pagina
+        showSection(route); //atualiza o conteudo exibido
+    }
 });
 
+//detecta quando o usuário navega usando os botões de voltar ou avançar.
+window.addEventListener('popstate', function() {
+    const route = window.location.pathname;
+    showSection(route);
+});
+
+//inicializa a seção correta ao carregar a página
+document.addEventListener('DOMContentLoaded', () => {
+    const route = window.location.pathname;
+    showSection(route);
+});
