@@ -9,6 +9,12 @@ import json
 def index(request):
     return render(request, 'index.html')
 
+def check_auth(request):
+    if request.user.is_authenticated:
+        return JsonResponse({'authenticated': True})
+    else:
+        return JsonResponse({'authenticated': False}, status=401)
+
 def no_cache(view):
     def view_wrapper(request, *args, **kwargs):
         response = view(request, *args, **kwargs)

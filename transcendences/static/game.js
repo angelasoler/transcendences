@@ -21,7 +21,6 @@ let downPressed = false;
 
 let animationFrameId;
 
-
 ////// GAME //////
 
 function initGame() {
@@ -137,30 +136,31 @@ function resetBall() {
 }
 
 ////// ROUTES //////
-function showSection(route) {
-    const sections = document.querySelectorAll('section');
-    sections.forEach(section => {
-        section.style.display = 'none';
-    });
-    
-    let sectionId = 'home';
-    
-    if (route == '/' || route == '/home')
-        sectionId = 'home';
-    else if (route == '/game')
-        sectionId = 'game';
-    else if (route == '/rankings')
-        sectionId = 'rankings'
-    else if (route == '/profile')
-        sectionId = 'profile'
-    else if (route == '/login')
-        sectionId = 'login'
-    else if (route == '/register')
-        sectionId = 'register'
-    else
-        sectionId = '404'
 
+const protectedRoutes = ['/profile', '/game', '/rankings'];
+
+function showSection(route) {
+    if (protectedRoutes.includes(route)) {
+        fetch('/api/check_auth/')
+            .then(response => {
+                if (response.ok) {
+                    displaySection(route);
+                } else {
+                    history.pushState({}, '', '/login');
+                    showSection('/login');
+                }
+            });
+    } else {
+        displaySection(route);
+    }
+}
+
+function displaySection(route) {
+    const sections = document.querySelectorAll('section');
+    sections.forEach(section => section.style.display = 'none');
+    const sectionId = route === '/' ? 'home' : route.slice(1);
     document.getElementById(sectionId).style.display = 'block';
+
     if (sectionId === 'game') {
         stopGame();
         initGame();
@@ -169,10 +169,8 @@ function showSection(route) {
         getRankings();
     else if (sectionId == 'profile')
         getProfile();
-    // else if (sectionId == 'login')
-    //     loginUser();
     else
-        stopGame();
+        stopGame(); //provisorio
 }
 
 document.addEventListener('click', function(event) {
@@ -214,6 +212,7 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+document.getElementById('registerForm').addEventListener('submit', registerUser);
 
 //TO-DO RETIRAR EMAIL?
 async function registerUser(event) {
@@ -242,7 +241,7 @@ async function registerUser(event) {
     }
 }
 
-document.getElementById('registerForm').addEventListener('submit', registerUser);
+document.getElementById('loginForm').addEventListener('submit', loginUser);
 
 async function loginUser(event) {
     // const csrftoken = getCookie('csrftoken');
@@ -269,8 +268,6 @@ async function loginUser(event) {
         alert(result.error);
     }
 }
-
-document.getElementById('loginForm').addEventListener('submit', loginUser);
 
 async function getProfile() {
     const response = await fetch('/api/profile/', {
@@ -315,7 +312,7 @@ async function getRankings() {
     const response = await fetch('/api/rankings/');
     if (response.ok) {
         const data = await response.json();
-        const tableBody = document.getElementById('rankingsTableBody');
+        const tableBody = document.getElementById('rankingsTableBody'); // TO-DO
         tableBody.innerHTML = '';
         data.forEach(item => {
             const row = document.createElement('tr');
