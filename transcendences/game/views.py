@@ -81,3 +81,8 @@ def get_rankings(request):
     ]
     return JsonResponse(data, safe=False)
 
+def game_room(request, room_name):
+    return render(request, 'game/room.html', {
+        'room_name': room_name
+    })
+

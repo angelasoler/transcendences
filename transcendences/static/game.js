@@ -36,7 +36,7 @@ function initGame() {
     // Adicionar event listeners para teclas
     document.addEventListener('keydown', keyDownHandler);
     document.addEventListener('keyup', keyUpHandler);
-    
+
     connectWebSocket();
     // Iniciar o jogo
     draw();
@@ -139,13 +139,6 @@ function draw() {
     animationFrameId = requestAnimationFrame(draw);
 }
 
-function updateGameState(data) {
-    // Atualizar o estado local com os dados recebidos
-    paddle2Y = data.paddle2Y;
-    ballX = data.ballX;
-    ballY = data.ballY;
-}
-
 function resetBall() {
     ballX = canvas.width / 2;
     ballY = canvas.height / 2;
@@ -154,7 +147,7 @@ function resetBall() {
 
 ////// ROUTES //////
 
-const protectedRoutes = ['/profile', '/game', '/rankings'];
+const protectedRoutes = ['/profile', '/game', '/rooms', '/rankings'];
 
 function showSection(route) {
     if (protectedRoutes.includes(route)) {
@@ -171,6 +164,8 @@ function showSection(route) {
         displaySection(route);
     }
 }
+
+let roomName;
 
 function displaySection(route) {
     const sections = document.querySelectorAll('section');
@@ -229,6 +224,7 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
 document.getElementById('registerForm').addEventListener('submit', registerUser);
 
 //TO-DO RETIRAR EMAIL?
@@ -320,7 +316,7 @@ async function logout() {
     const result = await response.json();
     if (response.ok) {
         alert(result.message);
-        window.location.href = '/';
+        window.location.href = '/'; //is secure loging out like this? user poderia modifica isso?
     } else {
         alert(result.error);
     }
@@ -349,7 +345,20 @@ async function getRankings() {
 ////// WebSocket /////
 
 let gameSocket;
-let roomName = 'sala1'; // Pode ser dinâmico
+
+
+document.getElementById('room-form').addEventListener('submit', createRoom);
+
+function createRoom(event) {
+    event.preventDefault();
+    // TO-DO: get roomName from DB
+    //      - travar sala para 2
+    const route = '/game';
+    roomName = document.getElementById('room-name').value;
+    document.getElementById('room-name-display').textContent = roomName;
+    history.pushState({}, '', route);
+    showSection(route);
+}
 
 function connectWebSocket() {
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
@@ -357,7 +366,7 @@ function connectWebSocket() {
     gameSocket = new WebSocket(wsUrl);
 
     gameSocket.onopen = function(e) {
-        console.log('WebSocket conectado.');
+        console.log("Conectado à sala " + roomName);
     };
 
     gameSocket.onmessage = function(e) {
@@ -367,7 +376,7 @@ function connectWebSocket() {
     };
 
     gameSocket.onclose = function(e) {
-        console.log('WebSocket desconectado.');
+        console.log("Desconectado da sala " + roomName);
     };
 
     gameSocket.onerror = function(e) {
@@ -379,5 +388,12 @@ function sendGameUpdate(data) {
     if (gameSocket && gameSocket.readyState === WebSocket.OPEN) {
         gameSocket.send(JSON.stringify(data));
     }
+}
+
+function updateGameState(data) {
+    // Atualizar o estado local com os dados recebidos
+    paddle2Y = data.paddle2Y;
+    ballX = data.ballX;
+    ballY = data.ballY;
 }
 

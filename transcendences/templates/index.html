@@ -34,7 +34,7 @@
                         <a class="nav-link active" href="/" data-route>Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="/game" data-route>Jogar</a>
+                        <a class="nav-link active" href="/rooms" data-route>Jogar</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/rankings" data-route>Rankings</a>
@@ -56,13 +56,24 @@
         <section id="home">
             <h1>Bem-vindo ao Pong Game</h1>
             <p>Desafie outros jogadores e alcance o topo do ranking!</p>
-            <a href="/game" class="btn btn-primary mt-3" data-route>Começar a Jogar</a>
+            <a href="/rooms" class="btn btn-primary mt-3" data-route>Começar a Jogar</a>
+        </section>
+        <!-- rooms -->
+        <section id="rooms" style="display:none;">
+            <div class="container">
+                <h2>Entrar em uma Sala</h2>
+                <form id="room-form">
+                    <input type="text" id="room-name" placeholder="Nome da Sala">
+                    <button type="submit">Entrar na Sala</button>
+                </form>
+            </div>
         </section>
         <!-- game -->
         <section id="game" style="display:none;">
+            <h2>Você está na sala: <span id="room-name-display"></span></h2>
             <div class="row justify-content-center">
                 <div class="col-md-8">
-                    <canvas id="gameCanvas" width="800" height="600"></canvas>
+                    <canvas id="gameCanvas" width="600" height="400"></canvas>
                 </div>
             </div>
         </section>
@@ -84,7 +95,7 @@
                 <p class="mt-3">Não tem uma conta? <a href="/register" data-route>Registre-se aqui</a>.</p>
             </div>
         </section>
-        <!-- regitro -->
+        <!-- register -->
         <section id="register" style="display:none;">
             <div class="container mt-5">
                 <h2>Registro</h2>
@@ -113,7 +124,7 @@
                 <p><strong>Nome de Usuário:</strong> <span id="profileUsername"></span></p>
                 <p><strong>Email:</strong> <span id="profileEmail"></span></p>
                 <!-- Adicione outras informações conforme necessário -->
-                <button class="btn btn-secondary" onclick="logout()">Sair</button>
+                <button class="btn btn-secondary" onclick="logout()" data-route>Sair</button>
             </div>
         </section>
         <!-- ranking -->
