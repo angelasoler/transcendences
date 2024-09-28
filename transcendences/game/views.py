@@ -2,8 +2,9 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.decorators import login_required
+
 import json
 
 def index(request):
@@ -24,7 +25,7 @@ def no_cache(view):
         return response
     return view_wrapper
 
-@csrf_exempt  # Usaremos o CSRF token mais tarde
+@csrf_protect
 def register_user(request):
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -39,7 +40,7 @@ def register_user(request):
         return JsonResponse({'message': 'Usuário registrado com sucesso'})
     return JsonResponse({'error': 'Método não permitido'}, status=405)
 
-@csrf_exempt
+@csrf_protect
 @no_cache
 def login_user(request):
     if request.method == 'POST':
@@ -55,7 +56,7 @@ def login_user(request):
             return JsonResponse({'error': 'Credenciais inválidas'}, status=400)
     return JsonResponse({'error': 'Método não permitido'}, status=405)
 
-@csrf_exempt
+@csrf_protect
 def logout_user(request):
     if request.method == 'POST':
         logout(request)

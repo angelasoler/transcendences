@@ -216,7 +216,7 @@ document.getElementById('registerForm').addEventListener('submit', registerUser)
 
 //TO-DO RETIRAR EMAIL?
 async function registerUser(event) {
-    // const csrftoken = getCookie('csrftoken');
+    const csrftoken = getCookie('csrftoken');
     event.preventDefault();
     const username = document.getElementById('registerUsername').value;
     const email = document.getElementById('registerEmail').value;
@@ -224,9 +224,10 @@ async function registerUser(event) {
     
     const response = await fetch('/api/register/', {
         method: 'POST',
+        mode: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
-            // 'X-CSRFToken': csrftoken,
+            'X-CSRFToken': csrftoken,
         },
         body: JSON.stringify({username, email, password}),
     });
@@ -244,7 +245,7 @@ async function registerUser(event) {
 document.getElementById('loginForm').addEventListener('submit', loginUser);
 
 async function loginUser(event) {
-    // const csrftoken = getCookie('csrftoken');
+    const csrftoken = getCookie('csrftoken');
     event.preventDefault();
     const username = document.getElementById('loginUsername').value;
     const password = document.getElementById('loginPassword').value;
@@ -253,7 +254,7 @@ async function loginUser(event) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            // 'X-CSRFToken': csrftoken,
+            'X-CSRFToken': csrftoken,
         },
         body: JSON.stringify({username, password}),
     });
@@ -261,9 +262,8 @@ async function loginUser(event) {
     const result = await response.json();
     if (response.ok) {
         alert(result.message);
-        history.pushState({}, '', '/profile');
-        showSection('/profile');
-        getProfile();
+        history.pushState({}, '', '/');
+        showSection('/');
     } else {
         alert(result.error);
     }
@@ -290,12 +290,13 @@ async function getProfile() {
 }
 
 async function logout() {
-    // const csrftoken = getCookie('csrftoken');
+    const csrftoken = getCookie('csrftoken');
     const response = await fetch('/api/logout/', {
         method: 'POST',
+        mode: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
-            // 'X-CSRFToken': csrftoken,
+            'X-CSRFToken': csrftoken,
         },
     });
 
