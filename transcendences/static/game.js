@@ -305,8 +305,7 @@ async function logout() {
     const result = await response.json();
     if (response.ok) {
         alert(result.message);
-        history.pushState({}, '', '/login');
-        showSection('/login');
+        window.location.href = '/';
     } else {
         alert(result.error);
     }
