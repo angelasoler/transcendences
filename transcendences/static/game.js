@@ -120,12 +120,12 @@ function draw() {
         paddle1Y += paddleSpeed;
     }
 
-    // Mover o paddle do oponente (IA simples)
-    if (paddle2Y + paddleHeight / 2 < ballY) {
-        paddle2Y += paddleSpeed - 5;
-    } else {
-        paddle2Y -= paddleSpeed - 5;
-    }
+    // // Mover o paddle do oponente (IA simples)
+    // if (paddle2Y + paddleHeight / 2 < ballY) {
+    //     paddle2Y += paddleSpeed - 5;
+    // } else {
+    //     paddle2Y -= paddleSpeed - 5;
+    // }
 
     const gameState = {
         paddle1Y: paddle1Y,
