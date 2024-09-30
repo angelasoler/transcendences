@@ -1,36 +1,60 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.layers import get_channel_layer
+from django.core.cache import cache
 
 class GameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = f'game_{self.room_name}'
-
-        # Acessar o usuário autenticado
         self.user = self.scope['user']
 
         if not self.user.is_authenticated:
-            await self.close()
-        # Limitar a 2 jogadores
-        if len(self.channel_layer.groups.get(self.room_group_name, [])) >= 2:
-            await self.close()
-        else:
-            await self.channel_layer.group_add(
-                self.room_group_name,
-                self.channel_name
-            )
-            await self.accept()
+            await self.close() # Fechar se o usuário não estiver autenticado
 
-            # Inicializar o estado do jogo
-            self.game_state = {
-                'paddle1Y': 0,
-                'paddle2Y': 0,
-                'ballX': 400,
-                'ballY': 300,
+        # Obter a contagem atual de jogadores na sala
+        player_count = cache.get(self.room_group_name, 0)
+
+        if player_count >= 2:
+            await self.close()
+            return
+
+        if player_count == 0:
+            self.paddle = 'paddle1'
+        else:
+            self.paddle = 'paddle2'
+        print(f"Atribuição do paddle: {self.paddle}") 
+
+         # Incrementar a contagem de jogadores
+        cache.set(self.room_group_name, player_count + 1)
+
+        game_state = cache.get(f'{self.room_group_name}_state')
+        if not game_state:
+            game_state = {
+                'paddle1Y': 150,
+                'paddle2Y': 150,
+                'ballX': 300,
+                'ballY': 200,
                 'ballSpeedX': 5,
                 'ballSpeedY': 5,
-                'paddleSpeed': 10
+                'canvasWidth': 600,
+                'canvasHeight': 400
             }
+            cache.set(f'{self.room_group_name}_state', game_state)
+            print("Inicializando estado do jogo.")  # Log para depuração
+        else:
+            print("Recuperando estado do jogo existente.")
+
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name
+        )
+        await self.accept()
+
+
+        await self.send(text_data=json.dumps({
+            'paddle': self.paddle
+        }))
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(
@@ -40,35 +64,67 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        
-        # Atualizar o estado dos jogadores (paddles)
-        self.game_state['paddle1Y'] = data.get('paddle1Y', self.game_state['paddle1Y'])
-        self.game_state['paddle2Y'] = data.get('paddle2Y', self.game_state['paddle2Y'])
+
+        # Recuperar o estado atual do jogo
+        game_state = cache.get(f'{self.room_group_name}_state')
+        if not game_state:
+            game_state = {
+                'paddle1Y': 150,
+                'paddle2Y': 150,
+                'ballX': 300,
+                'ballY': 200,
+                'ballSpeedX': 5,
+                'ballSpeedY': 5,
+                'canvasWidth': 600,
+                'canvasHeight': 400
+            }
+            cache.set(f'{self.room_group_name}_state', game_state)
+            print("Inicializando estado do jogo no recebimento.")
+
+        if self.paddle == 'paddle1':
+            game_state['paddle1Y'] = data.get('paddle1Y', game_state['paddle1Y'])
+        else:
+            game_state['paddle2Y'] = data.get('paddle2Y', game_state['paddle2Y'])
 
         # Atualizar o estado da bola
-        self.update_ball_position()
+        # self.update_ball_position(game_state)
+
+
+        game_state['ballX'] += game_state['ballSpeedX']
+        game_state['ballY'] += game_state['ballSpeedY']
+
+        # Colisão com as bordas
+        if game_state['ballY'] <= 0 or game_state['ballY'] >= game_state['canvasHeight']:
+            game_state['ballSpeedY'] = -game_state['ballSpeedY']
+
+        if game_state['ballX'] <= 0 or game_state['ballX'] >= game_state['canvasWidth']:
+            game_state['ballSpeedX'] = -game_state['ballSpeedX']
+
+
+        # Atualizar o estado no cache
+        cache.set(f'{self.room_group_name}_state', game_state)
+        print(f"Estado do jogo atualizado: {game_state}") 
 
         # Enviar o estado atualizado para ambos os jogadores
         await self.channel_layer.group_send(
             self.room_group_name,
             {
-                'type': 'game_state',
-                'game_state': self.game_state
+                'type': 'broadcast_game_state',
+                'game_state': game_state
             }
         )
 
     # Atualizar a posição da bola no jogo
-    def update_ball_position(self):
-        self.game_state['ballX'] += self.game_state['ballSpeedX']
-        self.game_state['ballY'] += self.game_state['ballSpeedY']
+    # def update_ball_position(self, game_state):
+    #     game_state['ballX'] += game_state['ballSpeedX']
+    #     game_state['ballY'] += game_state['ballSpeedY']
 
-        # Colisão com as bordas
-        if self.game_state['ballY'] <= 0 or self.game_state['ballY'] >= 600:
-            self.game_state['ballSpeedY'] = -self.game_state['ballSpeedY']
+    #     # Colisão com as bordas
+    #     if game_state['ballY'] <= 0 or game_state['ballY'] >= game_state['canvasHeight']:
+    #         game_state['ballSpeedY'] = -game_state['ballSpeedY']
 
-        if self.game_state['ballX'] <= 0 or self.game_state['ballX'] >= 800:
-            self.game_state['ballSpeedX'] = -self.game_state['ballSpeedX']
+    #     if game_state['ballX'] <= 0 or game_state['ballX'] >= game_state['canvasWidth']:
+    #         game_state['ballSpeedX'] = -game_state['ballSpeedX']
 
-    async def game_state(self, event):
+    async def broadcast_game_state(self, event):
         await self.send(text_data=json.dumps(event['game_state']))
-
