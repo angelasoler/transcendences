@@ -1,8 +1,11 @@
-// vairaveis glabais para controle do jogo
 let canvas, context;
-
 const canvasWidth = 600;
 const canvasHeight = 400;
+
+// Tamanhos
+const paddleWidth = 10;
+const paddleHeight = 100;
+const ballRadius = 7;
 
 // Posições iniciais
 let paddle1Y = canvasHeight / 2 - 50;
@@ -10,9 +13,11 @@ let paddle2Y = canvasHeight / 2 - 50;
 let ballX = canvasWidth / 2;
 let ballY = canvasHeight / 2;
 
-// Controles do jogador
 let upPressed = false;
 let downPressed = false;
+
+let playerPaddle = null;
+let score = { player1: 0, player2: 0 };
 
 let animationFrameId;
 
@@ -43,21 +48,34 @@ function keyUpHandler(e) {
     }
 }
 
-function draw() {
+function initGame() {
+    // Configurações do canvas
     canvas = document.getElementById('gameCanvas');
     context = canvas.getContext('2d');
 
-    context.clearRect(0, 0, canvas.width, canvas.height);  // Limpar o canvas
+    // Adicionar event listeners para teclas
+    document.addEventListener('keydown', keyDownHandler);
+    document.addEventListener('keyup', keyUpHandler);
+
+}
+
+function draw() {
+    context.clearRect(0, 0, canvas.width, canvas.height);
 
     // Desenhar os paddles
     context.fillStyle = 'white';
-    context.fillRect(10, paddle1Y, 10, 100);
-    context.fillRect(canvasWidth - 20, paddle2Y, 10, 100);
+    context.fillRect(0, paddle1Y, paddleWidth, paddleHeight);
+    context.fillRect(canvasWidth - paddleWidth, paddle2Y, paddleWidth, paddleHeight);
 
     // Desenhar a bola
     context.beginPath();
-    context.arc(ballX, ballY, 10, 0, Math.PI * 2);
+    context.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
     context.fill();
+
+    // Desenhar a pontuação
+    context.font = '24px Arial';
+    context.fillText(`Player 1: ${score.player1}`, 50, 30);
+    context.fillText(`Player 2: ${score.player2}`, canvasWidth - 150, 30);
 }
 
 function updatePaddlePositions() {
@@ -76,11 +94,12 @@ function updatePaddlePositions() {
             paddle2Y += 5;
         }
     }
-    sendGameUpdate();  // Enviar o estado atualizado dos paddles para o servidor
+    sendGameUpdate();
 }
 
 function gameLoop() {
     updatePaddlePositions();
+    draw();
     animationFrameId = requestAnimationFrame(gameLoop);
 }
 
@@ -114,6 +133,7 @@ function displaySection(route) {
 
     if (sectionId === 'game') {
         stopGame();
+        initGame();
         connectWebSocket();
         gameLoop();
     }
@@ -285,14 +305,12 @@ async function getRankings() {
 ////// WebSocket /////
 
 let gameSocket;
-let playerPaddle = null;
 
 document.getElementById('room-form').addEventListener('submit', createRoom);
 
 function createRoom(event) {
     event.preventDefault();
     // TO-DO: get roomName from DB
-    //      - travar sala para 2
     const route = '/game';
     roomName = document.getElementById('room-name').value;
     document.getElementById('room-name-display').textContent = roomName;
@@ -311,14 +329,16 @@ function connectWebSocket() {
     }
 
     gameSocket.onmessage = function(e) {
-        const gameState = JSON.parse(e.data);
-        if (gameState.paddle) {
-            playerPaddle = gameState.paddle;
+        const data = JSON.parse(e.data);
+        if (data.paddle) {
+            playerPaddle = data.paddle;
             console.log("Você controla: " + playerPaddle);
         } else {
+            const gameState = data.game_state;
+            const serverScore = data.score;
             console.log("updateGameState");
             // Atualizar o estado do jogo com os dados recebidos do servidor
-            updateGameState(gameState);
+            updateGameState(gameState, serverScore);
         }
     };
 
@@ -345,11 +365,12 @@ function sendGameUpdate() {
     }
 }
 
-function updateGameState(gameState) {
+function updateGameState(gameState, serverScore) {
     paddle1Y = gameState.paddle1Y;
     paddle2Y = gameState.paddle2Y;
     ballX = gameState.ballX;
     ballY = gameState.ballY;
-    draw();
+    score.player1 = serverScore.player1;
+    score.player2 = serverScore.player2;
 }
 
