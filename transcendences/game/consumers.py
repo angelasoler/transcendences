@@ -27,8 +27,14 @@ class GameConsumer(AsyncWebsocketConsumer):
                     'canvasHeight': 400
                 },
                 'score': {
-                    'player1': 0,
-                    'player2': 0
+                    'player1': {
+                        'name': '',
+                        'score': 0
+                    },
+                    'player2': {
+                        'name': '',
+                        'score': 0
+                    }
                 }
             }
 
@@ -37,6 +43,8 @@ class GameConsumer(AsyncWebsocketConsumer):
             return
 
         self.paddle = f'paddle{len(self.rooms[self.room_name]["players"]) + 1}'
+        player = f'player{len(self.rooms[self.room_name]["players"]) + 1}'
+        self.rooms[self.room_name]['score'][player]['name'] = self.user.username
         self.rooms[self.room_name]['players'].append(self.channel_name)
 
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
@@ -89,7 +97,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             if (game_state['ballY'] > game_state['paddle1Y'] and game_state['ballY'] < game_state['paddle1Y'] + 100):
                 game_state['ballSpeedX'] = -game_state['ballSpeedX']
             else:
-                score['player2'] += 1
+                score['player2']['score'] += 1
                 self.resetBall()
 
         # Colisão com o paddle direito
@@ -97,12 +105,18 @@ class GameConsumer(AsyncWebsocketConsumer):
             if (game_state['ballY'] > game_state['paddle2Y'] and game_state['ballY'] < game_state['paddle2Y'] + 100):
                 game_state['ballSpeedX'] = -game_state['ballSpeedX']
             else:
-                score['player1'] += 1
+                score['player1']['score'] += 1
                 self.resetBall()
 
 
     async def broadcast_game_state(self, event):
-        await self.send(text_data=json.dumps({'game_state': event['game_state'], 'score': event['score']}))
+        await self.send(text_data=json.dumps(
+                {
+                    'game_state': event['game_state'],
+                    'score': event['score'],
+                }
+            )
+        )
 
     def resetBall(self):
         game_state = self.rooms[self.room_name]['game_state']

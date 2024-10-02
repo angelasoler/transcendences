@@ -16,8 +16,18 @@ let ballY = canvasHeight / 2;
 let upPressed = false;
 let downPressed = false;
 
+// let playerName = null;
 let playerPaddle = null;
-let score = { player1: 0, player2: 0 };
+let score = {
+    player1: {
+        name: '',
+        score: 0
+    },
+    player2: {
+        name: '',
+        score: 0
+    }
+};
 
 let animationFrameId;
 
@@ -74,8 +84,8 @@ function draw() {
 
     // Desenhar a pontuação
     context.font = '24px Arial';
-    context.fillText(`Player 1: ${score.player1}`, 50, 30);
-    context.fillText(`Player 2: ${score.player2}`, canvasWidth - 150, 30);
+    context.fillText(`${score.player1.name}: ${score.player1.score}`, 50, 30);
+    context.fillText(`${score.player2.name}: ${score.player2.score}`, canvasWidth - 150, 30);
 }
 
 function updatePaddlePositions() {
@@ -323,7 +333,7 @@ function connectWebSocket() {
     const wsUrl = `${protocol}://${window.location.host}/ws/game/${roomName}/`;
     gameSocket = new WebSocket(wsUrl);
 
-    if (!roomName) {
+    if (!roomName) { //não permitir em form
         console.error("Nome da sala está vazio.");
         return;
     }
@@ -332,12 +342,12 @@ function connectWebSocket() {
         const data = JSON.parse(e.data);
         if (data.paddle) {
             playerPaddle = data.paddle;
+            playerName = data.name;
             console.log("Você controla: " + playerPaddle);
         } else {
             const gameState = data.game_state;
             const serverScore = data.score;
             console.log("updateGameState");
-            // Atualizar o estado do jogo com os dados recebidos do servidor
             updateGameState(gameState, serverScore);
         }
     };
@@ -370,7 +380,9 @@ function updateGameState(gameState, serverScore) {
     paddle2Y = gameState.paddle2Y;
     ballX = gameState.ballX;
     ballY = gameState.ballY;
-    score.player1 = serverScore.player1;
-    score.player2 = serverScore.player2;
+    score.player1.name = serverScore.player1.name;
+    score.player1.score = serverScore.player1.score;
+    score.player2.name = serverScore.player2.name;
+    score.player2.score = serverScore.player2.score;
 }
 
