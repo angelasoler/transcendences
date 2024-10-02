@@ -4,3 +4,4 @@ channels==3.0.4
 channels_redis==3.2.0
 daphne==3.0.2
 whitenoise==6.7.0
+dj-database-url
