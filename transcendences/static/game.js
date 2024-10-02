@@ -16,7 +16,7 @@ let ballY = canvasHeight / 2;
 let upPressed = false;
 let downPressed = false;
 
-// let playerName = null;
+let waitOponent = true;
 let playerPaddle = null;
 let score = {
     player1: {
@@ -73,7 +73,7 @@ function draw() {
     context.clearRect(0, 0, canvas.width, canvas.height);
 
     // Desenhar os paddles
-    context.fillStyle = 'white';
+    context.fillStyle = 'green';
     context.fillRect(0, paddle1Y, paddleWidth, paddleHeight);
     context.fillRect(canvasWidth - paddleWidth, paddle2Y, paddleWidth, paddleHeight);
 
@@ -84,6 +84,7 @@ function draw() {
 
     // Desenhar a pontuação
     context.font = '24px Arial';
+    context.fillStyle = 'white';
     context.fillText(`${score.player1.name}: ${score.player1.score}`, 50, 30);
     context.fillText(`${score.player2.name}: ${score.player2.score}`, canvasWidth - 150, 30);
 }
@@ -108,8 +109,15 @@ function updatePaddlePositions() {
 }
 
 function gameLoop() {
-    updatePaddlePositions();
-    draw();
+    if (waitOponent) {
+        context.font = 'bold 60px serif';
+        context.strokeStyle = 'green';
+        context.strokeText(`Wait`, canvasWidth/2 - 80, canvasHeight/2);
+    }
+    else {
+        draw();
+        updatePaddlePositions();
+    }
     animationFrameId = requestAnimationFrame(gameLoop);
 }
 
@@ -179,7 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 ////// FETCH API /////
 
-// Django CSRF Token
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -318,9 +325,9 @@ let gameSocket;
 
 document.getElementById('room-form').addEventListener('submit', createRoom);
 
+//TO-DO: selectRoom(event)
 function createRoom(event) {
     event.preventDefault();
-    // TO-DO: get roomName from DB
     const route = '/game';
     roomName = document.getElementById('room-name').value;
     document.getElementById('room-name-display').textContent = roomName;
@@ -333,7 +340,7 @@ function connectWebSocket() {
     const wsUrl = `${protocol}://${window.location.host}/ws/game/${roomName}/`;
     gameSocket = new WebSocket(wsUrl);
 
-    if (!roomName) { //não permitir em form
+    if (!roomName) { //TO-DO: não permitir em form
         console.error("Nome da sala está vazio.");
         return;
     }
@@ -342,7 +349,6 @@ function connectWebSocket() {
         const data = JSON.parse(e.data);
         if (data.paddle) {
             playerPaddle = data.paddle;
-            playerName = data.name;
             console.log("Você controla: " + playerPaddle);
         } else {
             const gameState = data.game_state;
@@ -376,6 +382,7 @@ function sendGameUpdate() {
 }
 
 function updateGameState(gameState, serverScore) {
+    waitOponent = false
     paddle1Y = gameState.paddle1Y;
     paddle2Y = gameState.paddle2Y;
     ballX = gameState.ballX;

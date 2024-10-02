@@ -72,9 +72,6 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'transcendences.wsgi.application'
-
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
@@ -141,3 +138,8 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels.layers.InMemoryChannelLayer"
     }
 }
+
+# CSRF configs
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_HTTPONLY = False

@@ -82,6 +82,7 @@
             <div class="container mt-5">
                 <h2>Login</h2>
                 <form id="loginForm">
+                    {% csrf_token %}
                     <div class="mb-3">
                         <label for="loginUsername" class="form-label">Nome de Usuário</label>
                         <input type="text" class="form-control" id="loginUsername" required>
@@ -100,6 +101,7 @@
             <div class="container mt-5">
                 <h2>Registro</h2>
                 <form id="registerForm">
+                    {% csrf_token %}
                     <div class="mb-3">
                         <label for="registerUsername" class="form-label">Nome de Usuário</label>
                         <input type="text" class="form-control" id="registerUsername" required>
