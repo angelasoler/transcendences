@@ -1,6 +1,6 @@
-
-// vairaveis glabais para controle do jogo
-let canvas, context
+let canvas, context;
+const canvasWidth = 600;
+const canvasHeight = 400;
 
 // Tamanhos
 const paddleWidth = 10;
@@ -8,39 +8,30 @@ const paddleHeight = 100;
 const ballRadius = 7;
 
 // Posições iniciais
-let paddle1Y, paddle2Y, ballX, ballY;
+let paddle1Y = canvasHeight / 2 - 50;
+let paddle2Y = canvasHeight / 2 - 50;
+let ballX = canvasWidth / 2;
+let ballY = canvasHeight / 2;
 
-// Velocidades;
-let ballSpeedX = 5;
-let ballSpeedY = 5;
-let paddleSpeed = 10;
-
-// Controles do jogador
 let upPressed = false;
 let downPressed = false;
+
+let waitOponent = true;
+let playerPaddle = null;
+let score = {
+    player1: {
+        name: '',
+        score: 0
+    },
+    player2: {
+        name: '',
+        score: 0
+    }
+};
 
 let animationFrameId;
 
 ////// GAME //////
-
-function initGame() {
-    // Configurações do canvas
-    canvas = document.getElementById('gameCanvas');
-    context = canvas.getContext('2d');
-    
-    paddle1Y = (canvas.height - paddleHeight) / 2;
-    paddle2Y = (canvas.height - paddleHeight) / 2;
-    ballX = canvas.width / 2;
-    ballY = canvas.height / 2;
-    
-    // Adicionar event listeners para teclas
-    document.addEventListener('keydown', keyDownHandler);
-    document.addEventListener('keyup', keyUpHandler);
-
-    connectWebSocket();
-    // Iniciar o jogo
-    draw();
-}
 
 function stopGame() {
     // Cancelar o loop de animação
@@ -67,82 +58,67 @@ function keyUpHandler(e) {
     }
 }
 
-// Função principal de desenho
+function initGame() {
+    // Configurações do canvas
+    canvas = document.getElementById('gameCanvas');
+    context = canvas.getContext('2d');
+
+    // Adicionar event listeners para teclas
+    document.addEventListener('keydown', keyDownHandler);
+    document.addEventListener('keyup', keyUpHandler);
+
+}
+
 function draw() {
-    // Limpar o canvas
     context.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Desenhar o paddle esquerdo (controlado pelo jogador)
-    context.fillStyle = 'white';
+    // Desenhar os paddles
+    context.fillStyle = 'green';
     context.fillRect(0, paddle1Y, paddleWidth, paddleHeight);
-
-    // Desenhar o paddle direito (IA simples)
-    context.fillRect(canvas.width - paddleWidth, paddle2Y, paddleWidth, paddleHeight);
+    context.fillRect(canvasWidth - paddleWidth, paddle2Y, paddleWidth, paddleHeight);
 
     // Desenhar a bola
     context.beginPath();
-    context.arc(ballX, ballY, ballRadius, 0, Math.PI*2);
+    context.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
     context.fill();
 
-    // Mover a bola
-    ballX += ballSpeedX;
-    ballY += ballSpeedY;
-
-    // Colisão com as paredes superior e inferior
-    if (ballY + ballRadius > canvas.height || ballY - ballRadius < 0) {
-        ballSpeedY = -ballSpeedY;
-    }
-
-    // Colisão com o paddle esquerdo
-    if (ballX - ballRadius < paddleWidth) {
-        if (ballY > paddle1Y && ballY < paddle1Y + paddleHeight) {
-            ballSpeedX = -ballSpeedX;
-        } else {
-            // Ponto para o oponente
-            resetBall();
-        }
-    }
-
-    // Colisão com o paddle direito
-    if (ballX + ballRadius > canvas.width - paddleWidth) {
-        if (ballY > paddle2Y && ballY < paddle2Y + paddleHeight) {
-            ballSpeedX = -ballSpeedX;
-        } else {
-            // Ponto para o jogador
-            resetBall();
-        }
-    }
-
-    // Mover o paddle do jogador
-    if (upPressed && paddle1Y > 0) {
-        paddle1Y -= paddleSpeed;
-    } else if (downPressed && paddle1Y < canvas.height - paddleHeight) {
-        paddle1Y += paddleSpeed;
-    }
-
-    // Mover o paddle do oponente (IA simples)
-    if (paddle2Y + paddleHeight / 2 < ballY) {
-        paddle2Y += paddleSpeed - 5;
-    } else {
-        paddle2Y -= paddleSpeed - 5;
-    }
-
-    const gameState = {
-        paddle1Y: paddle1Y,
-        paddle2Y: paddle2Y,
-        ballX: ballX,
-        ballY: ballY,
-        // Outros estados necessários
-    };
-    sendGameUpdate(gameState);
-
-    animationFrameId = requestAnimationFrame(draw);
+    // Desenhar a pontuação
+    context.font = '24px Arial';
+    context.fillStyle = 'white';
+    context.fillText(`${score.player1.name}: ${score.player1.score}`, 50, 30);
+    context.fillText(`${score.player2.name}: ${score.player2.score}`, canvasWidth - 150, 30);
 }
 
-function resetBall() {
-    ballX = canvas.width / 2;
-    ballY = canvas.height / 2;
-    ballSpeedX = -ballSpeedX;
+function updatePaddlePositions() {
+    if (playerPaddle === 'paddle1') {
+        if (upPressed && paddle1Y > 0) {
+            paddle1Y -= 5;
+        }
+        if (downPressed && paddle1Y < canvasHeight - 100) {
+            paddle1Y += 5;
+        }
+    } else if (playerPaddle === 'paddle2') {
+        if (upPressed && paddle2Y > 0) {
+            paddle2Y -= 5;
+        }
+        if (downPressed && paddle2Y < canvasHeight - 100) {
+            paddle2Y += 5;
+        }
+    }
+    sendGameUpdate();
+}
+
+function gameLoop() {
+    if (waitOponent) {
+        context.font = 'bold 60px serif';
+        context.strokeStyle = 'green';
+        context.strokeText(`Wait`, canvasWidth/2 - 80, canvasHeight/2);
+    }
+    else {
+        draw();
+        updatePaddlePositions();
+    }
+    animationFrameId = requestAnimationFrame(gameLoop);
 }
 
 ////// ROUTES //////
@@ -176,6 +152,8 @@ function displaySection(route) {
     if (sectionId === 'game') {
         stopGame();
         initGame();
+        connectWebSocket();
+        gameLoop();
     }
     else if (sectionId == 'rankings')
         getRankings();
@@ -209,7 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 ////// FETCH API /////
 
-// Django CSRF Token
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -346,13 +323,11 @@ async function getRankings() {
 
 let gameSocket;
 
-
 document.getElementById('room-form').addEventListener('submit', createRoom);
 
+//TO-DO: selectRoom(event)
 function createRoom(event) {
     event.preventDefault();
-    // TO-DO: get roomName from DB
-    //      - travar sala para 2
     const route = '/game';
     roomName = document.getElementById('room-name').value;
     document.getElementById('room-name-display').textContent = roomName;
@@ -365,17 +340,29 @@ function connectWebSocket() {
     const wsUrl = `${protocol}://${window.location.host}/ws/game/${roomName}/`;
     gameSocket = new WebSocket(wsUrl);
 
-    gameSocket.onopen = function(e) {
-        console.log("Conectado à sala " + roomName);
-    };
+    if (!roomName) { //TO-DO: não permitir em form
+        console.error("Nome da sala está vazio.");
+        return;
+    }
 
     gameSocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
-        // Atualizar o estado do jogo com os dados recebidos
-        updateGameState(data);
+        if (data.paddle) {
+            playerPaddle = data.paddle;
+            console.log("Você controla: " + playerPaddle);
+        } else {
+            const gameState = data.game_state;
+            const serverScore = data.score;
+            console.log("updateGameState");
+            updateGameState(gameState, serverScore);
+        }
     };
 
-    gameSocket.onclose = function(e) {
+    gameSocket.onopen = function() {
+        console.log("Conectado à sala " + roomName);
+    };
+
+    gameSocket.onclose = function() {
         console.log("Desconectado da sala " + roomName);
     };
 
@@ -384,16 +371,25 @@ function connectWebSocket() {
     };
 }
 
-function sendGameUpdate(data) {
+function sendGameUpdate() {
+    const gameState = {
+        paddle1Y: paddle1Y,
+        paddle2Y: paddle2Y,
+    };
     if (gameSocket && gameSocket.readyState === WebSocket.OPEN) {
-        gameSocket.send(JSON.stringify(data));
+        gameSocket.send(JSON.stringify(gameState));
     }
 }
 
-function updateGameState(data) {
-    // Atualizar o estado local com os dados recebidos
-    paddle2Y = data.paddle2Y;
-    ballX = data.ballX;
-    ballY = data.ballY;
+function updateGameState(gameState, serverScore) {
+    waitOponent = false
+    paddle1Y = gameState.paddle1Y;
+    paddle2Y = gameState.paddle2Y;
+    ballX = gameState.ballX;
+    ballY = gameState.ballY;
+    score.player1.name = serverScore.player1.name;
+    score.player1.score = serverScore.player1.score;
+    score.player2.name = serverScore.player2.name;
+    score.player2.score = serverScore.player2.score;
 }
 
