@@ -97,8 +97,11 @@ export const stopGame = () => {
 
 export function updateGameState(gameState, serverScore) {
     waitOponent = false
-    paddle1Y = gameState.paddle1Y;
-    paddle2Y = gameState.paddle2Y;
+    if (playerPaddle === 'paddle1') {
+        paddle2Y = gameState.paddle2Y;
+    } else if (playerPaddle === 'paddle2') {
+        paddle1Y = gameState.paddle1Y;
+    }
     ballX = gameState.ballX;
     ballY = gameState.ballY;
     score.player1.name = serverScore.player1.name;
