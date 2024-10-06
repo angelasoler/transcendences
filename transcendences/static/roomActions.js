@@ -6,6 +6,6 @@ export function createRoom(event) {
       // Declare roomName with const
     document.getElementById('room-name-display').textContent = document.getElementById('room-name').value;
 
-    history.pushState({}, '', route);
+
     loadView(route, displaySection);  // Update UI based on route
 }

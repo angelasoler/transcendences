@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const modalInstance = bootstrap.Modal.getInstance(modal);
                 modalInstance?.hide();
             });
-            handleRoute(route); // Load the correct section
+            navigateTo(`/${route}`); // Load the correct section
         }
     });
 
@@ -39,28 +39,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+function navigateTo(route) {
+    if (window.location.pathname !== route) {
+        window.history.pushState({}, '', route);
+        handleRoute(route);
+    }
+}
+
 // Function to handle routing and display the correct section
 function handleRoute(route) {
     // Navegar para a seção apropriada
     console.log("handleRoute: ", route);
     switch(route) {
-        case 'home':
+        case '/home':
             loadView('home', displaySection);
             break;
-        case 'login':
+        case '/login':
             loadView('login', displaySection);
             break;
-        case 'register':
+        case '/register':
             loadView('register', displaySection);
             break;
-        case 'local-tournament':
-            loadView('local_tournament', displaySection);
+        case '/local-tournament':
+            loadView('local-tournament', displaySection);
             break;
-        case 'join-room':
-            loadView('online_rooms', displaySection);
+        case '/online-rooms':
+            loadView('online-rooms', displaySection);
             break;
-        case 'online-tournament':
-            loadView('online_tournaments', displaySection);
+        case '/online-tournament':
+            loadView('online-tournament', displaySection);
             break;
         case 'local-vs-friend':
             alert('Iniciando jogo local...'); // Placeholder

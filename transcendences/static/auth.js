@@ -18,7 +18,6 @@ export const registerUser = async (event) => {
         const result = await response.json();
         if (response.ok) {
             alert(result.message);
-            history.pushState({}, '', '/login');
             loadView('login', displaySection);
         } else {
             alert(result.error);
@@ -44,7 +43,6 @@ export const loginUser = async (event) => {
         const result = await response.json();
         if (response.ok) {
             alert(result.message);
-            history.pushState({}, '', '/');
             loadView('/', displaySection);
         } else {
             alert(result.error);

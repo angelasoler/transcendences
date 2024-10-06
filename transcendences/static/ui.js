@@ -5,7 +5,6 @@ import { registerUser, loginUser } from './auth.js';
 const protectedRoutes = ['/profile', '/game', '/rooms', '/local_tournament', 'online_rooms', 'online_tournaments'];
 
 const redirectToLogin = () => {
-    history.pushState({}, '', '/login');
     loadView('login', displaySection);
 };
 
@@ -54,7 +53,7 @@ async function fetchDynamicAuth(sectionId) {
         if (response.ok) {
             const partialHtml = await response.text();
             document.getElementById('content').innerHTML = partialHtml;
-            window.history.pushState({}, '', `/${sectionId}`); // Change the URL without reloading
+            console.log("PUSH STATE CALLED!!!!");
             if (sectionId === 'login') {
                 document.getElementById('loginForm').addEventListener('submit', loginUser);
             } else {
@@ -74,7 +73,7 @@ async function fetchStaticViews(sectionId, route) {
         if (response.ok) {
             const partialHtml = await response.text();
             document.getElementById('content').innerHTML = partialHtml;
-            window.history.pushState({}, '', `/${route}`); // Change the URL without reloading
+            console.log("PUSH STATE CALLED!!!!");
         } else {
             console.error('Falha ao carregar view: ', response.status);
         }
@@ -98,7 +97,6 @@ async function getProfile() {
         document.getElementById('profileEmail').textContent = data.email;
     } else {
         alert('Erro ao obter perfil do usuário.');
-        history.pushState({}, '', '/login');
         loadView('login', displaySection);
     }
 }
