@@ -1,9 +1,15 @@
 import {displaySection, loadView} from "./ui.js";
 import {logoutUser} from "./auth.js";
-import {updateNavbarActiveLink} from "./utils.js";
+import {checkAuthStatus, updateNavbarActiveLink} from "./utils.js";
 
-export const navigateTo = (route) => {
+export const navigateTo = async (route) => {
     if (window.location.pathname !== route) {
+        const isAuthenticated = await checkAuthStatus();
+
+        if (isAuthenticated && (route === '/login' || route === '/register')) {
+            route = '/home'; // Redirect to home
+        }
+
         window.history.pushState({}, '', route);
         handleRoute(route);
     }

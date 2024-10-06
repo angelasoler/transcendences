@@ -58,8 +58,10 @@ export const checkAuthStatus = async () => {
         } else {
             updateNavBar(false);
         }
+        return response.ok;
     } catch (e) {
         console.log('Error while checking the authentication status: ', e);
         updateNavBar(false);
+        return false;
     }
 }

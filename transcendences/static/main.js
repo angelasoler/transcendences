@@ -6,9 +6,28 @@ import {logoutUser} from "./auth.js";
 import {updateNavbarActiveLink, checkAuthStatus} from "./utils.js";
 import {navigateTo, handleRoute} from "./routes.js";
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Load the initial route
-    handleRoute(window.location.pathname);
+document.addEventListener('DOMContentLoaded', async () => {
+    // Initial authentication check when the page loads
+    const isAuthenticated = await checkAuthStatus();
+
+    const currentPath = window.location.pathname;
+    // Load the initial route, handling redirects if needed
+    if (isAuthenticated) {
+        if (window.location.pathname === '/login' || window.location.pathname === '/register') {
+            // Redirect logged-in users away from login/register page
+            window.history.pushState({}, '', '/home');
+            handleRoute('/home');
+        } else {
+            // Redirect logged-in users away from login/register page
+            window.history.pushState({}, '', currentPath);
+            handleRoute(currentPath);
+        }
+    }  else {
+        // Redirect logged-in users away from login/register page
+        window.history.pushState({}, '', currentPath);
+        handleRoute(currentPath);
+    }
+
     // Loads the correct outlined button
     const currentRoute = window.location.pathname;
     if (currentRoute === '/') {
@@ -16,8 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         updateNavbarActiveLink(currentRoute.slice(1));
     }
-    // Checks for if the user is logged in so we can load the correct NavBar
-    checkAuthStatus();
 
     // Todas as seções
     const sections = {
