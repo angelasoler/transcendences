@@ -1,0 +1,5 @@
+FROM wernight/ngrok
+
+ENV NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+
+CMD ngrok http web:8000

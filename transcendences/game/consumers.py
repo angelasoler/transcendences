@@ -74,6 +74,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         game_state = self.rooms[self.room_name]['game_state']
 
         if self.paddle == 'paddle1':
+            
             game_state['paddle1Y'] = data.get('paddle1Y', game_state['paddle1Y'])
         else:
             game_state['paddle2Y'] = data.get('paddle2Y', game_state['paddle2Y'])

@@ -1,2 +1,4 @@
+transcendences/staticfiles
 venv/
 notes/
+.env
