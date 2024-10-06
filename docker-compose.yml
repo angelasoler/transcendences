@@ -3,15 +3,14 @@ services:
     build: .
     command: >
       sh -c "python manage.py migrate &&
+            python manage.py collectstatic --noinput &&
             daphne -b 0.0.0.0 -p 8000 transcendences.asgi:application"
     volumes:
       - ./transcendences:/app
-      - ./static:/app/staticfiles #dev env
     ports:
       - "8000:8000"
     depends_on:
       - db
-      - redis
 
   db:
     image: postgres:13
@@ -22,10 +21,19 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
 
-  redis:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
+  ngrok:
+      build:
+        context: .
+        dockerfile: Dockerfile.ngrok
+      depends_on:
+        - web
+      environment:
+        - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+      ports:
+        - "4040:4040"  
+      networks:
+        - default
+      restart: unless-stopped
 
 volumes:
   postgres_data:

@@ -1,3 +1,5 @@
+transcendences/staticfiles
 venv/
 .idea/
 notes/
+.env
