@@ -1,0 +1,44 @@
+<!-- Online Tournament Section -->
+<section id="online-tournaments">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>Torneios Disponíveis</h2>
+            <div class="list-group" id="tournamentsList">
+                <!-- Example tournament -->
+                <a href="#" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">Torneio Semanal</h5>
+                        <small>6/8 jogadores</small>
+                    </div>
+                    <p class="mb-1">Início: 20:00h</p>
+                    <small>Prêmio: 1000 pontos</small>
+                </a>
+            </div>
+            <div id="noTournamentsMessage" class="alert alert-info mt-3 d-none">
+                Não há torneios disponíveis no momento. Crie um novo torneio!
+            </div>
+        </div>
+        <div class="col-md-4">
+            <h2>Criar Torneio</h2>
+            <form id="createTournamentForm">
+                <div class="mb-3">
+                    <label for="onlineTournamentName" class="form-label">Nome do Torneio</label>
+                    <input type="text" class="form-control" id="onlineTournamentName" required>
+                </div>
+                <div class="mb-3">
+                    <label for="playerCount" class="form-label">Número de Jogadores</label>
+                    <select class="form-select" id="playerCount" required>
+                        <option value="4">4 jogadores</option>
+                        <option value="8">8 jogadores</option>
+                        <option value="16">16 jogadores</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="startTime" class="form-label">Horário de Início</label>
+                    <input type="datetime-local" class="form-control" id="startTime" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Criar Torneio</button>
+            </form>
+        </div>
+    </div>
+</section>

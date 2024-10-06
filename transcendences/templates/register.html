@@ -1,0 +1,23 @@
+<!-- register -->
+<section id="register">
+    <div class="container mt-5">
+        <h2>Registro</h2>
+        <form id="registerForm">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="registerUsername" class="form-label">Nome de Usuário</label>
+                <input type="text" class="form-control" id="registerUsername" required>
+            </div>
+            <div class="mb-3">
+                <label for="registerEmail" class="form-label">Email</label>
+                <input type="email" class="form-control" id="registerEmail" required>
+            </div>
+            <div class="mb-3">
+                <label for="registerPassword" class="form-label">Senha</label>
+                <input type="password" class="form-control" id="registerPassword" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Registrar</button>
+        </form>
+        <p class="mt-3">Já tem uma conta? <a href="/login" data-route="login">Faça login aqui</a>.</p>
+    </div>
+</section>

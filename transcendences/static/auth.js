@@ -1,5 +1,5 @@
 import { getCookie } from './utils.js';
-import { showSection, displaySection } from "./ui.js";
+import { loadView, displaySection } from "./ui.js";
 
 export const registerUser = async (event) => {
     event.preventDefault();
@@ -19,7 +19,7 @@ export const registerUser = async (event) => {
         if (response.ok) {
             alert(result.message);
             history.pushState({}, '', '/login');
-            showSection('/login', displaySection);
+            loadView('login', displaySection);
         } else {
             alert(result.error);
         }
@@ -45,7 +45,7 @@ export const loginUser = async (event) => {
         if (response.ok) {
             alert(result.message);
             history.pushState({}, '', '/');
-            showSection('/', displaySection);
+            loadView('/', displaySection);
         } else {
             alert(result.error);
         }

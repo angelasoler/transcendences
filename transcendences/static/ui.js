@@ -1,28 +1,35 @@
 import {initGame, stopGame, updateGameState} from "./game.js";
 import {connectWebSocket} from "./websocket.js";
+import { registerUser, loginUser } from './auth.js';
 
-const protectedRoutes = ['/profile', '/game', '/rooms', '/rankings'];
+const protectedRoutes = ['/profile', '/game', '/rooms', '/local_tournament', 'online_rooms', 'online_tournaments'];
 
 const redirectToLogin = () => {
     history.pushState({}, '', '/login');
-    showSection('/login', displaySection);
+    loadView('login', displaySection);
 };
 
-export const showSection = (route, displaySection) => {
+export const loadView = (route, displaySection) => {
     if (protectedRoutes.includes(route)) {
         fetch('/api/check_auth/')
             .then(response => response.ok ? displaySection(route) : redirectToLogin())
-            .catch(() => console.log("catch"));
+            .catch(() => redirectToLogin());
     } else {
         displaySection(route);
     }
 };
 
 export const displaySection = (route) => {
-    document.querySelectorAll('section').forEach(section => section.style.display = 'none');
-    const sectionId = route === '/' ? 'home' : route.slice(1);
-    document.getElementById(sectionId).style.display = 'block';
+    console.log("displaySection Route: ", route);
+    const sectionId = route === '/' ? 'home' : route;
+    console.log("section ID: ", sectionId);
+    if (sectionId === 'login' || sectionId === 'register') {
+        fetchDynamicAuth(sectionId);
+    } else {
+        fetchStaticViews(sectionId, route)
+    }
 
+    // document.getElementById(sectionId).style.display = 'block';
     if (sectionId === 'game') {
         let roomName = document.getElementById('room-name').value;
         let canvas = document.getElementById('gameCanvas');
@@ -35,13 +42,46 @@ export const displaySection = (route) => {
         stopGame();
         initGame(canvas, context);
         connectWebSocket(roomName, updateGameState);
-    } else if (sectionId === 'rankings')
-        getRankings();
-    else if (sectionId === 'profile')
+    } else if (sectionId === 'profile')
         getProfile();
     else
         stopGame(); //provisorio
-};
+}
+
+async function fetchDynamicAuth(sectionId) {
+    try {
+        const response = await fetch(`/${sectionId}/`);
+        if (response.ok) {
+            const partialHtml = await response.text();
+            document.getElementById('content').innerHTML = partialHtml;
+            window.history.pushState({}, '', sectionId); // Change the URL without reloading
+            if (sectionId === 'login') {
+                document.getElementById('loginForm').addEventListener('submit', loginUser);
+            } else {
+                document.getElementById('registerForm').addEventListener('submit', registerUser);
+            }
+        } else {
+            console.error('Falha ao renderizar view: ', response.status);
+        }
+    } catch (error) {
+        console.error('Erro ao renderizar view:', error);
+    }
+}
+
+async function fetchStaticViews(sectionId, route) {
+    try {
+        const response = await fetch(`/static/views/${sectionId}.html`);
+        if (response.ok) {
+            const partialHtml = await response.text();
+            document.getElementById('content').innerHTML = partialHtml;
+            window.history.pushState({}, '', route); // Change the URL without reloading
+        } else {
+            console.error('Falha ao carregar view: ', response.status);
+        }
+    } catch (error) {
+        console.error('Erro ao carregar view:', error);
+    }
+}
 
 async function getProfile() {
     const response = await fetch('/api/profile/', {
@@ -59,6 +99,6 @@ async function getProfile() {
     } else {
         alert('Erro ao obter perfil do usuário.');
         history.pushState({}, '', '/login');
-        showSection('/login');
+        loadView('login', displaySection);
     }
 }
