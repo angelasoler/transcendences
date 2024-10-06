@@ -1,4 +1,4 @@
-import {displaySection, showSection} from './ui.js';
+import {displaySection, loadView} from './ui.js';
 
 export function createRoom(event) {
     event.preventDefault();
@@ -6,6 +6,6 @@ export function createRoom(event) {
       // Declare roomName with const
     document.getElementById('room-name-display').textContent = document.getElementById('room-name').value;
 
-    history.pushState({}, '', route);
-    showSection(route, displaySection);  // Update UI based on route
+
+    loadView(route, displaySection);  // Update UI based on route
 }

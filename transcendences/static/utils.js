@@ -1,3 +1,5 @@
+import {updateNavBar} from "./auth.js";
+
 export const getCookie = (name) => {
     let cookieValue = null;
     if (document.cookie) {
@@ -12,3 +14,54 @@ export const getCookie = (name) => {
     }
     return cookieValue;
 };
+
+// Function to load the loader partial
+export const loadLoader = async (loader) => {
+    try {
+        const response = await fetch(`/static/views/${loader}.html`);
+        if (response.ok) {
+            const loaderHtml = await response.text();
+            document.getElementById('content').innerHTML = loaderHtml;
+        } else {
+            console.error('Failed to load loader:', response.status);
+        }
+    } catch (error) {
+        console.error('Error loading loader:', error);
+    }
+}
+
+export const updateNavbarActiveLink = (currentRoute) => {
+    // Select all buttons in the navbar
+    const navbarButtons = document.querySelectorAll('.navbar-nav .nav-item a');
+
+    // Iterate over each button
+    navbarButtons.forEach(button => {
+        // Check if the button's data-route matches the current route
+        if (button.dataset.route === currentRoute) {
+            button.classList.remove('btn-dark');
+            button.classList.add('btn-outline-light'); // Active button style
+            button.setAttribute('aria-current', 'page');
+        } else {
+            button.classList.remove('btn-outline-light');
+            button.classList.add('btn-dark'); // Inactive buttons style
+            button.removeAttribute('aria-current');
+        }
+    });
+}
+
+// Function to check if the user is already logged in so we can show the correct NavBar
+export const checkAuthStatus = async () => {
+    try {
+        const response = await fetch('/api/check_auth/');
+        if (response.ok) {
+            updateNavBar(true);
+        } else {
+            updateNavBar(false);
+        }
+        return response.ok;
+    } catch (e) {
+        console.log('Error while checking the authentication status: ', e);
+        updateNavBar(false);
+        return false;
+    }
+}

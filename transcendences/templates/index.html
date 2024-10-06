@@ -3,160 +3,271 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Pong Game</title>
-    <style>
-        /* Estilos básicos para o canvas */
-        body {
-            margin: 0;
-            overflow: hidden;
-        }
-        #gameCanvas {
-            width: 100%;
-            height: auto;
-            background-color: #000;
-        }
-    </style>
-
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong Game Hub</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{% static 'animations.css' %}" rel="stylesheet">
 </head>
 <body>
-    <!-- nav elements -->
-    <nav class="navbar navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/">Pong Game</a>
+            <a class="navbar-brand" href="/index" data-route="home">Pong Game Hub</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/" data-route>Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/rooms" data-route>Jogar</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/rankings" data-route>Rankings</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/profile" data-route>Perfil</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/login" data-route>Login</a>
-                    </li>
-                </ul>
+                <!-- Navbar for users that aren't logged in-->
+                <div id="unauthorizedNavBar" class="ms-auto">
+                    <ul class="navbar-nav mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a type="button" class="btn btn-dark me-2 mb-1" data-route="home" aria-current="page">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a type="button" class="btn btn-dark me-2 mb-1" data-route="login">Entrar</a>
+                        </li>
+                        <li class="nav-item">
+                            <a type="button" class="btn btn-dark mb-1" data-route="register">Registrar</a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Navbar for logged in users -->
+                <div id="authorizedNavBar" class="ms-auto">
+                    <ul class="navbar-nav mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a type="button" class="btn btn-dark me-2 mb-1" data-route="home" aria-current="page">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a type="button" class="btn btn-dark me-2 mb-1" data-route="profile">Perfil</a>
+                        </li>
+                        <li class="nav-item">
+                            <a type="button" class="btn btn-dark mb-1" data-route="logout">Sair</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </nav>
 
-    <!-- content -->
-    <div class="p-3 mb-2 bg-dark text-white">
-        <!-- home -->
-        <section id="home">
-            <h1>Bem-vindo ao Pong Game</h1>
-            <p>Desafie outros jogadores e alcance o topo do ranking!</p>
-            <a href="/rooms" class="btn btn-primary mt-3" data-route>Começar a Jogar</a>
-        </section>
-        <!-- rooms -->
-        <section id="rooms" style="display:none;">
-            <div class="container">
-                <h2>Entrar em uma Sala</h2>
-                <form id="room-form">
-                    <input type="text" id="room-name" placeholder="Nome da Sala">
-                    <button type="submit">Entrar na Sala</button>
-                </form>
-            </div>
-        </section>
-        <!-- game -->
-        <section id="game" style="display:none;">
-            <h2>Você está na sala: <span id="room-name-display"></span></h2>
-            <div class="row justify-content-center">
-                <div class="col-md-8">
-                    <canvas id="gameCanvas" width="600" height="400"></canvas>
-                </div>
-            </div>
-        </section>
-        <!-- login -->
-        <section id="login" style="display:none;">
-            <div class="container mt-5">
-                <h2>Login</h2>
-                <form id="loginForm">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="loginUsername" class="form-label">Nome de Usuário</label>
-                        <input type="text" class="form-control" id="loginUsername" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="loginPassword" class="form-label">Senha</label>
-                        <input type="password" class="form-control" id="loginPassword" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Entrar</button>
-                </form>
-                <p class="mt-3">Não tem uma conta? <a href="/register" data-route>Registre-se aqui</a>.</p>
-            </div>
-        </section>
-        <!-- register -->
-        <section id="register" style="display:none;">
-            <div class="container mt-5">
-                <h2>Registro</h2>
-                <form id="registerForm">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="registerUsername" class="form-label">Nome de Usuário</label>
-                        <input type="text" class="form-control" id="registerUsername" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="registerEmail" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="registerEmail" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="registerPassword" class="form-label">Senha</label>
-                        <input type="password" class="form-control" id="registerPassword" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Registrar</button>
-                </form>
-                <p class="mt-3">Já tem uma conta? <a href="/login" data-route>Faça login aqui</a>.</p>
-            </div>
-        </section>
-        <!-- user profile -->
-        <section id="profile" style="display:none;">
-            <div class="container mt-5">
-                <h2>Perfil do Usuário</h2>
-                <p><strong>Nome de Usuário:</strong> <span id="profileUsername"></span></p>
-                <p><strong>Email:</strong> <span id="profileEmail"></span></p>
-                <!-- Adicione outras informações conforme necessário -->
-                <button class="btn btn-secondary" onclick="logout()" data-route>Sair</button>
-            </div>
-        </section>
-        <!-- ranking -->
-        <section id="rankings" style="display:none;">
-            <div class="container mt-5">
-                <h2>Rankings</h2>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Posição</th>
-                            <th>Nome de Usuário</th>
-                            <th>Pontuação</th>
-                        </tr>
-                    </thead>
-                    <tbody id="rankingsTableBody">
-                        <!-- As linhas serão preenchidas dinamicamente -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
-        <section id="404" style="display:none;">
-            <div class="container mt-5">
-                <h2>Page Not Found</h2>
-            </div>
-        </section>
+    <div class="container py-5" id="content">
+        <!-- Views goes here(partials), still adhering to SPA -->
     </div>
-
-    <!-- Scripts -->
-    <!-- Bootstrap include -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="{% static 'main.js' %}"></script>
+    
+    
+    
+    
+{#    <script>#}
+{#        document.addEventListener('DOMContentLoaded', function() {#}
+{#            // Elementos do DOM#}
+{#            const addPlayerBtn = document.getElementById('addPlayer');#}
+{#            const playerInputs = document.getElementById('playerInputs');#}
+{#            let playerCount = 4;#}
+{##}
+{#            // Todas as seções#}
+{#            const sections = {#}
+{#                home: document.getElementById('home'),#}
+{#                localTournament: document.getElementById('local-tournament'),#}
+{#                onlineRooms: document.getElementById('online-rooms'),#}
+{#                onlineTournaments: document.getElementById('online-tournaments')#}
+{#            };#}
+{##}
+{#            // Função para mostrar uma seção e esconder as outras#}
+{#            function showSection(sectionId) {#}
+{#                Object.values(sections).forEach(section => {#}
+{#                    section.classList.add('d-none');#}
+{#                });#}
+{#                sections[sectionId]?.classList.remove('d-none');#}
+{#            }#}
+{##}
+{#            // Adicionar jogador no torneio local#}
+{#            addPlayerBtn?.addEventListener('click', function() {#}
+{#                playerCount++;#}
+{#                const newInput = document.createElement('div');#}
+{#                newInput.className = 'mb-3';#}
+{#                newInput.innerHTML = `#}
+{#                    <label class="form-label">Jogador ${playerCount}</label>#}
+{#                    <input type="text" class="form-control" name="player${playerCount}" required>#}
+{#                `;#}
+{#                playerInputs.appendChild(newInput);#}
+{#            });#}
+{##}
+{#            // Gerenciar navegação#}
+{#            document.addEventListener('click', function(e) {#}
+{#                const route = e.target.getAttribute('data-route');#}
+{#                if (route) {#}
+{#                    // Fechar qualquer modal aberto#}
+{#                    const openModals = document.querySelectorAll('.modal');#}
+{#                    openModals.forEach(modal => {#}
+{#                        const modalInstance = bootstrap.Modal.getInstance(modal);#}
+{#                        modalInstance?.hide();#}
+{#                    });#}
+{##}
+{#                    // Navegar para a seção apropriada#}
+{#                    switch(route) {#}
+{#                        case 'home':#}
+{#                            showSection('home');#}
+{#                            break;#}
+{#                        case 'local-tournament':#}
+{#                            showSection('localTournament');#}
+{#                            break;#}
+{#                        case 'join-room':#}
+{#                            showSection('onlineRooms');#}
+{#                            break;#}
+{#                        case 'online-tournament':#}
+{#                            showSection('onlineTournaments');#}
+{#                            break;#}
+{#                        case 'local-vs-friend':#}
+{#                            alert('Iniciando jogo local...'); // Placeholder#}
+{#                            break;#}
+{#                        default:#}
+{#                            showSection('home');#}
+{#                    }#}
+{#                }#}
+{#            });#}
+{##}
+{#            // Gerenciar formulários#}
+{#            document.getElementById('local-tournament-form')?.addEventListener('submit', function(e) {#}
+{#                e.preventDefault();#}
+{#                alert('Torneio local criado!'); // Placeholder#}
+{#            });#}
+{##}
+{#            document.getElementById('createRoomForm')?.addEventListener('submit', function(e) {#}
+{#                e.preventDefault();#}
+{#                alert('Sala criada!'); // Placeholder#}
+{#            });#}
+{##}
+{#            document.getElementById('createTournamentForm')?.addEventListener('submit', function(e) {#}
+{#                e.preventDefault();#}
+{#                alert('Torneio online criado!'); // Placeholder#}
+{#            });#}
+{#        });#}
+{#    </script>#}
 </body>
 </html>
+
+
+
+{#{% load static %}#}
+{#<!DOCTYPE html>#}
+{#<html lang="pt-BR">#}
+{#<head>#}
+{#    <meta charset="UTF-8">#}
+{#    <title>Pong Game</title>#}
+{#    <style>#}
+{#        /* Estilos básicos para o canvas */#}
+{#        body {#}
+{#            margin: 0;#}
+{#            overflow: hidden;#}
+{#        }#}
+{#        #gameCanvas {#}
+{#            width: 100%;#}
+{#            height: auto;#}
+{#            background-color: #000;#}
+{#        }#}
+{#    </style>#}
+{##}
+{#    <!-- Bootstrap CSS -->#}
+{#    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">#}
+{#</head>#}
+{#<body>#}
+{#    <!-- nav elements -->#}
+{#    <nav class="navbar navbar-dark bg-primary">#}
+{#        <div class="container-fluid">#}
+{#            <a class="navbar-brand" href="/">Pong Game</a>#}
+{#            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">#}
+{#                <span class="navbar-toggler-icon"></span>#}
+{#            </button>#}
+{#            <div class="collapse navbar-collapse" id="navbarSupportedContent">#}
+{#                <ul class="navbar-nav me-auto">#}
+{#                    <li class="nav-item">#}
+{#                        <a class="nav-link active" href="/" data-route>Home</a>#}
+{#                    </li>#}
+{#                    <li class="nav-item">#}
+{#                        <a class="nav-link active" href="/rooms" data-route>Jogar</a>#}
+{#                    </li>#}
+{#                    <li class="nav-item">#}
+{#                        <a class="nav-link" href="/rankings" data-route>Rankings</a>#}
+{#                    </li>#}
+{#                    <li class="nav-item">#}
+{#                        <a class="nav-link" href="/profile" data-route>Perfil</a>#}
+{#                    </li>#}
+{#                    <li class="nav-item">#}
+{#                        <a class="nav-link" href="/login" data-route>Login</a>#}
+{#                    </li>#}
+{#                </ul>#}
+{#            </div>#}
+{#        </div>#}
+{#    </nav>#}
+{##}
+{#    <!-- content -->#}
+{#    <div class="p-3 mb-2 bg-dark text-white">#}
+{#        <!-- home -->#}
+{#        <section id="home">#}
+{#            <h1>Bem-vindo ao Pong Game</h1>#}
+{#            <p>Desafie outros jogadores e alcance o topo do ranking!</p>#}
+{#            <a href="/rooms" class="btn btn-primary mt-3" data-route>Começar a Jogar</a>#}
+{#        </section>#}
+{#        <!-- rooms -->#}
+{#        <section id="rooms" style="display:none;">#}
+{#            <div class="container">#}
+{#                <h2>Entrar em uma Sala</h2>#}
+{#                <form id="room-form">#}
+{#                    <input type="text" id="room-name" placeholder="Nome da Sala">#}
+{#                    <button type="submit">Entrar na Sala</button>#}
+{#                </form>#}
+{#            </div>#}
+{#        </section>#}
+{#        <!-- game -->#}
+{#        <section id="game" style="display:none;">#}
+{#            <h2>Você está na sala: <span id="room-name-display"></span></h2>#}
+{#            <div class="row justify-content-center">#}
+{#                <div class="col-md-8">#}
+{#                    <canvas id="gameCanvas" width="600" height="400"></canvas>#}
+{#                </div>#}
+{#            </div>#}
+{#        </section>#}
+
+
+{#        <!-- user profile -->#}
+{#        <section id="profile" style="display:none;">#}
+{#            <div class="container mt-5">#}
+{#                <h2>Perfil do Usuário</h2>#}
+{#                <p><strong>Nome de Usuário:</strong> <span id="profileUsername"></span></p>#}
+{#                <p><strong>Email:</strong> <span id="profileEmail"></span></p>#}
+{#                <!-- Adicione outras informações conforme necessário -->#}
+{#                <button class="btn btn-secondary" onclick="logout()" data-route>Sair</button>#}
+{#            </div>#}
+{#        </section>#}
+{#        <!-- ranking -->#}
+{#        <section id="rankings" style="display:none;">#}
+{#            <div class="container mt-5">#}
+{#                <h2>Rankings</h2>#}
+{#                <table class="table">#}
+{#                    <thead>#}
+{#                        <tr>#}
+{#                            <th>Posição</th>#}
+{#                            <th>Nome de Usuário</th>#}
+{#                            <th>Pontuação</th>#}
+{#                        </tr>#}
+{#                    </thead>#}
+{#                    <tbody id="rankingsTableBody">#}
+{#                        <!-- As linhas serão preenchidas dinamicamente -->#}
+{#                    </tbody>#}
+{#                </table>#}
+{#            </div>#}
+{#        </section>#}
+{#        <section id="404" style="display:none;">#}
+{#            <div class="container mt-5">#}
+{#                <h2>Page Not Found</h2>#}
+{#            </div>#}
+{#        </section>#}
+{#    </div>#}
+{##}
+{#    <!-- Scripts -->#}
+{#    <!-- Bootstrap include -->#}
+{#    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>#}
+{#    <script type="module" src="{% static 'main.js' %}"></script>#}
+{#</body>#}
+{#</html>#}

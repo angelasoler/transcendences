@@ -1,0 +1,19 @@
+/* Define fade-out animation */
+.fade-out {
+    opacity: 1;
+    transition: opacity 0.65s ease-out;
+}
+
+.fade-out.active {
+    opacity: 0;
+}
+
+/* Define fade-in animation */
+.fade-in {
+    opacity: 0;
+    transition: opacity 0.65s ease-in;
+}
+
+.fade-in.active {
+    opacity: 1;
+}

@@ -1,0 +1,31 @@
+<!-- Online Rooms Section -->
+<section id="online-rooms">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>Salas Disponíveis</h2>
+            <div class="list-group" id="roomsList">
+                <!-- Example rooms -->
+                <a href="#" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">Sala 1</h5>
+                        <small>1/2 jogadores</small>
+                    </div>
+                    <p class="mb-1">Criado por: Jogador123</p>
+                </a>
+            </div>
+            <div id="noRoomsMessage" class="alert alert-info mt-3 d-none">
+                Não há salas disponíveis no momento. Crie uma nova sala!
+            </div>
+        </div>
+        <div class="col-md-4">
+            <h2>Criar Sala</h2>
+            <form id="createRoomForm">
+                <div class="mb-3">
+                    <label for="roomName" class="form-label">Nome da Sala</label>
+                    <input type="text" class="form-control" id="roomName" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Criar Sala</button>
+            </form>
+        </div>
+    </div>
+</section>
