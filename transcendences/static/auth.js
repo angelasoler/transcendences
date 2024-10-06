@@ -1,5 +1,5 @@
 import { getCookie } from './utils.js';
-import { loadView, displaySection } from "./ui.js";
+import {navigateTo} from "./routes.js";
 
 export const registerUser = async (event) => {
     event.preventDefault();
@@ -18,7 +18,7 @@ export const registerUser = async (event) => {
         const result = await response.json();
         if (response.ok) {
             alert(result.message);
-            loadView('login', displaySection);
+            navigateTo('/login');
         } else {
             alert(result.error);
         }
@@ -43,7 +43,8 @@ export const loginUser = async (event) => {
         const result = await response.json();
         if (response.ok) {
             alert(result.message);
-            loadView('/', displaySection);
+            navigateTo('/home');
+            updateNavBar(true);
         } else {
             alert(result.error);
         }
@@ -51,3 +52,36 @@ export const loginUser = async (event) => {
         console.error("Login failed", error);
     }
 };
+
+export const logoutUser = async () => {
+    const csrftoken = getCookie('csrftoken');
+    try {
+        const response = await fetch('/api/logout/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrftoken},
+        });
+        const result = await response.json();
+        if (response.ok) {
+            alert(result.message);
+            navigateTo('/home');
+            updateNavBar(false);
+        } else {
+            alert(result.error);
+        }
+    } catch(error) {
+        console.error("Logout Failed: ", error);
+    }
+};
+
+export const updateNavBar = (isLoggedIn) => {
+    const unauthorizedNav = document.getElementById('unauthorizedNavBar');
+    const authorizedNav = document.getElementById('authorizedNavBar');
+
+    if (isLoggedIn) {
+        authorizedNav.style.display = 'block';
+        unauthorizedNav.style.display = 'none';
+    } else {
+        authorizedNav.style.display = 'none';
+        unauthorizedNav.style.display = 'block';
+    }
+}

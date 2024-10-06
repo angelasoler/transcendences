@@ -2,10 +2,23 @@ import { initGame, gameLoop, stopGame } from './game.js';
 import { connectWebSocket } from './websocket.js';
 import { loadView, displaySection } from './ui.js';
 import {createRoom} from "./roomActions.js";
+import {logoutUser} from "./auth.js";
+import {updateNavbarActiveLink, checkAuthStatus} from "./utils.js";
+import {navigateTo, handleRoute} from "./routes.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     // Load the initial route
     handleRoute(window.location.pathname);
+    // Loads the correct outlined button
+    const currentRoute = window.location.pathname;
+    if (currentRoute === '/') {
+        updateNavbarActiveLink('home');
+    } else {
+        updateNavbarActiveLink(currentRoute.slice(1));
+    }
+    // Checks for if the user is logged in so we can load the correct NavBar
+    checkAuthStatus();
+
     // Todas as seções
     const sections = {
         home: document.getElementById('home'),
@@ -38,41 +51,3 @@ document.addEventListener('DOMContentLoaded', () => {
         handleRoute(window.location.pathname);
     });
 });
-
-function navigateTo(route) {
-    if (window.location.pathname !== route) {
-        window.history.pushState({}, '', route);
-        handleRoute(route);
-    }
-}
-
-// Function to handle routing and display the correct section
-function handleRoute(route) {
-    // Navegar para a seção apropriada
-    console.log("handleRoute: ", route);
-    switch(route) {
-        case '/home':
-            loadView('home', displaySection);
-            break;
-        case '/login':
-            loadView('login', displaySection);
-            break;
-        case '/register':
-            loadView('register', displaySection);
-            break;
-        case '/local-tournament':
-            loadView('local-tournament', displaySection);
-            break;
-        case '/online-rooms':
-            loadView('online-rooms', displaySection);
-            break;
-        case '/online-tournament':
-            loadView('online-tournament', displaySection);
-            break;
-        case 'local-vs-friend':
-            alert('Iniciando jogo local...'); // Placeholder
-            break;
-        default:
-            loadView('home', displaySection);
-    }
-}
