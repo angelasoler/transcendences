@@ -15,6 +15,21 @@ export const getCookie = (name) => {
     return cookieValue;
 };
 
+// Function to load the loader partial
+export const loadLoader = async (loader) => {
+    try {
+        const response = await fetch(`/static/views/${loader}.html`);
+        if (response.ok) {
+            const loaderHtml = await response.text();
+            document.getElementById('content').innerHTML = loaderHtml;
+        } else {
+            console.error('Failed to load loader:', response.status);
+        }
+    } catch (error) {
+        console.error('Error loading loader:', error);
+    }
+}
+
 export const updateNavbarActiveLink = (currentRoute) => {
     // Select all buttons in the navbar
     const navbarButtons = document.querySelectorAll('.navbar-nav .nav-item a');

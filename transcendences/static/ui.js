@@ -2,13 +2,14 @@ import {initGame, stopGame, updateGameState} from "./game.js";
 import {connectWebSocket} from "./websocket.js";
 import { registerUser, loginUser } from './auth.js';
 
-const protectedRoutes = ['/profile', '/game', '/rooms', '/local_tournament', 'online_rooms', 'online_tournaments'];
+const protectedRoutes = ['profile', 'game', 'rooms', 'local-tournament', 'online-rooms', 'online-tournaments'];
 
 const redirectToLogin = () => {
     loadView('login', displaySection);
 };
 
 export const loadView = (route, displaySection) => {
+    console.log("load View route: ", route);
     if (protectedRoutes.includes(route)) {
         fetch('/api/check_auth/')
             .then(response => response.ok ? displaySection(route) : redirectToLogin())
@@ -22,29 +23,56 @@ export const displaySection = (route) => {
     console.log("displaySection Route: ", route);
     const sectionId = route === '/' ? 'home' : route;
     console.log("section ID: ", sectionId);
-    if (sectionId === 'login' || sectionId === 'register') {
-        fetchDynamicAuth(sectionId);
-    } else {
-        fetchStaticViews(sectionId, route)
+
+    // Fade-in/out animation when changing content
+    const contentDiv = document.getElementById('content');
+
+    // Check if there is any existing content to fade out
+    const hasContent = contentDiv.innerHTML.trim() !== '';
+
+    if (hasContent) {
+        // Start fade-out animation
+        contentDiv.classList.add('fade-out');
+        contentDiv.classList.add('active');
     }
 
-    // document.getElementById(sectionId).style.display = 'block';
-    if (sectionId === 'game') {
-        let roomName = document.getElementById('room-name').value;
-        let canvas = document.getElementById('gameCanvas');
-        let context = canvas.getContext('2d');
-        if (!roomName) {
-            console.log("NO ROOM NAME");
-            return;
+    // Wait for the fade-out to finish before updating the content
+    setTimeout(async () => {
+        if (sectionId === 'login' || sectionId === 'register') {
+            fetchDynamicAuth(sectionId);
+        } else {
+            fetchStaticViews(sectionId, route)
         }
-        // Call functions to stop previous game, init new game, etc.
-        stopGame();
-        initGame(canvas, context);
-        connectWebSocket(roomName, updateGameState);
-    } else if (sectionId === 'profile')
-        getProfile();
-    else
-        stopGame(); //provisorio
+
+        // Start fade-in animation
+        contentDiv.classList.remove('fade-out');
+        contentDiv.classList.add('fade-in');
+        contentDiv.classList.add('active');
+
+        // Allow the fade-in to happen
+        setTimeout(() => {
+            contentDiv.classList.remove('fade-in'); // Clean up after fade-in
+            contentDiv.classList.remove('active');
+        }, 650); // Duration must match the CSS transition duration
+
+        // document.getElementById(sectionId).style.display = 'block';
+        if (sectionId === 'game') {
+            let roomName = document.getElementById('room-name').value;
+            let canvas = document.getElementById('gameCanvas');
+            let context = canvas.getContext('2d');
+            if (!roomName) {
+                console.log("NO ROOM NAME");
+                return;
+            }
+            // Call functions to stop previous game, init new game, etc.
+            stopGame();
+            initGame(canvas, context);
+            connectWebSocket(roomName, updateGameState);
+        } else if (sectionId === 'profile')
+            getProfile();
+        else
+            stopGame(); //provisorio
+    }, 650); // Duration must match the CSS transition duration
 }
 
 async function fetchDynamicAuth(sectionId) {
