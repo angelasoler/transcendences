@@ -12,7 +12,7 @@ export const showSection = (route, displaySection) => {
     if (protectedRoutes.includes(route)) {
         fetch('/api/check_auth/')
             .then(response => response.ok ? displaySection(route) : redirectToLogin())
-            .catch(() => redirectToLogin());
+            .catch(() => console.log("catch"));
     } else {
         displaySection(route);
     }
@@ -42,3 +42,23 @@ export const displaySection = (route) => {
     else
         stopGame(); //provisorio
 };
+
+async function getProfile() {
+    const response = await fetch('/api/profile/', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store',
+        },
+        cache: 'no-store',
+    });
+    if (response.ok) {
+        const data = await response.json();
+        document.getElementById('profileUsername').textContent = data.username;
+        document.getElementById('profileEmail').textContent = data.email;
+    } else {
+        alert('Erro ao obter perfil do usuário.');
+        history.pushState({}, '', '/login');
+        showSection('/login');
+    }
+}
