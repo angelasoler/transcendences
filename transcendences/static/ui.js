@@ -54,7 +54,7 @@ async function fetchDynamicAuth(sectionId) {
         if (response.ok) {
             const partialHtml = await response.text();
             document.getElementById('content').innerHTML = partialHtml;
-            window.history.pushState({}, '', sectionId); // Change the URL without reloading
+            window.history.pushState({}, '', `/${sectionId}`); // Change the URL without reloading
             if (sectionId === 'login') {
                 document.getElementById('loginForm').addEventListener('submit', loginUser);
             } else {
@@ -74,7 +74,7 @@ async function fetchStaticViews(sectionId, route) {
         if (response.ok) {
             const partialHtml = await response.text();
             document.getElementById('content').innerHTML = partialHtml;
-            window.history.pushState({}, '', route); // Change the URL without reloading
+            window.history.pushState({}, '', `/${route}`); // Change the URL without reloading
         } else {
             console.error('Falha ao carregar view: ', response.status);
         }
