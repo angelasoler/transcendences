@@ -1,5 +1,3 @@
-import {gameLoop} from "./game.js";
-
 let gameSocket = null;
 let playerPaddle = null;
 
@@ -14,9 +12,6 @@ export const connectWebSocket = (roomName, updateGameState) => {
         if (data.paddle) {
             playerPaddle = data.paddle;
             console.log("You control:", playerPaddle);
-            let canvas = document.getElementById('gameCanvas');
-            let context = canvas.getContext('2d');
-            gameLoop(context, playerPaddle);
         } else {
             const gameState = data.game_state;
             const serverScore = data.score;

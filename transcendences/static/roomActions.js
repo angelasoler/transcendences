@@ -7,5 +7,5 @@ export function createRoom(event) {
     document.getElementById('room-name-display').textContent = document.getElementById('room-name').value;
 
 
-    loadView(route, displaySection);  // Update UI based on route
+    loadView(route);  // Update UI based on route
 }

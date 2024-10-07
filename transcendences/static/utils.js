@@ -15,7 +15,7 @@ export const getCookie = (name) => {
     return cookieValue;
 };
 
-// Function to load the loader partial
+// not being used for now
 export const loadLoader = async (loader) => {
     try {
         const response = await fetch(`/static/views/${loader}.html`);
@@ -31,25 +31,21 @@ export const loadLoader = async (loader) => {
 }
 
 export const updateNavbarActiveLink = (currentRoute) => {
-    // Select all buttons in the navbar
     const navbarButtons = document.querySelectorAll('.navbar-nav .nav-item a');
 
-    // Iterate over each button
     navbarButtons.forEach(button => {
-        // Check if the button's data-route matches the current route
         if (button.dataset.route === currentRoute) {
             button.classList.remove('btn-dark');
-            button.classList.add('btn-outline-light'); // Active button style
+            button.classList.add('btn-outline-light');
             button.setAttribute('aria-current', 'page');
         } else {
             button.classList.remove('btn-outline-light');
-            button.classList.add('btn-dark'); // Inactive buttons style
+            button.classList.add('btn-dark');
             button.removeAttribute('aria-current');
         }
     });
 }
 
-// Function to check if the user is already logged in so we can show the correct NavBar
 export const checkAuthStatus = async () => {
     try {
         const response = await fetch('/api/check_auth/');
