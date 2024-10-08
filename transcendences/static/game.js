@@ -1,5 +1,8 @@
-import {sendGameUpdate} from "./websocket.js";
-import {fetchViews} from "./ui.js";
+import { connectWebSocket, playerPaddle, sendGameUpdate, gameSocket } from "./websocket.js";
+import { roomName } from "./ui.js";
+
+export { OnlineMovementStrategy };
+
 
 let canvas;
 let context;
@@ -27,15 +30,15 @@ let score = {
     player2: { name: '', score: 0 }
 };
 
-
-export const initGame = async () => {
-    await fetchViews('local-game');
+export function initGame(movementStrategy) {
     canvas = document.getElementById('gameCanvas');
     context = canvas.getContext('2d');
     document.addEventListener('keydown', keyDownHandler);
     document.addEventListener('keyup', keyUpHandler);
-    draw();
-};
+    console.log('Waiting for oponent');
+    movementStrategy.init();
+    gameLoop(movementStrategy);
+}
 
 const keyDownHandler = (e) => {
     if (e.key === 'ArrowUp') {
@@ -78,64 +81,91 @@ export const draw = () => {
 
 //remote
 export function updateGameState(gameState, serverScore) {
-    waitOponent = false
-    if (playerPaddle === 'paddle1') {
-        paddle2Y = gameState.paddle2Y;
-    } else if (playerPaddle === 'paddle2') {
-        paddle1Y = gameState.paddle1Y;
+    console.log('Waiting for oponent false');
+    try {
+        waitOponent = false
+        if (playerPaddle === 'paddle1') {
+            paddle2Y = gameState.paddle2Y;
+        } else if (playerPaddle === 'paddle2') {
+            paddle1Y = gameState.paddle1Y;
+        }
+        ballX = gameState.ballX;
+        ballY = gameState.ballY;
+        score.player1.name = serverScore.player1.name;
+        score.player1.score = serverScore.player1.score;
+        score.player2.name = serverScore.player2.name;
+        score.player2.score = serverScore.player2.score;
+    } catch (error) {
+        console.error('Erro ao atualizar o estado do jogo:', error);
     }
-    ballX = gameState.ballX;
-    ballY = gameState.ballY;
-    score.player1.name = serverScore.player1.name;
-    score.player1.score = serverScore.player1.score;
-    score.player2.name = serverScore.player2.name;
-    score.player2.score = serverScore.player2.score;
 }
 
-export const gameLoop = () => {
-    draw();
-    updatePaddlePositions();
-    animationFrameId = requestAnimationFrame(() => gameLoop());
+export const gameLoop = (MovementStrategy) => {
+    console.log('Game loop');
+    if (waitOponent) {
+        console.log('Waiting for oponent');
+        context.font = 'bold 60px serif';
+        context.strokeStyle = 'green';
+        context.strokeText(`Wait`, canvasWidth/2 - 80, canvasHeight/2);
+    } else {
+        console.log('draw');
+        draw();
+        MovementStrategy.updatePaddlePositions();
+    }
+    // TO-DO: onclick close game
+    animationFrameId = requestAnimationFrame(() => gameLoop(MovementStrategy));
 };
 
-export const stopGame = () => {
+export const stopGame = (MovementStrategy) => {
     cancelAnimationFrame(animationFrameId);
     document.removeEventListener('keydown', keyDownHandler);
     document.removeEventListener('keyup', keyUpHandler);
+    waitOponent = false;
+    MovementStrategy.close(MovementStrategy);
 };
 
-// export const gameLoop = (context, playerPaddle, paddleMovementStrategy) => {
-//     draw(context, playerPaddle);
-//     paddleMovementStrategy.updatePaddlePositions(playerPaddle);
-//     animationFrameId = requestAnimationFrame(() => gameLoop(context, playerPaddle, paddleMovementStrategy));
-// };
-
-class PaddleMovementStrategy {
-    updatePaddlePositions(playerPaddle) {
+class MovementStrategy {
+    updatePaddlePositions() {
         throw new Error('Método updatePaddlePositions deve ser implementado');
     }
 }
 
-class LocalPaddleMovementStrategy extends PaddleMovementStrategy {
+class LocalMovementStrategy extends MovementStrategy {
     constructor(player1Keys, player2Keys) {
         super();
         this.player1Keys = player1Keys;
         this.player2Keys = player2Keys;
     }
 
+    init() {
+        waitOponent = false;
+        console.log(local);
+    }
     
-    updatePaddlePositions(playerPaddle) {
+    
+    updatePaddlePositions() {
+        console.log(local);
+        
+    }
+
+    close() {
+        console.log(local);
         
     }
 }
 
-class OnlinePaddleMovementStrategy extends PaddleMovementStrategy {
-    constructor(socket) {
+class OnlineMovementStrategy extends MovementStrategy {
+    constructor(roomName) {
         super();
-        this.socket = socket;
+        this.roomName = roomName;
+        this.socket = gameSocket;
     }
 
-    updatePaddlePositions = (playerPaddle) => {
+    init() {
+        connectWebSocket(this.roomName);
+    }
+
+    updatePaddlePositions() {
         if (playerPaddle === 'paddle1' && upPressed && paddle1Y > 0) {
             paddle1Y -= 5;
         } else if (playerPaddle === 'paddle1' && downPressed && paddle1Y < canvasHeight - 100) {
@@ -150,5 +180,9 @@ class OnlinePaddleMovementStrategy extends PaddleMovementStrategy {
             paddle2Y: paddle2Y,
         };
         sendGameUpdate(gameState);
-    };
+    }
+
+    close() {
+        this.socket.close();
+    }
 }

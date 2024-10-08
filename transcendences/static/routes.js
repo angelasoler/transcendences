@@ -15,13 +15,10 @@ export const navigateTo = async (route) => {
 }
 
 export const handleRoute = (route) => {
-    console.log("handleRoute: ", route);
-    let routeRequested;
-    if (route === '/') {
-        routeRequested = 'home';
-    } else {
-        routeRequested = route.slice(1);
-    }
+    // console.log("handleRoute: ", route);
+    let routeRequested = route;
+    if (route === '/')
+        routeRequested = '/home';
     loadView(routeRequested);
     updateNavbarActiveLink(routeRequested);
-}
+};

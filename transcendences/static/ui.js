@@ -1,16 +1,37 @@
-import {initGame, stopGame, updateGameState, draw} from "./game.js";
-import {connectWebSocket} from "./websocket.js";
+import {initGame, stopGame, OnlineMovementStrategy} from "./game.js";
 import { registerUser, loginUser, logoutUser } from './auth.js';
-export { fetchViews };
 
-const protectedRoutes = ['profile', 'game', 'rooms', 'local-tournament', 'online-rooms', 'online-tournaments'];
+export let roomName = null;
+
+const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournaments'];
 
 const redirectToLogin = () => {
-    loadView('login');
+    window.history.pushState({}, '', '/login');
+    displaySection('/login');
 };
 
+
+function hasQueryString() {
+    const queryString = window.location.search;
+    const hasQueryString = queryString !== '';
+    let modeValue = '';
+
+    if (hasQueryString) {
+        const queryParams = queryString.substring(1);
+        const paramsArray = queryParams.split('&');
+
+        paramsArray.forEach(param => {
+            const [key, value] = param.split('=');
+            if (key === 'mode') {
+                modeValue = value;
+            }
+        });
+    }
+    return modeValue;
+}
+
 export const loadView = (route) => {
-    console.log("load View route: ", route);
+    // console.log("load View route: ", route);
     if (protectedRoutes.includes(route)) {
         fetch('/api/check_auth/')
             .then(response => {
@@ -28,9 +49,16 @@ export const loadView = (route) => {
     }
 };
 
-export const displaySection = async (section) => {
+export const displaySection = async (route) => {
+    let section = route.startsWith('/') ? route.slice(1) : route;
     console.log("displaySection section: ", section);
     document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+    let MovementStrategy;
+
+    let gameMode = hasQueryString();
+    if (gameMode !== '') {
+        section = window.location.pathname.slice(1);
+    }
 
     await fetchViews(section);
     switch (section) {
@@ -46,10 +74,25 @@ export const displaySection = async (section) => {
         case 'profile':
             getProfile();
             break;
-        case 'game':
-        case 'local-game':
-            stopGame();
-            initGame();
+        case 'online-rooms':
+            document.getElementById('createRoomForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                roomName = document.getElementById('roomName').value;
+                console.log('roomName:', roomName);
+                window.history.pushState({}, '', `/game-canva?mode=online`);
+                displaySection('/game-canva?mode=online');
+            });
+            break;
+        case 'game-canva':
+            if (gameMode === 'online') {
+                document.getElementById('room-name-display').textContent = roomName;
+                MovementStrategy = new OnlineMovementStrategy(roomName);
+            }
+            // else if (gameMode === 'local') {
+            //         MovementStrategy = new LocalMovementStrategy();
+            // }
+            initGame(MovementStrategy);
+            stopGame(MovementStrategy);
             break;
     }
 }
@@ -92,6 +135,6 @@ async function getProfile() {
         document.getElementById('profileEmail').textContent = data.email;
     } else {
         alert('Erro ao obter perfil do usuário.');
-        loadView('login');
+        redirectToLogin();
     }
 }

@@ -1,7 +1,10 @@
-let gameSocket = null;
-let playerPaddle = null;
+import { OnlineMovementStrategy, updateGameState } from "./game.js";
+// import { roomName } from "./ui.js";
 
-export const connectWebSocket = (roomName, updateGameState) => {
+export let gameSocket = null;
+export let playerPaddle = null;
+
+export const connectWebSocket = (roomName) => {
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
     const wsUrl = `${protocol}://${window.location.host}/ws/game/${roomName}/`;
 
