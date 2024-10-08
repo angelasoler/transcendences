@@ -1,5 +1,6 @@
 import {initGame, stopGame, OnlineMovementStrategy} from "./game.js";
 import { registerUser, loginUser, logoutUser } from './auth.js';
+import { LocalMovementStrategy } from './local_game.js'
 
 export let roomName = null;
 
@@ -83,16 +84,28 @@ export const displaySection = async (route) => {
                 displaySection('/game-canva?mode=online');
             });
             break;
+        case 'local-vs-friend':
+            document.getElementById('players-nicknames').addEventListener('submit', (e) => {
+                e.preventDefault();
+                let nickname1 = document.getElementById('nickname1').value;
+                let nickname2 = document.getElementById('nickname2').value;
+                console.log('nickname1:', nickname1);
+                console.log('nickname2:', nickname2);
+                console.log('roomName:', roomName);
+                window.history.pushState({}, '', `/game-canva?mode=local`);
+                displaySection('/game-canva?mode=local');
+            });
         case 'game-canva':
             if (gameMode === 'online') {
                 document.getElementById('room-name-display').textContent = roomName;
                 MovementStrategy = new OnlineMovementStrategy(roomName);
             }
-            // else if (gameMode === 'local') {
-            //         MovementStrategy = new LocalMovementStrategy();
-            // }
-            initGame(MovementStrategy);
-            stopGame(MovementStrategy);
+            else if (gameMode === 'local') {
+                MovementStrategy = new LocalMovementStrategy();
+                MovementStrategy.animate();
+            }
+            // initGame(MovementStrategy);
+            // stopGame(MovementStrategy);
             break;
     }
 }

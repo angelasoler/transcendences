@@ -48,12 +48,6 @@ class GameConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
-        if len(self.rooms[self.room_name]['players']) == 2:
-            print('there is 2 players, time to star playing!')
-            self.game_loop = asyncio.create_task(self.game_update_loop())
-
-
-
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
@@ -73,11 +67,14 @@ class GameConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         game_state = self.rooms[self.room_name]['game_state']
 
+        if len(self.rooms[self.room_name]['players']) == 2:
+            print('there is 2 players, time to star playing!')
+            self.game_loop = asyncio.create_task(self.game_update_loop())
+
         if self.paddle == 'paddle1':
-            
-            game_state['paddle1Y'] = data.get('paddle1Y', game_state['paddle1Y'])
+            game_state['selfPaddle1Y'] = data.get('selfPaddle1Y', game_state['selfPaddle1Y'])
         else:
-            game_state['paddle2Y'] = data.get('paddle2Y', game_state['paddle2Y'])
+            game_state['selfPaddle2Y'] = data.get('selfPaddle2Y', game_state['selfPaddle2Y'])
 
     def update_ball_position(self):
         game_state = self.rooms[self.room_name]['game_state']
