@@ -6,7 +6,10 @@ export class LocalMovementStrategy extends MovementStrategy {
         super();
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        
+
+        this.isRunning = true;
+        this.animationFrameId = null;
+
         this.paddleHeight = 100;
         this.paddleWidth = 10;
         this.ballRadius = 8;
@@ -31,14 +34,16 @@ export class LocalMovementStrategy extends MovementStrategy {
         this.ball = {
           x: this.canvas.width / 2,
           y: this.canvas.height / 2,
-          speedX: 5,
-          speedY: 5
+          speedX: 3,
+          speedY: 3
         };
         
         this.paddleSpeed = 5;
         
         document.addEventListener('keydown', this.handleKeyDown.bind(this));
         document.addEventListener('keyup', this.handleKeyUp.bind(this));
+        document.getElementById('exitButton').addEventListener('click', this.closeGame.bind(this));
+        window.addEventListener('beforeunload', this.closeGame.bind(this));
         
         this.animate();
       }
@@ -127,9 +132,20 @@ export class LocalMovementStrategy extends MovementStrategy {
     }
       
     animate() {
+        if (!this.isRunning)
+            return;
         this.update();
         this.draw();
-        requestAnimationFrame(this.animate.bind(this));
+        this.animationFrameId = requestAnimationFrame(this.animate.bind(this));
+    }
+
+    closeGame() {
+        this.isRunning = false;
+        if (this.animationFrameId) {
+          cancelAnimationFrame(this.animationFrameId);
+        }
+        document.removeEventListener('keydown', this.handleKeyDown);
+        document.removeEventListener('keyup', this.handleKeyUp);
     }
 }
 

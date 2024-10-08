@@ -102,9 +102,9 @@ export const displaySection = async (route) => {
             }
             else if (gameMode === 'local') {
                 MovementStrategy = new LocalMovementStrategy();
-                MovementStrategy.animate();
+                // MovementStrategy.animate();
             }
-            // initGame(MovementStrategy);
+            initGame(MovementStrategy);
             // stopGame(MovementStrategy);
             break;
     }
