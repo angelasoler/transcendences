@@ -1,13 +1,15 @@
 import {MovementStrategy} from './game.js';
 
-
-export class LocalMovementStrategy extends MovementStrategy {
-    constructor() {
+export class OnlineMovementStrategy extends MovementStrategy {
+    constructor(websocket) {
         super();
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
+        this.websocket = websocket;
+        this.isHost = false;
 
         this.isRunning = true;
+        this.start = false;
         this.animationFrameId = null;
 
         this.paddleHeight = 100;
@@ -25,10 +27,8 @@ export class LocalMovementStrategy extends MovementStrategy {
         };
 
         this.keys = {
-            w: false,
-            s: false,
-            ArrowUp: false,
-            ArrowDown: false
+            up: false,
+            down: false
         };
         
         this.ball = {
@@ -44,59 +44,101 @@ export class LocalMovementStrategy extends MovementStrategy {
         document.addEventListener('keyup', this.handleKeyUp.bind(this));
         window.addEventListener('beforeunload', this.closeGame.bind(this));
         
+        this.setupWebSocket();
         this.animate();
-      }
-      
-      handleKeyDown(e) {
-        if (['w', 's', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
-            this.keys[e.key] = true;
+    }
+
+    setupWebSocket() {
+        this.websocket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            this.handleWebSocketMessage(data);
+        };
+    }
+
+    handleWebSocketMessage(data) {
+        switch(data.type) {
+            case 'game_status':
+                this.isHost = data.is_host;
+                break;
+            case 'game_start':
+                this.start = true;
+                break;
+            case 'game_state':
+                if (this.isHost) {
+                    this.rightPaddle.y = data.opponent_paddle;
+                } else {
+                    this.leftPaddle.y = data.opponent_paddle;
+                    this.ball = data.ball;
+                }
+                break;
+            case 'game_end':
+                this.closeGame();
+                break;
         }
-      }
+    }
       
-      handleKeyUp(e) {
-        if (['w', 's', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
-            this.keys[e.key] = false;
+    handleKeyDown(e) {
+        if (e.key === 'ArrowUp') this.keys.up = true;
+        if (e.key === 'ArrowDown') this.keys.down = true;
+    }
+      
+    handleKeyUp(e) {
+        if (e.key === 'ArrowUp') this.keys.up = false;
+        if (e.key === 'ArrowDown') this.keys.down = false;
+    }
+      
+    update() {
+        let paddleSpeed = 0;
+        if (this.keys.up && !this.keys.down) paddleSpeed = -this.paddleSpeed;
+        else if (this.keys.down && !this.keys.up) paddleSpeed = this.paddleSpeed;
+
+        if (this.isHost) {
+            this.leftPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, 
+                this.leftPaddle.y + paddleSpeed));
+            
+            // Host atualiza a bola
+            this.updateBall();
+            
+            // Envia estado do jogo
+            this.sendGameState(this.leftPaddle.y);
+        } else {
+            this.rightPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, 
+                this.rightPaddle.y + paddleSpeed));
+            
+            // Client envia apenas sua posição
+            this.sendGameState(this.rightPaddle.y);
         }
-      }
-      
-      update() {
-        // calculo paddle esquerdo
-        if (this.keys.w && !this.keys.s)
-            this.leftPaddle.speed = -this.paddleSpeed;
-        else if (this.keys.s && !this.keys.w)
-            this.leftPaddle.speed = this.paddleSpeed;
-        else
-            this.leftPaddle.speed = 0;
+    }
 
-        // calculo paddle direito
-        if (this.keys.ArrowUp && !this.keys.ArrowDown)
-           this.rightPaddle.speed = -this.paddleSpeed;
-        else if (this.keys.ArrowDown && !this.keys.ArrowUp)
-            this.rightPaddle.speed = this.paddleSpeed;
-        else
-        this.rightPaddle.speed = 0;
-    
-        // Atualiza posição dos paddles
-        this.leftPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, this.leftPaddle.y + this.leftPaddle.speed));
-        this.rightPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, this.rightPaddle.y + this.rightPaddle.speed));
-
-
+    updateBall() {
         this.ball.x += this.ball.speedX;
         this.ball.y += this.ball.speedY;
         
-        // Colisão com as paredes superior e inferior
         if (this.ball.y <= 0 || this.ball.y >= this.canvas.height) {
-          this.ball.speedY = -this.ball.speedY;
+            this.ball.speedY = -this.ball.speedY;
         }
 
         if (this.checkPaddleCollision(this.leftPaddle, true) || 
             this.checkPaddleCollision(this.rightPaddle, false)) {
-          this.ball.speedX = -this.ball.speedX;
+            this.ball.speedX = -this.ball.speedX;
         }
 
         if (this.ball.x < 0 || this.ball.x > this.canvas.width) {
             this.resetBall();
         }
+    }
+
+    sendGameState(paddleY) {
+        const gameState = {
+            type: 'paddle_update',
+            paddle_y: paddleY
+        };
+
+        if (this.isHost) {
+            gameState.ball = this.ball;
+        }
+
+        this.websocket.send(JSON.stringify(gameState));
     }
       
     checkPaddleCollision(paddle, isLeft) {
@@ -133,18 +175,20 @@ export class LocalMovementStrategy extends MovementStrategy {
     animate() {
         if (!this.isRunning)
             return;
-        this.update();
-        this.draw();
+        if (this.start) {
+            this.update();
+            this.draw();
+        }
         this.animationFrameId = requestAnimationFrame(this.animate.bind(this));
     }
 
     closeGame() {
         this.isRunning = false;
         if (this.animationFrameId) {
-          cancelAnimationFrame(this.animationFrameId);
+            cancelAnimationFrame(this.animationFrameId);
         }
+        this.websocket.close();
         document.removeEventListener('keydown', this.handleKeyDown);
         document.removeEventListener('keyup', this.handleKeyUp);
     }
 }
-

@@ -1,135 +1,103 @@
-import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-import asyncio
+import json
 
-class GameConsumer(AsyncWebsocketConsumer):
-    rooms = {}  # Dicionário para armazenar o estado das salas
+class PongConsumer(AsyncWebsocketConsumer):
+    games = {}
 
     async def connect(self):
-        self.room_name = self.scope['url_route']['kwargs']['room_name']
-        self.room_group_name = f'game_{self.room_name}'
-        self.user = self.scope['user']
+        self.game_id = self.scope['url_route']['kwargs']['game_id']
+        self.game_group_name = f'pong_{self.game_id}'
 
-        if not self.user.is_authenticated:
-            await self.close()
-            return
-
-        if self.room_name not in self.rooms:
-            self.rooms[self.room_name] = {
-                'players': [],
-                'game_state': {
-                    'paddle1Y': 150,
-                    'paddle2Y': 150,
-                    'ballX': 300,
-                    'ballY': 200,
-                    'ballSpeedX': 5,
-                    'ballSpeedY': 5,
-                    'canvasWidth': 600,
-                    'canvasHeight': 400
-                },
-                'score': {
-                    'player1': {
-                        'name': '',
-                        'score': 0
-                    },
-                    'player2': {
-                        'name': '',
-                        'score': 0
-                    }
-                }
+        if self.game_id not in self.games:
+            self.games[self.game_id] = {
+                'players': [self.channel_name],
+                'host': self.channel_name
             }
-
-        self.paddle = f'paddle{len(self.rooms[self.room_name]["players"]) + 1}'
-        player = f'player{len(self.rooms[self.room_name]["players"]) + 1}'
-        self.rooms[self.room_name]['score'][player]['name'] = self.user.username
-        self.rooms[self.room_name]['players'].append(self.channel_name)
-
-        if len(self.rooms[self.room_name]['players']) > 2:
+            is_host = True
+        elif len(self.games[self.game_id]['players']) < 2:
+            self.games[self.game_id]['players'].append(self.channel_name)
+            is_host = False
+        else:
             await self.close()
             return
 
-        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
-        await self.accept()
-
-        await self.send(text_data=json.dumps({'paddle': self.paddle}))
-
-    async def disconnect(self, close_code):
-        if self.room_name in self.rooms:
-            self.rooms[self.room_name]['players'].remove(self.channel_name)
-            if not self.rooms[self.room_name]['players']:
-                del self.rooms[self.room_name]
-        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
-
-        if hasattr(self, 'game_loop'):
-            self.game_loop.cancel()
-
-    async def receive(self, text_data):
-        data = json.loads(text_data)
-        game_state = self.rooms[self.room_name]['game_state']
-
-        if len(self.rooms[self.room_name]['players']) == 2:
-            print('there is 2 players, time to star playing!')
-            self.game_loop = asyncio.create_task(self.game_update_loop())
-
-        if self.paddle == 'paddle1':
-            game_state['selfPaddle1Y'] = data.get('selfPaddle1Y', game_state['selfPaddle1Y'])
-        else:
-            game_state['selfPaddle2Y'] = data.get('selfPaddle2Y', game_state['selfPaddle2Y'])
-
-    def update_ball_position(self):
-        game_state = self.rooms[self.room_name]['game_state']
-        score = self.rooms[self.room_name]['score']
-        game_state['ballX'] += game_state['ballSpeedX']
-        game_state['ballY'] += game_state['ballSpeedY']
-
-        if game_state['ballY'] <= 0 or game_state['ballY'] >= game_state['canvasHeight']:
-            game_state['ballSpeedY'] = -game_state['ballSpeedY']
-
-        if game_state['ballX'] <= 0 or game_state['ballX'] >= game_state['canvasWidth']:
-            game_state['ballSpeedX'] = -game_state['ballSpeedX']
-
-        # Colisão com o paddle esquerdo
-        if (game_state['ballX'] < 10):
-            if (game_state['ballY'] > game_state['paddle1Y'] and game_state['ballY'] < game_state['paddle1Y'] + 100):
-                game_state['ballSpeedX'] = -game_state['ballSpeedX']
-            else:
-                score['player2']['score'] += 1
-                self.resetBall()
-
-        # Colisão com o paddle direito
-        if (game_state['ballX'] > game_state['canvasWidth'] - 10):
-            if (game_state['ballY'] > game_state['paddle2Y'] and game_state['ballY'] < game_state['paddle2Y'] + 100):
-                game_state['ballSpeedX'] = -game_state['ballSpeedX']
-            else:
-                score['player1']['score'] += 1
-                self.resetBall()
-
-
-    async def broadcast_game_state(self, event):
-        await self.send(text_data=json.dumps(
-                {
-                    'game_state': event['game_state'],
-                    'score': event['score'],
-                }
-            )
+        await self.channel_layer.group_add(
+            self.game_group_name,
+            self.channel_name
         )
 
-    def resetBall(self):
-        game_state = self.rooms[self.room_name]['game_state']
-        game_state['ballX'] = game_state['canvasWidth'] / 2
-        game_state['ballY'] = game_state['canvasHeight'] / 2
-        game_state['ballSpeedX'] = -game_state['ballSpeedX']
+        await self.accept()
 
+        await self.send(json.dumps({
+            'type': 'game_status',
+            'is_host': is_host
+        }))
 
-    async def game_update_loop(self):
-        while True:
-            self.update_ball_position()
+        if len(self.games[self.game_id]['players']) == 2:
             await self.channel_layer.group_send(
-                self.room_group_name,
+                self.game_group_name,
                 {
-                    'type': 'broadcast_game_state',
-                    'game_state': self.rooms[self.room_name]['game_state'],
-                    'score': self.rooms[self.room_name]['score']
+                    'type': 'game_start',
                 }
             )
-            await asyncio.sleep(0.03)
+
+    async def disconnect(self, close_code):
+        if self.game_id in self.games:
+            game_info = self.games[self.game_id]
+            if self.channel_name in game_info['players']:
+                game_info['players'].remove(self.channel_name)
+                
+                if game_info['players']:
+                    await self.channel_layer.group_send(
+                        self.game_group_name,
+                        {
+                            'type': 'game_end',
+                            'reason': 'opponent_disconnected'
+                        }
+                    )
+                else:
+                    del self.games[self.game_id]
+
+        await self.channel_layer.group_discard(
+            self.game_group_name,
+            self.channel_name
+        )
+
+    async def receive(self, text_data):
+        if self.game_id not in self.games or len(self.games[self.game_id]['players']) < 2:
+            return
+
+        data = json.loads(text_data)
+        
+        if data['type'] == 'paddle_update':
+            await self.channel_layer.group_send(
+                self.game_group_name,
+                {
+                    'type': 'game_state',
+                    'sender_channel_name': self.channel_name,
+                    'paddle_y': data['paddle_y'],
+                    'ball': data.get('ball')  # Apenas o host envia isso
+                }
+            )
+
+    async def game_state(self, event):
+        if event['sender_channel_name'] != self.channel_name:
+            game_info = self.games.get(self.game_id, {})
+            is_sender_host = game_info and event['sender_channel_name'] == game_info['host']
+            
+            await self.send(json.dumps({
+                'type': 'game_state',
+                'opponent_paddle': event['paddle_y'],
+                'ball': event['ball'] if is_sender_host else None
+            }))
+
+    async def game_start(self, event):
+        await self.send(json.dumps({
+            'type': 'game_start'
+        }))
+
+    async def game_end(self, event):
+        await self.send(json.dumps({
+            'type': 'game_end',
+            'reason': event.get('reason', 'unknown')
+        }))

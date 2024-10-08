@@ -1,8 +1,4 @@
-import { connectWebSocket, playerPaddle, sendGameUpdate, gameSocket, paddle1Y, paddle2Y, ballX, ballY, score } from "./websocket.js";
-import { roomName } from "./ui.js";
-
-export { MovementStrategy, OnlineMovementStrategy };
-
+export { MovementStrategy };
 
 export let canvas;
 export let context;
@@ -90,43 +86,8 @@ class MovementStrategy {
     update() {
         throw new Error('Método update deve ser implementado');
     }
-}
 
-class OnlineMovementStrategy extends MovementStrategy {
-    constructor(roomName) {
-        super();
-        this.roomName = roomName;
-        this.socket = gameSocket;
-    }
-
-    init() {
-        let opponentReadyPromise = new Promise((resolve) => {
-            window.addEventListener('opponentReady', () => {
-                resolve();
-            });
-        });
-        connectWebSocket(this.roomName);
-    }
-
-    update() {
-        console.log('online: update paddle')
-        if (playerPaddle === 'paddle1' && upPressed && localPaddle1Y > 0) {
-            localPaddle1Y -= 5;
-        } else if (playerPaddle === 'paddle1' && downPressed && localPaddle1Y < canvasHeight - 100) {
-            localPaddle1Y += 5;
-        } else if (playerPaddle === 'paddle2' && upPressed && localPaddle2Y > 0) {
-            localPaddle2Y -= 5;
-        } else if (playerPaddle === 'paddle2' && downPressed && localPaddle2Y < canvasHeight - 100) {
-            localPaddle2Y += 5;
-        }
-        const gameState = {
-            selfPaddle1Y: localPaddle1Y,
-            selfPaddle2Y: localPaddle2Y,
-        };
-        sendGameUpdate(gameState);
-    }
-
-    close() {
-        this.socket.close();
+    animate() {
+        throw new Error('Método animate deve ser implementado');
     }
 }

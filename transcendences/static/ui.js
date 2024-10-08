@@ -1,6 +1,7 @@
-import {initGame, stopGame, OnlineMovementStrategy} from "./game.js";
+import {initGame} from "./game.js";
 import { registerUser, loginUser, logoutUser } from './auth.js';
 import { LocalMovementStrategy } from './local_game.js'
+import { OnlineMovementStrategy } from './remote_game.js'
 
 export let roomName = null;
 
@@ -95,19 +96,36 @@ export const displaySection = async (route) => {
                 window.history.pushState({}, '', `/game-canva?mode=local`);
                 displaySection('/game-canva?mode=local');
             });
+            break;
         case 'game-canva':
             if (gameMode === 'online') {
-                document.getElementById('room-name-display').textContent = roomName;
-                MovementStrategy = new OnlineMovementStrategy(roomName);
+                // document.getElementById('room-name-display').textContent = 'new-game-id';
+                let websocket = initRemoteGame('new');
+                MovementStrategy = new OnlineMovementStrategy(websocket);
             }
             else if (gameMode === 'local') {
                 MovementStrategy = new LocalMovementStrategy();
-                // MovementStrategy.animate();
             }
             initGame(MovementStrategy);
-            // stopGame(MovementStrategy);
             break;
     }
+}
+
+function initRemoteGame(gameId) {
+    // if (window.currentGame) {
+    //     window.currentGame.closeGame();
+    // }
+
+    const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsUrl = `${wsScheme}://${window.location.host}/ws/pong/${gameId}/`;
+    const websocket = new WebSocket(wsUrl);
+
+    websocket.onopen = (event) => {
+        console.log('Conectado ao jogo', gameId);
+        // window.currentGame = new OnlineMovementStrategy(websocket);
+    };
+    // return window.currentGame;
+    return websocket;
 }
 
 async function fetchViews(sectionId) {
