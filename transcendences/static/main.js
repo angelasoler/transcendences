@@ -20,7 +20,6 @@ async function handleAuthRouting() {
     }
 }
 
-///consertar isso aqui
 document.addEventListener('DOMContentLoaded', async () => {
     handleAuthRouting();
 

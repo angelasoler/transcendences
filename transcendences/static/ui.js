@@ -112,19 +112,13 @@ export const displaySection = async (route) => {
 }
 
 function initRemoteGame(gameId) {
-    // if (window.currentGame) {
-    //     window.currentGame.closeGame();
-    // }
-
     const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
     const wsUrl = `${wsScheme}://${window.location.host}/ws/pong/${gameId}/`;
     const websocket = new WebSocket(wsUrl);
 
     websocket.onopen = (event) => {
         console.log('Conectado ao jogo', gameId);
-        // window.currentGame = new OnlineMovementStrategy(websocket);
     };
-    // return window.currentGame;
     return websocket;
 }
 
