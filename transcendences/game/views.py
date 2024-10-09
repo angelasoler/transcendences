@@ -79,14 +79,6 @@ def get_profile(request):
     }
     return JsonResponse(data)
 
-def get_rankings(request):
-    scores = Score.objects.select_related('user').order_by('-points')[:10]
-    data = [
-        {'position': idx + 1, 'username': score.user.username, 'points': score.points}
-        for idx, score in enumerate(scores)
-    ]
-    return JsonResponse(data, safe=False)
-
 def game_room(request, room_name):
     return render(request, 'game/room.html', {
         'room_name': room_name

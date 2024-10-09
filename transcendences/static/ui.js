@@ -1,102 +1,136 @@
-import {initGame, stopGame, updateGameState} from "./game.js";
-import {connectWebSocket} from "./websocket.js";
-import { registerUser, loginUser } from './auth.js';
+import {initGame} from "./game.js";
+import { registerUser, loginUser, logoutUser } from './auth.js';
+import { LocalMovementStrategy } from './local_game.js'
+import { OnlineMovementStrategy } from './remote_game.js'
 
-const protectedRoutes = ['profile', 'game', 'rooms', 'local-tournament', 'online-rooms', 'online-tournaments'];
+export const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournaments'];
 
 const redirectToLogin = () => {
-    loadView('login', displaySection);
+    window.history.pushState({}, '', '/login');
+    displaySection('/login');
 };
 
-export const loadView = (route, displaySection) => {
-    console.log("load View route: ", route);
+function hasQueryString() {
+    const queryString = window.location.search;
+    const hasQueryString = queryString !== '';
+    let modeValue = '';
+
+    if (hasQueryString) {
+        const queryParams = queryString.substring(1);
+        const paramsArray = queryParams.split('&');
+
+        paramsArray.forEach(param => {
+            const [key, value] = param.split('=');
+            if (key === 'mode') {
+                modeValue = value;
+            }
+        });
+    }
+    return modeValue;
+}
+
+export const loadView = (route) => {
+    // console.log("load View route: ", route);
     if (protectedRoutes.includes(route)) {
         fetch('/api/check_auth/')
-            .then(response => response.ok ? displaySection(route) : redirectToLogin())
-            .catch(() => redirectToLogin());
-    } else {
+            .then(response => {
+                if (!response.ok)
+                    redirectToLogin();
+            }).catch(error => {
+                console.error('check auth request to back end fail', error.message);
+            });
+    }
+    try {
         displaySection(route);
+    }
+    catch (error) {
+        console.error('Erro ao carregar a view:', error);
     }
 };
 
-export const displaySection = (route) => {
-    console.log("displaySection Route: ", route);
-    const sectionId = route === '/' ? 'home' : route;
-    console.log("section ID: ", sectionId);
+const localMatch = (e) => {
+    e.preventDefault();
+    let nickname1 = document.getElementById('nickname1').value;
+    let nickname2 = document.getElementById('nickname2').value;
+    console.log('nickname1:', nickname1);
+    console.log('nickname2:', nickname2);
+    window.history.pushState({}, '', `/game-canva?mode=local`);
+    displaySection('/game-canva?mode=local');
+};
 
-    // Fade-in/out animation when changing content
-    const contentDiv = document.getElementById('content');
+const remoteMatch = (e) => {
+    e.preventDefault();
+    window.history.pushState({}, '', `/game-canva?mode=online`);
+    displaySection('/game-canva?mode=online');
+}
 
-    // Check if there is any existing content to fade out
-    const hasContent = contentDiv.innerHTML.trim() !== '';
+const displaySection = async (route) => {
+    let section = route.startsWith('/') ? route.slice(1) : route;
+    console.log("displaySection section: ", section);
+    document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+    let MovementStrategy;
 
-    if (hasContent) {
-        // Start fade-out animation
-        contentDiv.classList.add('fade-out');
-        contentDiv.classList.add('active');
+    let gameMode = hasQueryString();
+    if (gameMode !== '') {
+        section = window.location.pathname.slice(1);
     }
 
-    // Wait for the fade-out to finish before updating the content
-    setTimeout(async () => {
-        if (sectionId === 'login' || sectionId === 'register') {
-            fetchDynamicAuth(sectionId);
-        } else {
-            fetchStaticViews(sectionId, route)
-        }
-
-        // Start fade-in animation
-        contentDiv.classList.remove('fade-out');
-        contentDiv.classList.add('fade-in');
-        contentDiv.classList.add('active');
-
-        // Allow the fade-in to happen
-        setTimeout(() => {
-            contentDiv.classList.remove('fade-in'); // Clean up after fade-in
-            contentDiv.classList.remove('active');
-        }, 650); // Duration must match the CSS transition duration
-
-        // document.getElementById(sectionId).style.display = 'block';
-        if (sectionId === 'game') {
-            let roomName = document.getElementById('room-name').value;
-            let canvas = document.getElementById('gameCanvas');
-            let context = canvas.getContext('2d');
-            if (!roomName) {
-                console.log("NO ROOM NAME");
-                return;
-            }
-            // Call functions to stop previous game, init new game, etc.
-            stopGame();
-            initGame(canvas, context);
-            connectWebSocket(roomName, updateGameState);
-        } else if (sectionId === 'profile')
+    await fetchViews(section);
+    switch (section) {
+        case 'login':
+            document.getElementById('loginForm').addEventListener('submit', loginUser);
+            break;
+        case 'register':
+            document.getElementById('registerForm').addEventListener('submit', registerUser);
+            break;
+        case 'logout':
+            logoutUser();
+            break;
+        case 'profile':
             getProfile();
-        else
-            stopGame(); //provisorio
-    }, 650); // Duration must match the CSS transition duration
-}
-
-async function fetchDynamicAuth(sectionId) {
-    try {
-        const response = await fetch(`/${sectionId}/`);
-        if (response.ok) {
-            const partialHtml = await response.text();
-            document.getElementById('content').innerHTML = partialHtml;
-            if (sectionId === 'login') {
-                document.getElementById('loginForm').addEventListener('submit', loginUser);
-            } else {
-                document.getElementById('registerForm').addEventListener('submit', registerUser);
+            break;
+        case 'online-rooms':
+            document.getElementById('createRoomForm').addEventListener('submit', remoteMatch);
+            break;
+        case 'local-vs-friend':
+            document.getElementById('players-nicknames').addEventListener('submit', localMatch);
+            break;
+        case 'game-canva':
+            if (gameMode === 'online') {
+                let websocket = initRemoteGame('new');
+                MovementStrategy = new OnlineMovementStrategy(websocket);
             }
-        } else {
-            console.error('Falha ao renderizar view: ', response.status);
-        }
-    } catch (error) {
-        console.error('Erro ao renderizar view:', error);
+            else if (gameMode === 'local') {
+                MovementStrategy = new LocalMovementStrategy();
+            }
+            initGame(MovementStrategy);
+            break;
     }
 }
 
-async function fetchStaticViews(sectionId, route) {
+function initRemoteGame(gameId) {
+    const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsUrl = `${wsScheme}://${window.location.host}/ws/pong/${gameId}/`;
+    const websocket = new WebSocket(wsUrl);
+
+    websocket.onopen = (event) => {
+        console.log('Conectado ao jogo', gameId);
+    };
+    return websocket;
+}
+
+async function fetchViews(sectionId) {
+    let response;
+
     try {
-        const response = await fetch(`/static/views/${sectionId}.html`);
+        switch (sectionId) {
+            case 'login':
+            case 'register':
+                response = await fetch(`/${sectionId}/`);
+                break;
+            default:
+                response = await fetch(`/static/views/${sectionId}.html`);
+        }
         if (response.ok) {
             const partialHtml = await response.text();
             document.getElementById('content').innerHTML = partialHtml;
@@ -123,6 +157,6 @@ async function getProfile() {
         document.getElementById('profileEmail').textContent = data.email;
     } else {
         alert('Erro ao obter perfil do usuário.');
-        loadView('login', displaySection);
+        redirectToLogin();
     }
 }
