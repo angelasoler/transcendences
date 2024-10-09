@@ -10,14 +10,11 @@ async function handleAuthRouting() {
         if (currentRoute === '/login' || currentRoute === '/register') {
             window.history.pushState({}, '', '/home');
             handleRoute('/home');
-        } else {
-            window.history.pushState({}, '', currentRoute);
-            handleRoute(currentRoute);
+            return;
         }
-    } else {
-        window.history.pushState({}, '', currentRoute);
-        handleRoute(currentRoute);
     }
+    window.history.pushState({}, '', currentRoute);
+    handleRoute(currentRoute);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

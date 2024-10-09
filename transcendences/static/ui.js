@@ -3,15 +3,12 @@ import { registerUser, loginUser, logoutUser } from './auth.js';
 import { LocalMovementStrategy } from './local_game.js'
 import { OnlineMovementStrategy } from './remote_game.js'
 
-export let roomName = null;
-
-const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournaments'];
+export const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournaments'];
 
 const redirectToLogin = () => {
     window.history.pushState({}, '', '/login');
     displaySection('/login');
 };
-
 
 function hasQueryString() {
     const queryString = window.location.search;
@@ -51,7 +48,23 @@ export const loadView = (route) => {
     }
 };
 
-export const displaySection = async (route) => {
+const localMatch = (e) => {
+    e.preventDefault();
+    let nickname1 = document.getElementById('nickname1').value;
+    let nickname2 = document.getElementById('nickname2').value;
+    console.log('nickname1:', nickname1);
+    console.log('nickname2:', nickname2);
+    window.history.pushState({}, '', `/game-canva?mode=local`);
+    displaySection('/game-canva?mode=local');
+};
+
+const remoteMatch = (e) => {
+    e.preventDefault();
+    window.history.pushState({}, '', `/game-canva?mode=online`);
+    displaySection('/game-canva?mode=online');
+}
+
+const displaySection = async (route) => {
     let section = route.startsWith('/') ? route.slice(1) : route;
     console.log("displaySection section: ", section);
     document.querySelectorAll('section').forEach(s => s.style.display = 'none');
@@ -77,29 +90,13 @@ export const displaySection = async (route) => {
             getProfile();
             break;
         case 'online-rooms':
-            document.getElementById('createRoomForm').addEventListener('submit', (e) => {
-                e.preventDefault();
-                roomName = document.getElementById('roomName').value;
-                console.log('roomName:', roomName);
-                window.history.pushState({}, '', `/game-canva?mode=online`);
-                displaySection('/game-canva?mode=online');
-            });
+            document.getElementById('createRoomForm').addEventListener('submit', remoteMatch);
             break;
         case 'local-vs-friend':
-            document.getElementById('players-nicknames').addEventListener('submit', (e) => {
-                e.preventDefault();
-                let nickname1 = document.getElementById('nickname1').value;
-                let nickname2 = document.getElementById('nickname2').value;
-                console.log('nickname1:', nickname1);
-                console.log('nickname2:', nickname2);
-                console.log('roomName:', roomName);
-                window.history.pushState({}, '', `/game-canva?mode=local`);
-                displaySection('/game-canva?mode=local');
-            });
+            document.getElementById('players-nicknames').addEventListener('submit', localMatch);
             break;
         case 'game-canva':
             if (gameMode === 'online') {
-                // document.getElementById('room-name-display').textContent = 'new-game-id';
                 let websocket = initRemoteGame('new');
                 MovementStrategy = new OnlineMovementStrategy(websocket);
             }
@@ -125,15 +122,15 @@ function initRemoteGame(gameId) {
 async function fetchViews(sectionId) {
     let response;
 
-    switch (sectionId) {
-        case 'login':
-        case 'register':
-            response = await fetch(`/${sectionId}/`);
-            break;
-        default:
-            response = await fetch(`/static/views/${sectionId}.html`);
-    }
     try {
+        switch (sectionId) {
+            case 'login':
+            case 'register':
+                response = await fetch(`/${sectionId}/`);
+                break;
+            default:
+                response = await fetch(`/static/views/${sectionId}.html`);
+        }
         if (response.ok) {
             const partialHtml = await response.text();
             document.getElementById('content').innerHTML = partialHtml;
