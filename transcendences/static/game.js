@@ -19,33 +19,17 @@ export function initGame(mvStrategy) {
     gameLoop(mvStrategy);
 }
 
-const keyDownHandler = (e) => {
-    if (e.key === 'ArrowUp') {
-        upPressed = true;
-    }
-    if (e.key === 'ArrowDown') {
-        downPressed = true;
-    }
-};
-
-const keyUpHandler = (e) => {
-    if (e.key === 'ArrowUp') {
-        upPressed = false;
-    }
-    if (e.key === 'ArrowDown') {
-        downPressed = false;
-    }
-};
-
 export const gameLoop = (mvStrategy) => {
-    // console.log('Game loop');
-    if (!mvStrategy.isRunning)
-        return ;
-    if (mvStrategy.start) {
-        mvStrategy.update();
-        mvStrategy.draw();
-    }
-    mvStrategy.animationFrameId = requestAnimationFrame(() => gameLoop(mvStrategy));
+    mvStrategy.animationFrameId = requestAnimationFrame((timestamp) => {
+        if (!mvStrategy.isRunning)
+            return ;
+        mvStrategy.currentTime = timestamp;
+        if (mvStrategy.start) {
+            mvStrategy.update();
+            mvStrategy.draw();
+        }
+        gameLoop(mvStrategy)
+    });
 };
 
 class MovementStrategy {
@@ -56,6 +40,7 @@ class MovementStrategy {
 
         this.isRunning = true;
         this.animationFrameId = null;
+        this.currentTime = 0;
 
         this.paddleHeight = 100;
         this.paddleWidth = 10;

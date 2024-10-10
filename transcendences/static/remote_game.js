@@ -44,7 +44,7 @@ export class OnlineMovementStrategy extends MovementStrategy {
                 break;
         }
     }
-      
+
     handleKeyDown(e) {
         if (e.key === 'ArrowUp') this.keys.up = true;
         if (e.key === 'ArrowDown') this.keys.down = true;
@@ -54,7 +54,7 @@ export class OnlineMovementStrategy extends MovementStrategy {
         if (e.key === 'ArrowUp') this.keys.up = false;
         if (e.key === 'ArrowDown') this.keys.down = false;
     }
-      
+
     update() {
         let paddleSpeed = 0;
         if (this.keys.up && !this.keys.down) paddleSpeed = -this.paddleSpeed;
