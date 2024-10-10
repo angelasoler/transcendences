@@ -8,3 +8,12 @@ class Score(models.Model):
     def __str__(self):
         return f"{self.user.username}: {self.points}"
 
+
+class Room(models.Model):
+    game_id = models.CharField(max_length=100, unique=True)
+    players = models.IntegerField(default=1)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_full(self):
+        return self.players >= 2
