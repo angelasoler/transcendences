@@ -14,6 +14,10 @@ class Room(models.Model):
     players = models.IntegerField(default=1)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
 
     def is_full(self):
         return self.players >= 2
+
+    def is_empty(self):
+        return self.players <= 0

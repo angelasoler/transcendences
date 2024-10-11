@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.decorators import login_required
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from .models import Room
 import uuid
 
@@ -85,6 +87,22 @@ def create_room(request):
     if request.method == 'POST':
         game_id = str(uuid.uuid4())
         room = Room.objects.create(game_id=game_id, created_by=request.user)
+        # Broadcast the new room to all connected clients
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            'online_rooms',
+            {
+                'type': 'rooms.update',
+                'message': {
+                    'action': 'create',
+                    'room': {
+                        'game_id': room.game_id,
+                        'players': room.players,
+                        'created_by': room.created_by.username,
+                    }
+                }
+            }
+        )
         return JsonResponse({'game_id': game_id})
     return JsonResponse({'error': 'Método não permido'}, status=405)
 
@@ -113,6 +131,22 @@ def join_room(request):
             if not room.is_full():
                 room.players += 1
                 room.save()
+                # Broadcast the room update to all connected clients
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    'online_rooms',
+                    {
+                        'type': 'rooms.update',
+                        'message': {
+                            'action': 'update',
+                            'room': {
+                                'game_id': room.game_id,
+                                'players': room.players,
+                                'created_by': room.created_by.username,
+                            }
+                        }
+                    }
+                )
                 return JsonResponse({'success': True})
             return JsonResponse({'error': 'A sala está cheia'}, status=400)
         except Room.DoesNotExist:

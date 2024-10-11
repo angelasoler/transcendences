@@ -5,6 +5,7 @@ import { OnlineMovementStrategy } from './remote_game.js'
 import {getCookie} from "./utils.js";
 
 export const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournaments'];
+let roomsSocket;
 
 const redirectToLogin = () => {
     window.history.pushState({}, '', '/login');
@@ -107,6 +108,11 @@ const displaySection = async (route) => {
         window.roomsInterval = null;
     }
 
+    if (roomsSocket) {
+        roomsSocket.close();
+        roomsSocket = null;
+    }
+
     await fetchViews(section);
     switch (section) {
         case 'login':
@@ -123,8 +129,7 @@ const displaySection = async (route) => {
             break;
         case 'online-rooms':
             document.getElementById('createRoomForm').addEventListener('submit', remoteMatch);
-            fetchAvailableRooms();
-            window.roomsInterval = setInterval(fetchAvailableRooms, 5000);
+            connectRoomsWebSocket();
             break;
         case 'local-vs-friend':
             document.getElementById('players-nicknames').addEventListener('submit', localMatch);
@@ -141,6 +146,110 @@ const displaySection = async (route) => {
             initGame(MovementStrategy);
             break;
     }
+}
+
+function connectRoomsWebSocket() {
+    const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsUrl = `${wsScheme}://${window.location.host}/ws/rooms/`;
+
+    roomsSocket = new WebSocket(wsUrl);
+
+    roomsSocket.onopen = function(event) {
+        console.log('Connected to rooms WebSocket');
+        fetchAvailableRooms();
+    };
+
+    roomsSocket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        handleRoomsUpdate(data);
+    };
+
+    roomsSocket.onclose = function(event) {
+        console.log('Rooms WebSocket closed');
+    };
+
+    roomsSocket.onerror = function(error) {
+        console.error('Rooms WebSocket error: ', error);
+    };
+}
+
+function handleRoomsUpdate(data) {
+    const action = data.action;
+    const room = data.room;
+
+    if (action === 'create') {
+        addRoomToList(room);
+    } else if (action === 'update') {
+        if (room.players >= 2) {
+            removeRoomFromList(room.game_id);
+        } else {
+            updateRoomInList(room);
+        }
+    } else if (action === 'delete') {
+        removeRoomFromList(room.game_id);
+    }
+}
+
+function addRoomToList(room) {
+    const roomsList = document.getElementById('roomsList');
+    const roomElement = createRoomElement(room);
+    roomsList.appendChild(roomElement);
+    document.getElementById('noRoomsMessage').classList.add('d-none');
+    document.getElementById('create-rooms-button').classList.add('d-none');
+}
+
+function updateRoomInList(room) {
+    const roomElement = document.getElementById(`room-${room.game_id}`);
+    if (roomElement) {
+        // Update the player count
+        const small = roomElement.querySelector('small');
+        small.textContent = `${room.players}/2 jogadores`;
+    }
+}
+
+function removeRoomFromList(gameId) {
+    const roomElement = document.getElementById(`room-${gameId}`);
+    if (roomElement) {
+        roomElement.remove();
+    }
+    // Check if rooms list is empty
+    const roomsList = document.getElementById('roomsList');
+    if (roomsList.children.length === 0) {
+        document.getElementById('noRoomsMessage').classList.remove('d-none');
+        document.getElementById('create-rooms-button').classList.remove('d-none');
+    }
+}
+
+function createRoomElement(room) {
+    const roomElement = document.createElement('a');
+    roomElement.href = '#';
+    roomElement.id = `room-${room.game_id}`;
+    roomElement.classList.add('list-group-item', 'list-group-item-action');
+    roomElement.addEventListener('click', () => {
+        joinRoom(room.game_id);
+    });
+
+    const roomHeader = document.createElement('div');
+    roomHeader.classList.add('d-flex', 'w-100', 'justify-content-between');
+
+    const h5 = document.createElement('h5');
+    h5.classList.add('mb-1');
+    h5.textContent = `Sala ${room.game_id.substring(0, 8)}`;
+
+    const small = document.createElement('small');
+    small.textContent = `${room.players}/2 jogadores`;
+
+    roomHeader.appendChild(h5);
+    roomHeader.appendChild(small);
+
+    const p = document.createElement('p');
+    p.classList.add('mb-1');
+    p.textContent = `Criado por: ${room.created_by}`;
+
+    roomElement.appendChild(roomHeader);
+    roomElement.appendChild(p);
+
+    return roomElement;
 }
 
 function fetchAvailableRooms() {
@@ -161,44 +270,17 @@ function fetchAvailableRooms() {
         return response.json();
     })
     .then(data => {
+        console.log('API Response:', data);
         const rooms = data.rooms_list;
         const roomsList = document.getElementById('roomsList');
         roomsList.innerHTML = '';
 
         if (rooms.length === 0) {
             document.getElementById('noRoomsMessage').classList.remove('d-none');
+            document.getElementById('create-rooms-button').classList.remove('d-none');
         } else {
-            document.getElementById('noRoomsMessage').classList.add('d-none');
             rooms.forEach(room => {
-                const roomElement = document.createElement('a');
-                roomElement.href = '#';
-                roomElement.classList.add('list-group-item', 'list-group-item-action');
-                roomElement.addEventListener('click', () => {
-                    joinRoom(room.game_id);
-                });
-
-                const roomHeader = document.createElement('div');
-                roomHeader.classList.add('d-flex', 'w-100', 'justify-content-between');
-
-                const h5 = document.createElement('h5');
-                h5.classList.add('mb-1');
-                // Short game_id
-                h5.textContent = `Sala ${room.game_id.substring(0, 8)}`;
-
-                const small = document.createElement('small');
-                small.textContent = `${room.players}/2 jogadores`;
-
-                roomHeader.appendChild(h5);
-                roomHeader.appendChild(small);
-
-                const p = document.createElement('p');
-                p.classList.add('mb-1');
-                p.textContent = `Criado por: ${room.created_by}`;
-
-                roomElement.appendChild(roomHeader);
-                roomElement.appendChild(p);
-
-                roomsList.appendChild(roomElement);
+                addRoomToList(room);
             });
         }
     })
