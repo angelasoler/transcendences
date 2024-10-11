@@ -3,18 +3,6 @@ export { MovementStrategy };
 export let canvas;
 export let context;
 
-const canvasWidth = 600;
-const canvasHeight = 400;
-const paddleWidth = 10;
-const paddleHeight = 100;
-const ballRadius = 7;
-
-let upPressed = false;
-let downPressed = false;
-let animationFrameId = null;
-
-let waitOponent = true;
-
 export function initGame(mvStrategy) {
     gameLoop(mvStrategy);
 }
