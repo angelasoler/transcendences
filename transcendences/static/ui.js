@@ -1,7 +1,9 @@
-import {initGame} from "./game.js";
+// import {initGame} from "./game.js";
 import { registerUser, loginUser, logoutUser } from './auth.js';
-import { LocalMovementStrategy } from './local_game.js'
-import { OnlineMovementStrategy } from './remote_game.js'
+// import { LocalMovementStrategy } from './local_game.js'
+// import { OnlineMovementStrategy } from './remote_game.js'
+import { RemotePlay } from './remote_game.js';
+import { LocalPlay } from './local_game.js';
 
 export const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournaments'];
 
@@ -98,12 +100,13 @@ const displaySection = async (route) => {
         case 'game-canva':
             if (gameMode === 'online') {
                 let websocket = initRemoteGame('new');
-                MovementStrategy = new OnlineMovementStrategy(websocket);
+                const remoteGame = new RemotePlay(websocket);
+                remoteGame.startGame();
             }
             else if (gameMode === 'local') {
-                MovementStrategy = new LocalMovementStrategy();
+                const localGame = new LocalPlay();
+                localGame.startGame();
             }
-            initGame(MovementStrategy);
             break;
     }
 }
