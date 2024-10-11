@@ -131,6 +131,7 @@ const displaySection = async (route) => {
             break;
         case 'game-canva':
             if (gameMode === 'online') {
+                document.getElementById('room-name-display').textContent = `Sala ${gameId.substring(0, 8)}`;
                 let websocket = initRemoteGame(gameId);
                 MovementStrategy = new OnlineMovementStrategy(websocket);
             }
