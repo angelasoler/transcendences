@@ -5,10 +5,11 @@ ENV PYTHONDONTWRITEBYTECODE 1
 
 WORKDIR /app
 
-COPY ./transcendences /app/
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+COPY ./transcendences /app
 
+COPY ./requirements.txt /app
+
+RUN pip install --upgrade pip
 
 EXPOSE 8000
 

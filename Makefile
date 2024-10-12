@@ -1,17 +1,24 @@
 
 build:
 	docker-compose build
+
 up:
 	docker-compose up web
+
 upd:
 	docker-compose up -d web
 
+test:
+	docker-compose run --rm test bash
+
 down:
 	docker-compose down
+
 fclean: down
 	@echo "Cleaning..."
 	
 	if [ "$(shell docker container ls -a  | grep transcendence_web)" ]; then docker container rm transcendence_web; fi
+	if [ "$(shell docker container ls -a  | grep transcendence_web_test)" ]; then docker container rm transcendence_web_test; fi
 	if [ "$(shell docker container ls -a  | grep transcendence_redis)" ]; then docker container rm transcendence_redis; fi
 	if [ "$(shell docker container ls -a  | grep transcendence_db)" ];  then docker container rm transcendence_db; fi
 	

@@ -17,16 +17,17 @@ services:
       dockerfile: Dockerfile
     container_name: "transcendence_web"
     image: transcendence/web:latest
-    command: >
-      sh -c "python manage.py migrate &&
-            python manage.py collectstatic --noinput &&
-            daphne -b 0.0.0.0 -p 8000 transcendences.asgi:application"
+    env_file: env.development
     volumes:
       - ./transcendences:/app
+      - ./static:/app/staticfiles #dev env
+      - ./requirements.txt:/app/requirements.txt
+
     ports:
       - "8000:8000"
     depends_on:
       - db
+      
   ngrok:
       build:
         context: .
@@ -41,5 +42,22 @@ services:
         - default
       restart: unless-stopped
 
+      - redis
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile_test
+    container_name: "transcendence_web_test"
+    env_file: env.test
+    image: transcendenceTest/web:latest
+    command: python -m venv env  
+    volumes:
+      - ./transcendences:/app
+      - ./static:/app/staticfiles #dev env
+      - ./requirements.txt:/app/requirements.txt 
+    depends_on:
+      - db
+      - redis
 volumes:
   postgres_data:
