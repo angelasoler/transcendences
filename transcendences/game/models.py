@@ -21,3 +21,6 @@ class Room(models.Model):
 
     def is_empty(self):
         return self.players <= 0
+
+    def __str__(self):
+        return f"Room {self.game_id} - Players: {self.players} - Active: {self.is_active}"

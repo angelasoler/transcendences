@@ -2,41 +2,7 @@ import json
 import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
-from django.contrib.auth.models import User
 from .models import Room
-
-
-
-class RoomsConsumer(AsyncWebsocketConsumer):
-    async def connect(self):
-        self.room_group_name = 'online_rooms'
-
-
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-
-        await self.accept()
-        print(f"WebSocket connected: {self.channel_name}")
-
-    async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
-        print(f"WebSocket disconnected: {self.channel_name}")
-
-    # Receive message from WebSocket
-    # Maybe handle messages from the client if needed
-    # async def receive(self, text_data):
-        # pass
-
-    # Receive message from room group
-    async def rooms_update(self, event):
-        await self.send(text_data=json.dumps(event['message']))
 
 
 class PongConsumer(AsyncWebsocketConsumer):
@@ -70,8 +36,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
-        async with self.lock:
-            await self.increment_players()
+        await self.update_room_players(+1)
 
         await self.send(json.dumps({
             'type': 'game_status',
@@ -91,25 +56,24 @@ class PongConsumer(AsyncWebsocketConsumer):
             game_info = self.games[self.game_id]
             if self.channel_name in game_info['players']:
                 game_info['players'].remove(self.channel_name)
-                async with self.lock:
-                    await self.decrement_players()
                 if game_info['players']:
                     await self.channel_layer.group_send(
                         self.game_group_name,
                         {
                             'type': 'game_end',
-                            'reason': 'opponent_disconnected'
+                            'reason': 'Opponent disconnected. You are the Winner!'
                         }
                     )
                 else:
                     del self.games[self.game_id]
+                    await self.mark_room_inactive()
 
         await self.channel_layer.group_discard(
             self.game_group_name,
             self.channel_name
         )
 
-
+        await self.update_room_players(-1)
 
     async def receive(self, text_data):
         if self.game_id not in self.games or len(self.games[self.game_id]['players']) < 2:
@@ -150,64 +114,23 @@ class PongConsumer(AsyncWebsocketConsumer):
             'reason': event.get('reason', 'unknown')
         }))
 
-        await self.close()
+        await self.mark_room_inactive()
 
     @database_sync_to_async
-    def increment_players(self):
+    def update_room_players(self, change):
         try:
             room = Room.objects.get(game_id=self.game_id)
-            room.players += 1
+            room.players += change
+            if room.players <= 0:
+                room.is_active = False
             room.save()
         except Room.DoesNotExist:
-            pass  # Handle error if needed
+            pass
 
     @database_sync_to_async
-    def decrement_players(self):
+    def mark_room_inactive(self):
         try:
             room = Room.objects.get(game_id=self.game_id)
-            room.players -= 1
-            if room.players <= 0:
-                # Set room as inactive and delete it
-                room.is_active = False
-                room.save()
-                room.delete()
-                # Broadcast room deletion
-                self.broadcast_room_deletion()
-            else:
-                room.save()
-                # Broadcast room update
-                self.broadcast_room_update(room)
+            room.delete()
         except Room.DoesNotExist:
-            pass  # Handle error if needed
-
-    def broadcast_room_update(self, room):
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            'online_rooms',
-            {
-                'type': 'rooms.update',
-                'message': {
-                    'action': 'update',
-                    'room': {
-                        'game_id': room.game_id,
-                        'players': room.players,
-                        'created_by': room.created_by.username,
-                    }
-                }
-            }
-        )
-
-    def broadcast_room_deletion(self):
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            'online_rooms',
-            {
-                'type': 'rooms.update',
-                'message': {
-                    'action': 'delete',
-                    'room': {
-                        'game_id': self.game_id,
-                    }
-                }
-            }
-        )
+            pass

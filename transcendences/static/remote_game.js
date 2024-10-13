@@ -42,6 +42,7 @@ export class OnlineMovementStrategy extends MovementStrategy {
             case 'game_end':
                 this.closeGame();
                 break;
+            // case 'room_full':
         }
     }
       
@@ -116,8 +117,12 @@ export class OnlineMovementStrategy extends MovementStrategy {
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
         }
-        this.websocket.close();
-        document.removeEventListener('keydown', this.handleKeyDown);
-        document.removeEventListener('keyup', this.handleKeyUp);
+        if (this.websocket) {
+            this.websocket.close();
+        }
+        document.removeEventListener('keydown', this.boundHandleKeyDown);
+        document.removeEventListener('keyup', this.boundHandleKeyUp);
+        window.removeEventListener('beforeunload', this.boundCloseGame);
+        window.removeEventListener('popstate', this.boundCloseGame);
     }
 }

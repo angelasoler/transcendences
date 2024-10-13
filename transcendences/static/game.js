@@ -1,41 +1,11 @@
 export { MovementStrategy };
 
-export let canvas;
-export let context;
-
-const canvasWidth = 600;
-const canvasHeight = 400;
-const paddleWidth = 10;
-const paddleHeight = 100;
-const ballRadius = 7;
-
-let upPressed = false;
-let downPressed = false;
-let animationFrameId = null;
-
-let waitOponent = true;
-
 export function initGame(mvStrategy) {
+    // Salva a atual instancia de MovementStrategy globalmente
+    // para que possamos chamar closeGame() quando mudar de view
+    window.currentMovementStrategy = mvStrategy;
     gameLoop(mvStrategy);
 }
-
-const keyDownHandler = (e) => {
-    if (e.key === 'ArrowUp') {
-        upPressed = true;
-    }
-    if (e.key === 'ArrowDown') {
-        downPressed = true;
-    }
-};
-
-const keyUpHandler = (e) => {
-    if (e.key === 'ArrowUp') {
-        upPressed = false;
-    }
-    if (e.key === 'ArrowDown') {
-        downPressed = false;
-    }
-};
 
 export const gameLoop = (mvStrategy) => {
     // console.log('Game loop');
@@ -79,11 +49,23 @@ class MovementStrategy {
             speedY: 3
         };
 
-        document.addEventListener('keydown', this.handleKeyDown.bind(this));
-        document.addEventListener('keyup', this.handleKeyUp.bind(this));
-        window.addEventListener('beforeunload', this.closeGame.bind(this));
-        window.addEventListener('popstate', this.closeGame.bind(this));
+        this.boundHandleKeyDown = this.handleKeyDown.bind(this);
+        this.boundHandleKeyUp = this.handleKeyUp.bind(this);
+        this.boundCloseGame = this.closeGame.bind(this);
 
+        document.addEventListener('keydown', this.boundHandleKeyDown);
+        document.addEventListener('keyup', this.boundHandleKeyUp);
+        window.addEventListener('beforeunload', this.boundCloseGame);
+        window.addEventListener('popstate', this.boundCloseGame);
+
+    }
+
+    handleKeyUp() {
+        throw new Error('Método handleKeyUp deve ser implementado');
+    }
+
+    handleKeyDown() {
+        throw new Error('Método handleKeyDown deve ser implementado');
     }
 
     closeGame() {

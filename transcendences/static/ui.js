@@ -50,7 +50,7 @@ export const loadView = (route) => {
     }
 };
 
-const localMatch = (e) => {
+const createLocalRoom = (e) => {
     e.preventDefault();
     let nickname1 = document.getElementById('nickname1').value;
     let nickname2 = document.getElementById('nickname2').value;
@@ -60,9 +60,9 @@ const localMatch = (e) => {
     displaySection('/game-canva?mode=local');
 };
 
-const remoteMatch = (e) => {
+const joinOrCreateRemoteRoom = (e) => {
     e.preventDefault();
-    fetch('/api/create_room/', {
+    fetch('/api/join_or_create_room/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -72,26 +72,67 @@ const remoteMatch = (e) => {
     })
     .then(response => {
         if (!response.ok) {
-            console.error('Error creating room: ', response.status);
-            return response.text().then(text => { throw new Error(text) });
+            if (response.status === 401) {
+                // Unauthorized, need to redirect to login
+                throw new Error('Unauthorized');
+            } else if (response.status === 403) {
+                // Forbidden, need to redirect to login
+                throw new Error('Forbidden');
+            } else {
+                console.error('Erro ao criar ou dar fetch na sala: ', response.status);
+                return response.text().then(text => { throw new Error(text) });
+            }
         }
-        return response.json();
+        // Attempt to parse JSON
+        return response.json().catch(() => {
+            throw new Error('Invalid JSON response');
+        });
     })
     .then(data => {
-        const gameId = data.game_id;
-        window.history.pushState({}, '', `/game-canva?mode=online&game_id=${gameId}`);
-        displaySection(`/game-canva?mode=online&game_id=${gameId}`);
+        if (data.game_id) {
+            window.history.pushState({}, '', `/game-canva?mode=online&game_id=${data.game_id}`);
+            displaySection(`/game-canva?mode=online&game_id=${data.game_id}`);
+        } else {
+            alert(data.error);
+        }
     })
     .catch(error => {
-        console.error('Erro ao criar a sala: ', error);
+        if (error.message === 'Unauthorized' || error.message === 'Forbidden') {
+            redirectToLogin();
+        } else {
+            console.error('Erro ao criar a sala: ', error);
+            alert('Ocorreu um erro ao criar ou entrar na sala.');
+        }
+    });
+}
+
+function closeModal() {
+    // Close the modal and remove any backdrops
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+    });
+    // Remove modal backdrop
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => {
+        backdrop.parentNode.removeChild(backdrop);
     });
 }
 
 const displaySection = async (route) => {
+    // chama closeGame() se estiver dentro de um jogo e mudar de view
+    if (window.currentMovementStrategy) {
+        window.currentMovementStrategy.closeGame();
+        window.currentMovementStrategy = null;
+    }
+
     let section = route.startsWith('/') ? route.slice(1) : route;
     console.log("displaySection section: ", section);
     document.querySelectorAll('section').forEach(s => s.style.display = 'none');
     let MovementStrategy;
+    closeModal();
 
     let gameMode = hasQueryString();
     let gameId = '';
@@ -127,12 +168,11 @@ const displaySection = async (route) => {
         case 'profile':
             getProfile();
             break;
-        case 'online-rooms':
-            document.getElementById('createRoomForm').addEventListener('submit', remoteMatch);
-            connectRoomsWebSocket();
+        case 'home':
+            document.getElementById('joinOnlineRoomButton').addEventListener('click', joinOrCreateRemoteRoom);
             break;
         case 'local-vs-friend':
-            document.getElementById('players-nicknames').addEventListener('submit', localMatch);
+            document.getElementById('players-nicknames').addEventListener('submit', createLocalRoom);
             break;
         case 'game-canva':
             if (gameMode === 'online') {
@@ -146,178 +186,6 @@ const displaySection = async (route) => {
             initGame(MovementStrategy);
             break;
     }
-}
-
-function connectRoomsWebSocket() {
-    const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const wsUrl = `${wsScheme}://${window.location.host}/ws/rooms/`;
-
-    roomsSocket = new WebSocket(wsUrl);
-
-    roomsSocket.onopen = function(event) {
-        console.log('Connected to rooms WebSocket');
-        fetchAvailableRooms();
-    };
-
-    roomsSocket.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-        handleRoomsUpdate(data);
-    };
-
-    roomsSocket.onclose = function(event) {
-        console.log('Rooms WebSocket closed');
-    };
-
-    roomsSocket.onerror = function(error) {
-        console.error('Rooms WebSocket error: ', error);
-    };
-}
-
-function handleRoomsUpdate(data) {
-    const action = data.action;
-    const room = data.room;
-
-    if (action === 'create') {
-        addRoomToList(room);
-    } else if (action === 'update') {
-        if (room.players >= 2) {
-            removeRoomFromList(room.game_id);
-        } else {
-            updateRoomInList(room);
-        }
-    } else if (action === 'delete') {
-        removeRoomFromList(room.game_id);
-    }
-}
-
-function addRoomToList(room) {
-    const roomsList = document.getElementById('roomsList');
-    const roomElement = createRoomElement(room);
-    roomsList.appendChild(roomElement);
-    document.getElementById('noRoomsMessage').classList.add('d-none');
-    document.getElementById('create-rooms-button').classList.add('d-none');
-}
-
-function updateRoomInList(room) {
-    const roomElement = document.getElementById(`room-${room.game_id}`);
-    if (roomElement) {
-        // Update the player count
-        const small = roomElement.querySelector('small');
-        small.textContent = `${room.players}/2 jogadores`;
-    }
-}
-
-function removeRoomFromList(gameId) {
-    const roomElement = document.getElementById(`room-${gameId}`);
-    if (roomElement) {
-        roomElement.remove();
-    }
-    // Check if rooms list is empty
-    const roomsList = document.getElementById('roomsList');
-    if (roomsList.children.length === 0) {
-        document.getElementById('noRoomsMessage').classList.remove('d-none');
-        document.getElementById('create-rooms-button').classList.remove('d-none');
-    }
-}
-
-function createRoomElement(room) {
-    const roomElement = document.createElement('a');
-    roomElement.href = '#';
-    roomElement.id = `room-${room.game_id}`;
-    roomElement.classList.add('list-group-item', 'list-group-item-action');
-    roomElement.addEventListener('click', () => {
-        joinRoom(room.game_id);
-    });
-
-    const roomHeader = document.createElement('div');
-    roomHeader.classList.add('d-flex', 'w-100', 'justify-content-between');
-
-    const h5 = document.createElement('h5');
-    h5.classList.add('mb-1');
-    h5.textContent = `Sala ${room.game_id.substring(0, 8)}`;
-
-    const small = document.createElement('small');
-    small.textContent = `${room.players}/2 jogadores`;
-
-    roomHeader.appendChild(h5);
-    roomHeader.appendChild(small);
-
-    const p = document.createElement('p');
-    p.classList.add('mb-1');
-    p.textContent = `Criado por: ${room.created_by}`;
-
-    roomElement.appendChild(roomHeader);
-    roomElement.appendChild(p);
-
-    return roomElement;
-}
-
-function fetchAvailableRooms() {
-    fetch('/api/get_available_rooms/', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store',
-        },
-        cache: 'no-store',
-        credentials: 'include',
-    })
-    .then(response => {
-        if (!response.ok) {
-            console.error('Error fetching rooms: ', response.status);
-            return response.text().then(text => { throw new Error(text) });
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('API Response:', data);
-        const rooms = data.rooms_list;
-        const roomsList = document.getElementById('roomsList');
-        roomsList.innerHTML = '';
-
-        if (rooms.length === 0) {
-            document.getElementById('noRoomsMessage').classList.remove('d-none');
-            document.getElementById('create-rooms-button').classList.remove('d-none');
-        } else {
-            rooms.forEach(room => {
-                addRoomToList(room);
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Erro ao obter salas disponíveis: ', error);
-    });
-}
-
-function joinRoom(gameId) {
-    fetch('/api/join_room/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken'),
-        },
-        credentials: 'include',
-        body: JSON.stringify({'game_id': gameId}),
-    })
-    .then(response => {
-        if (!response.ok) {
-            console.error('Error joining room: ', response.status);
-            return response.text().then(text => { throw new Error(text) });
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            window.history.pushState({}, '', `/game-canva?mode=online&game_id=${gameId}`);
-            displaySection(`/game-canva?mode=online&game_id=${gameId}`);
-        } else {
-            alert(data.error);
-            fetchAvailableRooms();
-        }
-    })
-    .catch(error => {
-        console.error('Erro ao entrar na sala: ', error);
-    });
 }
 
 function initRemoteGame(gameId) {
