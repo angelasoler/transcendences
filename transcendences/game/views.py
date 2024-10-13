@@ -3,7 +3,6 @@ from django.http import JsonResponse
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.views.decorators.csrf import csrf_protect
-from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from .decorators import ajax_login_required
 from .models import Room
