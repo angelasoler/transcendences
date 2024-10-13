@@ -6,8 +6,11 @@ from django.contrib.auth.models import User as DjangoUser
 from .service import UserService
 
 
+#Garantindo que os emails sejam unicos
+DjangoUser._meta.get_field('email')._unique    = True
+
 class User(models.Model):
-    manager        = models.OneToOneField(DjangoUser, related_name='profile', on_delete=models.CASCADE )
+    manager     = models.OneToOneField(DjangoUser, related_name='profile', on_delete=models.CASCADE, unique=True )
     avatar_path = models.CharField(max_length=150)
     created_at  = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     updated_at  = models.DateTimeField(auto_now=True, blank=True, null=True)
