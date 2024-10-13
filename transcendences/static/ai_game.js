@@ -4,30 +4,39 @@ import {MovementStrategy} from './game.js';
 export class AIMovementStrategy extends MovementStrategy {
     constructor() {
         super();
-        this.keys = {
-            ArrowUp: false,
-            ArrowDown: false
-        };
+        this.playerKeys = {
+			ArrowUp: false,
+			ArrowDown: false
+		};
+
+        this.aiKeys = {
+			w: false,
+			s: false
+		};
 
         this.currentState = 'waiting';
         this.lastUpdate = 0;
         this.updateInterval = 1000;
         this.predictedIntersection = null;
 
+        document.addEventListener('iaMoveUp', this.moveAIPaddleUp.bind(this));
+        document.addEventListener('iaMoveDown', this.moveAIPaddleDown.bind(this));
+        document.addEventListener('iaStop', this.stopAIPaddle.bind(this));
     }
 
     handleKeyDown(e) {
-        if (e.key === 'ArrowUp') this.keys.ArrowUp = true;
-        if (e.key === 'ArrowDown') this.keys.ArrowDown = true;
-    }
-      
-    handleKeyUp(e) {
-        if (e.key === 'ArrowUp') this.keys.ArrowUp = false;
-        if (e.key === 'ArrowDown') this.keys.ArrowDown = false;
-    }
+		if (['ArrowUp', 'ArrowDown'].includes(e.key)) {
+			this.playerKeys[e.key] = true;
+		}
+	}
 
-    // Máquina de estados da IA
-    updateAI(currentTime) {
+	handleKeyUp(e) {
+		if (['ArrowUp', 'ArrowDown'].includes(e.key)) {
+			this.playerKeys[e.key] = false;
+		}
+	}
+
+    AIDecitionTree(currentTime) {
         if (currentTime - this.lastUpdate < this.updateInterval) {
             return;
         }
@@ -48,6 +57,7 @@ export class AIMovementStrategy extends MovementStrategy {
                 break;
 
             case 'moving':
+                console.log('Moving paddle...');
                 this.movePaddle();
                 if (this.ball.speedX > 0) {
                     this.currentState = 'waiting';
@@ -81,30 +91,64 @@ export class AIMovementStrategy extends MovementStrategy {
 
         const paddleCenter = this.leftPaddle.y + this.paddleHeight / 2;
         const targetDiff = this.predictedIntersection - paddleCenter;
-
         const tolerance = 10;
+        let simulatedKeyEvent;
 
         if (Math.abs(targetDiff) > tolerance) {
             if (targetDiff > 0) {
-                this.leftPaddle.speed = this.paddleSpeed;
+                simulatedKeyEvent = new Event('iaMoveUp');
             } else {
-                this.leftPaddle.speed = -this.paddleSpeed;
+                simulatedKeyEvent = new Event('iaMoveDown');
             }
+        }
+        else {
+            simulatedKeyEvent = new Event('iaStop');
+        }
+        document.dispatchEvent(simulatedKeyEvent);
+    }
+
+    updatePlayerPaddle() {
+        if (this.playerKeys.ArrowUp && !this.playerKeys.ArrowDown) {
+            this.rightPaddle.speed = -this.paddleSpeed;
+        } else if (this.playerKeys.ArrowDown && !this.playerKeys.ArrowUp) {
+            this.rightPaddle.speed = this.paddleSpeed;
+        } else {
+            this.rightPaddle.speed = 0;
+        }
+    }
+
+    updateAIPaddle() {
+        if (this.aiKeys.w && !this.aiKeys.s) {
+            this.leftPaddle.speed = this.paddleSpeed;
+        } else if (this.aiKeys.s && !this.aiKeys.w) {
+            this.leftPaddle.speed = -this.paddleSpeed;
         } else {
             this.leftPaddle.speed = 0;
         }
     }
 
-    update(currentTime) {
-        if (this.keys.ArrowUp && !this.keys.ArrowDown) {
-            this.rightPaddle.speed = -this.paddleSpeed;
-        } else if (this.keys.ArrowDown && !this.keys.ArrowUp) {
-            this.rightPaddle.speed = this.paddleSpeed;
-        } else {
-            this.rightPaddle.speed = 0;
-        }
+    moveAIPaddleUp() {
+        console.log('Moving AI paddle up...');
+        this.aiKeys['w'] = true;
+        this.aiKeys['s'] = false;
+    }
+    
+    moveAIPaddleDown() {
+        console.log('Moving AI paddle down...');
+        this.aiKeys['s'] = true;
+        this.aiKeys['w'] = false;
+    }
+    
+    stopAIPaddle() {
+        console.log('not moving AI paddle...');
+        this.aiKeys['w'] = false;
+        this.aiKeys['s'] = false;
+    }
 
-        this.updateAI(currentTime);
+    update(currentTime) {
+        this.updatePlayerPaddle();
+        this.updateAIPaddle();
+        this.AIDecitionTree(currentTime);
 
         this.leftPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, 
             this.leftPaddle.y + this.leftPaddle.speed));
