@@ -2,11 +2,9 @@ from django.urls import path
 
 from . import views
 
-app_name = 'user'
-
 urlpatterns = [
-    path('', views.index, name='index'),
-    path('api/user/create', views.create, name='create'),
-    path('api/user/update', views.update, name='update'),
-    path('api/user/delete', views.update, name='delete')
+    path('api/user/create', views.create_user, name='create_user'),
+    path('api/user/update', views.update_user, name='update_user'),
+    path('api/user/login',  views.login_user,  name='login_user'),
+    path('api/user/add_friends',  views.user_add_friend,  name='user_add_friend')
 ]
