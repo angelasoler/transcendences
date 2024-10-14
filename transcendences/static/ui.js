@@ -1,7 +1,4 @@
-// import {initGame} from "./game.js";
 import { registerUser, loginUser, logoutUser } from './auth.js';
-// import { LocalMovementStrategy } from './local_game.js'
-// import { OnlineMovementStrategy } from './remote_game.js'
 import { RemotePlay } from './remote_game.js';
 import { LocalPlay } from './local_game.js';
 
@@ -98,13 +95,14 @@ const displaySection = async (route) => {
             document.getElementById('players-nicknames').addEventListener('submit', localMatch);
             break;
         case 'game-canva':
+            const canvas = document.getElementById('gameCanvas');
             if (gameMode === 'online') {
                 let websocket = initRemoteGame('new');
-                const remoteGame = new RemotePlay(websocket);
+                const remoteGame = new RemotePlay(canvas, websocket);
                 remoteGame.startGame();
             }
             else if (gameMode === 'local') {
-                const localGame = new LocalPlay();
+                const localGame = new LocalPlay(canvas);
                 localGame.startGame();
             }
             break;

@@ -1,130 +1,10 @@
-import { PongGame } from './game.js';
+// static/your_app/js/remote_game.js
 
-// export class OnlineMovementStrategy extends MovementStrategy {
-//     constructor(websocket) {
-//         super();
-//         this.websocket = websocket;
-//         this.isHost = false;
+import { BaseGame } from './game.js';
 
-//         this.start = false;
-
-//         this.keys = {
-//             up: false,
-//             down: false
-//         };
-
-//         this.setupWebSocket();
-//     }
-
-//     setupWebSocket() {
-//         this.websocket.onmessage = (event) => {
-//             const data = JSON.parse(event.data);
-//             this.handleWebSocketMessage(data);
-//         };
-//     }
-
-//     handleWebSocketMessage(data) {
-//         switch(data.type) {
-//             case 'game_status':
-//                 this.isHost = data.is_host;
-//                 break;
-//             case 'game_start':
-//                 this.start = true;
-//                 break;
-//             case 'game_state':
-//                 if (this.isHost) {
-//                     this.rightPaddle.y = data.opponent_paddle;
-//                 } else {
-//                     this.leftPaddle.y = data.opponent_paddle;
-//                     this.ball = data.ball;
-//                 }
-//                 break;
-//             case 'game_end':
-//                 this.closeGame();
-//                 break;
-//         }
-//     }
-      
-//     handleKeyDown(e) {
-//         if (e.key === 'ArrowUp') this.keys.up = true;
-//         if (e.key === 'ArrowDown') this.keys.down = true;
-//     }
-      
-//     handleKeyUp(e) {
-//         if (e.key === 'ArrowUp') this.keys.up = false;
-//         if (e.key === 'ArrowDown') this.keys.down = false;
-//     }
-      
-//     update() {
-//         let paddleSpeed = 0;
-//         if (this.keys.up && !this.keys.down) paddleSpeed = -this.paddleSpeed;
-//         else if (this.keys.down && !this.keys.up) paddleSpeed = this.paddleSpeed;
-
-//         if (this.isHost) {
-//             this.leftPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, 
-//                 this.leftPaddle.y + paddleSpeed));
-            
-//             // Host atualiza a bola
-//             this.updateBall();
-            
-//             // Envia estado do jogo
-//             this.sendGameState(this.leftPaddle.y);
-//         } else {
-//             this.rightPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, 
-//                 this.rightPaddle.y + paddleSpeed));
-            
-//             // Client envia apenas sua posição
-//             this.sendGameState(this.rightPaddle.y);
-//         }
-//     }
-
-//     //deve virar server side
-//     updateBall() {
-//         this.ball.x += this.ball.speedX;
-//         this.ball.y += this.ball.speedY;
-        
-//         if (this.ball.y <= 0 || this.ball.y >= this.canvas.height) {
-//             this.ball.speedY = -this.ball.speedY;
-//         }
-
-//         if (this.checkPaddleCollision(this.leftPaddle, true) || 
-//             this.checkPaddleCollision(this.rightPaddle, false)) {
-//             this.ball.speedX = -this.ball.speedX;
-//         }
-
-//         if (this.ball.x < 0 || this.ball.x > this.canvas.width) {
-//             this.resetBall();
-//         }
-//     }
-
-//     sendGameState(paddleY) {
-//         const gameState = {
-//             type: 'paddle_update',
-//             paddle_y: paddleY
-//         };
-
-//         if (this.isHost) {
-//             gameState.ball = this.ball;
-//         }
-
-//         this.websocket.send(JSON.stringify(gameState));
-//     }
-
-//     closeGame() {
-//         console.log('Game closed');
-//         this.isRunning = false;
-//         if (this.animationFrameId) {
-//             cancelAnimationFrame(this.animationFrameId);
-//         }
-//         this.websocket.close();
-//         document.removeEventListener('keydown', this.handleKeyDown);
-//         document.removeEventListener('keyup', this.handleKeyUp);
-//     }
-// }
-
-export class RemotePlay {
+export class RemotePlay extends BaseGame {
     constructor(canvas, socket) {
-        this.game = new PongGame(canvas);
+        super(canvas);
         this.socket = socket;
         this.isHost = false;
 
@@ -142,15 +22,15 @@ export class RemotePlay {
 
         this.socket.on('game_start', (data) => {
             this.isHost = data.isHost;
-            this.game.start = true;
+            this.start = true;
         });
 
         this.socket.on('paddle_update', (data) => {
-            this.game.updatePaddlePosition(data.side, data.newY);
+            this.updatePaddlePosition(data.side, data.newY);
         });
 
         this.socket.on('ball_update', (data) => {
-            this.game.updateBallPosition(data.x, data.y);
+            this.ball.position.set(data.x, data.y, 0);
         });
     }
 
@@ -164,11 +44,25 @@ export class RemotePlay {
         }
     }
 
+    update() {
+        super.update();
+
+        // Send paddle and ball updates to the server
+        this.sendPaddleUpdate(this.leftPaddle.position.y);
+        if (this.isHost) {
+            this.sendBallUpdate(this.ball.position.x, this.ball.position.y);
+        }
+    }
+
     startGame() {
         this.socket.emit('start_game');
+        this.start = true;
+        this.intervalId = setInterval(() => this.update(), 16); // 60 FPS
     }
 
     endGame() {
         this.socket.emit('end_game');
+        this.start = false;
+        clearInterval(this.intervalId);
     }
 }
