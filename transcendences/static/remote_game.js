@@ -65,7 +65,7 @@ export class OnlineMovementStrategy extends MovementStrategy {
                 this.leftPaddle.y + paddleSpeed));
             
             // Host atualiza a bola
-            this.updateBall();
+            this.updateGameEngine();
             
             // Envia estado do jogo
             this.sendGameState(this.leftPaddle.y);
@@ -75,25 +75,6 @@ export class OnlineMovementStrategy extends MovementStrategy {
             
             // Client envia apenas sua posição
             this.sendGameState(this.rightPaddle.y);
-        }
-    }
-
-    //deve virar server side
-    updateBall() {
-        this.ball.x += this.ball.speedX;
-        this.ball.y += this.ball.speedY;
-        
-        if (this.ball.y <= 0 || this.ball.y >= this.canvas.height) {
-            this.ball.speedY = -this.ball.speedY;
-        }
-
-        if (this.checkPaddleCollision(this.leftPaddle, true) || 
-            this.checkPaddleCollision(this.rightPaddle, false)) {
-            this.ball.speedX = -this.ball.speedX;
-        }
-
-        if (this.ball.x < 0 || this.ball.x > this.canvas.width) {
-            this.resetBall();
         }
     }
 

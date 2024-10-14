@@ -1,3 +1,4 @@
+import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
 export { MovementStrategy };
 
 export let canvas;
@@ -59,13 +60,14 @@ class MovementStrategy {
 
     }
 
-    closeGame() {
-        throw new Error('Método close deve ser implementado');
-    }
-
-    update() {
-        throw new Error('Método update deve ser implementado');
-    }
+	updateGameEngine() {
+        this.updateBall();
+        this.handleBallCollision();
+        if (this.checkPaddleCollision(this.leftPaddle, true) || 
+        this.checkPaddleCollision(this.rightPaddle, false)) {
+            this.ball.speedX = -this.ball.speedX;
+        }
+	}
 
     draw () {
         this.ctx.fillStyle = 'black';
@@ -101,5 +103,28 @@ class MovementStrategy {
         this.ball.x = this.canvas.width / 2;
         this.ball.y = this.canvas.height / 2;
         this.ball.speedX = -this.ball.speedX;
+    }
+
+
+    handleBallCollision() {
+        if (this.ball.y <= 0 || this.ball.y >= this.canvas.height) {
+            this.ball.speedY = -this.ball.speedY;
+        }
+        if (this.ball.x < 0 || this.ball.x > this.canvas.width) {
+            this.resetBall();
+        }
+    }
+
+    updateBall() {
+        this.ball.x += this.ball.speedX;
+        this.ball.y += this.ball.speedY;
+    }
+
+    closeGame() {
+        throw new Error('Método close deve ser implementado');
+    }
+
+    update() {
+        throw new Error('Método update deve ser implementado');
     }
 }

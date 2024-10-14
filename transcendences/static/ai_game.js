@@ -1,10 +1,6 @@
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
 import {LocalMovementStrategy} from './local_game.js';
 
-// TO-DO
-// [_] ai game deve herdar de local
-// [_] evitar repetição de codigo
-
 export class AIMovementStrategy extends LocalMovementStrategy {
     constructor() {
         super();
@@ -89,7 +85,7 @@ export class AIMovementStrategy extends LocalMovementStrategy {
         }
     }
 
-    updateAIPaddle() {
+    moveAIPaddle() {
         if (this.aiKeys.w && !this.aiKeys.s) {
             this.leftPaddle.speed = -this.paddleSpeed;
         } else if (this.aiKeys.s && !this.aiKeys.w) {
@@ -118,9 +114,10 @@ export class AIMovementStrategy extends LocalMovementStrategy {
     }
 
     update() {
-        this.updateRightPaddle();
-        this.updateAIPaddle();
+        this.moveRightPaddle();
+        this.moveAIPaddle();
         this.AIDecitionTree();
+        this.updatePaddles();
         this.updateGameEngine();
     }
 }

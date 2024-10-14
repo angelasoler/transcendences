@@ -25,30 +25,14 @@ export class LocalMovementStrategy extends MovementStrategy {
 		}
 	}
 
-	updateGameEngine() {
+	updatePaddles() {
 		this.leftPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, 
             this.leftPaddle.y + this.leftPaddle.speed));
         this.rightPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, 
             this.rightPaddle.y + this.rightPaddle.speed));
-
-        this.ball.x += this.ball.speedX;
-        this.ball.y += this.ball.speedY;
-
-        if (this.ball.y <= 0 || this.ball.y >= this.canvas.height) {
-            this.ball.speedY = -this.ball.speedY;
-        }
-
-        if (this.checkPaddleCollision(this.leftPaddle, true) || 
-            this.checkPaddleCollision(this.rightPaddle, false)) {
-            this.ball.speedX = -this.ball.speedX;
-        }
-
-        if (this.ball.x < 0 || this.ball.x > this.canvas.width) {
-            this.resetBall();
-        }
 	}
 
-	updateRightPaddle() {
+	moveRightPaddle() {
 		if (this.playerKeys.ArrowUp && !this.playerKeys.ArrowDown)
 			this.rightPaddle.speed = -this.paddleSpeed;
 		else if (this.playerKeys.ArrowDown && !this.playerKeys.ArrowUp)
@@ -57,7 +41,7 @@ export class LocalMovementStrategy extends MovementStrategy {
 			this.rightPaddle.speed = 0;
 	}
 
-	updateLeftPaddle() {
+	moveLeftPaddle() {
 		if (this.playerKeys.w && !this.playerKeys.s)
 			this.leftPaddle.speed = -this.paddleSpeed;
 		else if (this.playerKeys.s && !this.playerKeys.w)
@@ -67,8 +51,9 @@ export class LocalMovementStrategy extends MovementStrategy {
 	}
 
 	update() {
-		this.updateRightPaddle();
-		this.updateLeftPaddle();
+		this.moveRightPaddle();
+		this.moveLeftPaddle();
+		this.updatePaddles();
 		this.updateGameEngine();
 	}
 
