@@ -36,53 +36,32 @@ export class AIMovementStrategy extends MovementStrategy {
 		}
 	}
 
-    AIDecitionTree(currentTime) {
-        if (currentTime - this.lastUpdate < this.updateInterval) {
-            return;
-        }
-        this.lastUpdate = currentTime;
-
-        switch (this.currentState) {
-            case 'waiting':
-                console.log('Waiting for ball to move...');
-                if (this.ball.speedX < 0) {
-                    this.currentState = 'calculating';
-                }
-                break;
-
-            case 'calculating':
-                console.log('Calculating trajectory...');
+    AIDecitionTree() {
+        if (this.currentTime - this.lastUpdate >= this.updateInterval) {
+            this.lastUpdate = this.currentTime;
+            if (this.ball.speedX < 0
+                && this.ball.x < this.canvas.width / 2
+            ) {
                 this.calculateTrajectory();
-                this.currentState = 'moving';
-                break;
-
-            case 'moving':
-                console.log('Moving paddle...');
-                this.movePaddle();
-                if (this.ball.speedX > 0) {
-                    this.currentState = 'waiting';
-                }
-                break;
+                console.log('1 seg has pass...', this.predictedIntersection);
+            }
         }
+        this.movePaddle();
     }
 
     calculateTrajectory() {
         const ballPos = new THREE.Vector2(this.ball.x, this.ball.y);
         const ballVelocity = new THREE.Vector2(this.ball.speedX, this.ball.speedY);
-        
         const timeToPaddle = (this.paddleWidth - ballPos.x) / ballVelocity.x;
         const intersectionY = ballPos.y + ballVelocity.y * timeToPaddle;
-
-
         let futureY = intersectionY;
         const canvasHeight = this.canvas.height;
-        
+    
         if (futureY < 0) {
             futureY = Math.abs(futureY);
         } else if (futureY > canvasHeight) {
             futureY = canvasHeight - (futureY - canvasHeight);
         }
-
         this.predictedIntersection = futureY;
     }
 
@@ -90,21 +69,19 @@ export class AIMovementStrategy extends MovementStrategy {
         if (this.predictedIntersection === null) return;
 
         const paddleCenter = this.leftPaddle.y + this.paddleHeight / 2;
-        const targetDiff = this.predictedIntersection - paddleCenter;
         const tolerance = 10;
         let simulatedKeyEvent;
 
-        if (Math.abs(targetDiff) > tolerance) {
-            if (targetDiff > 0) {
-                simulatedKeyEvent = new Event('iaMoveUp');
-            } else {
-                simulatedKeyEvent = new Event('iaMoveDown');
-            }
-        }
-        else {
+        if (Math.abs(paddleCenter - this.predictedIntersection) < tolerance) {
             simulatedKeyEvent = new Event('iaStop');
+            document.dispatchEvent(simulatedKeyEvent);
+        } else if (paddleCenter < this.predictedIntersection) {
+            simulatedKeyEvent = new Event('iaMoveDown');
+            document.dispatchEvent(simulatedKeyEvent);
+        } else if (paddleCenter > this.predictedIntersection) {
+            simulatedKeyEvent = new Event('iaMoveUp');
+            document.dispatchEvent(simulatedKeyEvent);
         }
-        document.dispatchEvent(simulatedKeyEvent);
     }
 
     updatePlayerPaddle() {
@@ -119,9 +96,9 @@ export class AIMovementStrategy extends MovementStrategy {
 
     updateAIPaddle() {
         if (this.aiKeys.w && !this.aiKeys.s) {
-            this.leftPaddle.speed = this.paddleSpeed;
-        } else if (this.aiKeys.s && !this.aiKeys.w) {
             this.leftPaddle.speed = -this.paddleSpeed;
+        } else if (this.aiKeys.s && !this.aiKeys.w) {
+            this.leftPaddle.speed = this.paddleSpeed;
         } else {
             this.leftPaddle.speed = 0;
         }
@@ -145,10 +122,10 @@ export class AIMovementStrategy extends MovementStrategy {
         this.aiKeys['s'] = false;
     }
 
-    update(currentTime) {
+    update() {
         this.updatePlayerPaddle();
         this.updateAIPaddle();
-        this.AIDecitionTree(currentTime);
+        this.AIDecitionTree();
 
         this.leftPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, 
             this.leftPaddle.y + this.leftPaddle.speed));

@@ -82,6 +82,7 @@ class MovementStrategy {
         this.ctx.fill();
     }
 
+    // revisar collisao, tem bug
     checkPaddleCollision(paddle, isLeft) {
         const paddleX = isLeft ? this.paddleWidth : this.canvas.width - this.paddleWidth;
 
