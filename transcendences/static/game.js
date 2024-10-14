@@ -82,15 +82,19 @@ class MovementStrategy {
         this.ctx.fill();
     }
 
-    // revisar collisao, tem bug
     checkPaddleCollision(paddle, isLeft) {
         const paddleX = isLeft ? this.paddleWidth : this.canvas.width - this.paddleWidth;
+        const withinPaddleYRange = this.ball.y >= paddle.y && this.ball.y <= paddle.y + this.paddleHeight;
+    
+        if (!withinPaddleYRange) {
+            return false;
+        }
 
-        return this.ball.y >= paddle.y && 
-               this.ball.y <= paddle.y + this.paddleHeight &&
-               (isLeft ? 
-                 this.ball.x <= paddleX + this.paddleWidth && this.ball.x >= paddleX :
-                 this.ball.x >= paddleX - this.paddleWidth && this.ball.x <= paddleX);
+        if (isLeft) {
+            return this.ball.x >= paddleX && this.ball.x <= paddleX + this.paddleWidth;
+        } else {
+            return this.ball.x <= paddleX && this.ball.x >= paddleX - this.paddleWidth;
+        }
     }
 
     resetBall() {

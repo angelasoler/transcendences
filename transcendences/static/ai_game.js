@@ -1,6 +1,10 @@
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
 import {MovementStrategy} from './game.js';
 
+// TO-DO
+// [_] ai game deve herdar de local
+// [_] evitar repetição de codigo
+
 export class AIMovementStrategy extends MovementStrategy {
     constructor() {
         super();
