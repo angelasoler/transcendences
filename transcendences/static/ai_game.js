@@ -40,8 +40,8 @@ export class AIMovementStrategy extends LocalMovementStrategy {
         if (this.currentTime - this.lastUpdate >= this.updateInterval) {
             this.lastUpdate = this.currentTime;
             console.log('1 seg has pass...', this.predictedIntersection);
-            if (this.ball.speedX < 0
-                && this.ball.x < this.canvas.width / 2
+            if (this.ball.speed.x < 0
+                && this.ball.pos.x < this.canvas.width / 2
             ) {
                 console.log('Calculating...', this.predictedIntersection);
                 this.calculateTrajectory();
@@ -51,8 +51,8 @@ export class AIMovementStrategy extends LocalMovementStrategy {
     }
 
     calculateTrajectory() {
-        const ballPos = new THREE.Vector2(this.ball.x, this.ball.y);
-        const ballVelocity = new THREE.Vector2(this.ball.speedX, this.ball.speedY);
+        const ballPos = new THREE.Vector2(this.ball.pos.x, this.ball.pos.y);
+        const ballVelocity = new THREE.Vector2(this.ball.speed.x, this.ball.speed.y);
         const timeToPaddle = (this.paddleWidth - ballPos.x) / ballVelocity.x;
         const intersectionY = ballPos.y + ballVelocity.y * timeToPaddle;
         let futureY = intersectionY;

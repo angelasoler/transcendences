@@ -45,12 +45,10 @@ class MovementStrategy {
             y: this.canvas.height / 2 - this.paddleHeight / 2,
             speed: 0
         };
-          
+
         this.ball = {
-            x: this.canvas.width / 2,
-            y: this.canvas.height / 2,
-            speedX: 3,
-            speedY: 3
+            pos: new THREE.Vector2(this.canvas.width / 2, this.canvas.height / 2),
+            speed: new THREE.Vector2(3, 3),
         };
 
         document.addEventListener('keydown', this.handleKeyDown.bind(this));
@@ -63,10 +61,8 @@ class MovementStrategy {
 	updateGameEngine() {
         this.updateBall();
         this.handleBallCollision();
-        if (this.checkPaddleCollision(this.leftPaddle, true) || 
-        this.checkPaddleCollision(this.rightPaddle, false)) {
-            this.ball.speedX = -this.ball.speedX;
-        }
+        this.checkPaddleCollision(this.leftPaddle, true);
+        this.checkPaddleCollision(this.rightPaddle, false);
 	}
 
     draw () {
@@ -80,44 +76,44 @@ class MovementStrategy {
         this.ctx.fillRect(this.canvas.width - this.paddleWidth, this.rightPaddle.y, this.paddleWidth, this.paddleHeight);
     
         this.ctx.beginPath();
-        this.ctx.arc(this.ball.x, this.ball.y, this.ballRadius, 0, Math.PI * 2);
+        this.ctx.arc(this.ball.pos.x, this.ball.pos.y, this.ballRadius, 0, Math.PI * 2);
         this.ctx.fill();
     }
 
     checkPaddleCollision(paddle, isLeft) {
         const paddleX = isLeft ? this.paddleWidth : this.canvas.width - this.paddleWidth;
-        const withinPaddleYRange = this.ball.y >= paddle.y && this.ball.y <= paddle.y + this.paddleHeight;
-    
-        if (!withinPaddleYRange) {
-            return false;
-        }
+        const withinPaddleYRange = this.ball.pos.y >= paddle.y && this.ball.pos.y <= paddle.y + this.paddleHeight;
 
-        if (isLeft) {
-            return this.ball.x >= paddleX && this.ball.x <= paddleX + this.paddleWidth;
-        } else {
-            return this.ball.x <= paddleX && this.ball.x >= paddleX - this.paddleWidth;
+        if (withinPaddleYRange) {
+            if ((isLeft && this.ball.pos.x <= paddleX + this.paddleWidth) ||
+                (!isLeft && this.ball.pos.x >= paddleX - this.paddleWidth)) {
+                    this.ball.speed.x = -this.ball.speed.x;
+                    const spin = new THREE.Vector2(0, paddle.speed * 0.1);
+                    this.ball.speed.add(spin);
+            }
         }
     }
 
     resetBall() {
-        this.ball.x = this.canvas.width / 2;
-        this.ball.y = this.canvas.height / 2;
-        this.ball.speedX = -this.ball.speedX;
+        this.ball.pos.set(this.canvas.width / 2, this.canvas.height / 2);
+        this.ball.speed.set((Math.random() > 0.5 ? 1 : -1) * 3, (Math.random() > 0.5 ? 1 : -1) * 3);
     }
 
 
     handleBallCollision() {
-        if (this.ball.y <= 0 || this.ball.y >= this.canvas.height) {
-            this.ball.speedY = -this.ball.speedY;
+        if (this.ball.pos.y <= 0 || this.ball.pos.y >= this.canvas.height) {
+            const normal = new THREE.Vector2(0, 1);
+            const dotProduct = this.ball.speed.dot(normal);
+            const reflection = normal.clone().multiplyScalar(2 * dotProduct);
+            this.ball.speed.sub(reflection);
         }
-        if (this.ball.x < 0 || this.ball.x > this.canvas.width) {
+        if (this.ball.pos.x < 0 || this.ball.pos.x > this.canvas.width) {
             this.resetBall();
         }
     }
 
     updateBall() {
-        this.ball.x += this.ball.speedX;
-        this.ball.y += this.ball.speedY;
+        this.ball.pos.add(this.ball.speed);
     }
 
     closeGame() {
