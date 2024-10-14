@@ -1,11 +1,11 @@
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
-import {MovementStrategy} from './game.js';
+import {LocalMovementStrategy} from './local_game.js';
 
 // TO-DO
 // [_] ai game deve herdar de local
 // [_] evitar repetição de codigo
 
-export class AIMovementStrategy extends MovementStrategy {
+export class AIMovementStrategy extends LocalMovementStrategy {
     constructor() {
         super();
         this.playerKeys = {
@@ -43,11 +43,12 @@ export class AIMovementStrategy extends MovementStrategy {
     AIDecitionTree() {
         if (this.currentTime - this.lastUpdate >= this.updateInterval) {
             this.lastUpdate = this.currentTime;
+            console.log('1 seg has pass...', this.predictedIntersection);
             if (this.ball.speedX < 0
                 && this.ball.x < this.canvas.width / 2
             ) {
+                console.log('Calculating...', this.predictedIntersection);
                 this.calculateTrajectory();
-                console.log('1 seg has pass...', this.predictedIntersection);
             }
         }
         this.movePaddle();
@@ -88,16 +89,6 @@ export class AIMovementStrategy extends MovementStrategy {
         }
     }
 
-    updatePlayerPaddle() {
-        if (this.playerKeys.ArrowUp && !this.playerKeys.ArrowDown) {
-            this.rightPaddle.speed = -this.paddleSpeed;
-        } else if (this.playerKeys.ArrowDown && !this.playerKeys.ArrowUp) {
-            this.rightPaddle.speed = this.paddleSpeed;
-        } else {
-            this.rightPaddle.speed = 0;
-        }
-    }
-
     updateAIPaddle() {
         if (this.aiKeys.w && !this.aiKeys.s) {
             this.leftPaddle.speed = -this.paddleSpeed;
@@ -109,57 +100,27 @@ export class AIMovementStrategy extends MovementStrategy {
     }
 
     moveAIPaddleUp() {
-        console.log('Moving AI paddle up...');
+        // console.log('Moving AI paddle up...');
         this.aiKeys['w'] = true;
         this.aiKeys['s'] = false;
     }
     
     moveAIPaddleDown() {
-        console.log('Moving AI paddle down...');
+        // console.log('Moving AI paddle down...');
         this.aiKeys['s'] = true;
         this.aiKeys['w'] = false;
     }
     
     stopAIPaddle() {
-        console.log('not moving AI paddle...');
+        // console.log('not moving AI paddle...');
         this.aiKeys['w'] = false;
         this.aiKeys['s'] = false;
     }
 
     update() {
-        this.updatePlayerPaddle();
+        this.updateRightPaddle();
         this.updateAIPaddle();
         this.AIDecitionTree();
-
-        this.leftPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, 
-            this.leftPaddle.y + this.leftPaddle.speed));
-        this.rightPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, 
-            this.rightPaddle.y + this.rightPaddle.speed));
-
-        this.ball.x += this.ball.speedX;
-        this.ball.y += this.ball.speedY;
-
-        if (this.ball.y <= 0 || this.ball.y >= this.canvas.height) {
-            this.ball.speedY = -this.ball.speedY;
-        }
-
-        if (this.checkPaddleCollision(this.leftPaddle, true) || 
-            this.checkPaddleCollision(this.rightPaddle, false)) {
-            this.ball.speedX = -this.ball.speedX;
-        }
-
-        if (this.ball.x < 0 || this.ball.x > this.canvas.width) {
-            this.resetBall();
-        }
+        this.updateGameEngine();
     }
-
-    closeGame() {
-		console.log('Game closed');
-		this.isRunning = false;
-		if (this.animationFrameId) {
-			cancelAnimationFrame(this.animationFrameId);
-		}
-		document.removeEventListener('keydown', this.handleKeyDown);
-		document.removeEventListener('keyup', this.handleKeyUp);
-	}
 }

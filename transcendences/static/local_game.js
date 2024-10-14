@@ -5,7 +5,7 @@ export class LocalMovementStrategy extends MovementStrategy {
 	constructor() {
 		super();
 
-		this.keys = {
+		this.playerKeys = {
 			w: false,
 			s: false,
 			ArrowUp: false,
@@ -15,54 +15,61 @@ export class LocalMovementStrategy extends MovementStrategy {
 
 	handleKeyDown(e) {
 		if (['w', 's', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
-			this.keys[e.key] = true;
+			this.playerKeys[e.key] = true;
 		}
 	}
 
 	handleKeyUp(e) {
 		if (['w', 's', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
-			this.keys[e.key] = false;
+			this.playerKeys[e.key] = false;
 		}
 	}
 
-	update() {
-		// calculo paddle esquerdo
-		if (this.keys.w && !this.keys.s)
-			this.leftPaddle.speed = -this.paddleSpeed;
-		else if (this.keys.s && !this.keys.w)
-			this.leftPaddle.speed = this.paddleSpeed;
-		else
-			this.leftPaddle.speed = 0;
+	updateGameEngine() {
+		this.leftPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, 
+            this.leftPaddle.y + this.leftPaddle.speed));
+        this.rightPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, 
+            this.rightPaddle.y + this.rightPaddle.speed));
 
-		// calculo paddle direito
-		if (this.keys.ArrowUp && !this.keys.ArrowDown)
+        this.ball.x += this.ball.speedX;
+        this.ball.y += this.ball.speedY;
+
+        if (this.ball.y <= 0 || this.ball.y >= this.canvas.height) {
+            this.ball.speedY = -this.ball.speedY;
+        }
+
+        if (this.checkPaddleCollision(this.leftPaddle, true) || 
+            this.checkPaddleCollision(this.rightPaddle, false)) {
+            this.ball.speedX = -this.ball.speedX;
+        }
+
+        if (this.ball.x < 0 || this.ball.x > this.canvas.width) {
+            this.resetBall();
+        }
+	}
+
+	updateRightPaddle() {
+		if (this.playerKeys.ArrowUp && !this.playerKeys.ArrowDown)
 			this.rightPaddle.speed = -this.paddleSpeed;
-		else if (this.keys.ArrowDown && !this.keys.ArrowUp)
+		else if (this.playerKeys.ArrowDown && !this.playerKeys.ArrowUp)
 			this.rightPaddle.speed = this.paddleSpeed;
 		else
 			this.rightPaddle.speed = 0;
+	}
 
-		// Atualiza posição dos paddles
-		this.leftPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, this.leftPaddle.y + this.leftPaddle.speed));
-		this.rightPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, this.rightPaddle.y + this.rightPaddle.speed));
+	updateLeftPaddle() {
+		if (this.playerKeys.w && !this.playerKeys.s)
+			this.leftPaddle.speed = -this.paddleSpeed;
+		else if (this.playerKeys.s && !this.playerKeys.w)
+			this.leftPaddle.speed = this.paddleSpeed;
+		else
+			this.leftPaddle.speed = 0;
+	}
 
-
-		this.ball.x += this.ball.speedX;
-		this.ball.y += this.ball.speedY;
-		
-		// Colisão com as paredes superior e inferior
-		if (this.ball.y <= 0 || this.ball.y >= this.canvas.height) {
-			this.ball.speedY = -this.ball.speedY;
-		}
-
-		if (this.checkPaddleCollision(this.leftPaddle, true) || 
-			this.checkPaddleCollision(this.rightPaddle, false)) {
-			this.ball.speedX = -this.ball.speedX;
-		}
-
-		if (this.ball.x < 0 || this.ball.x > this.canvas.width) {
-			this.resetBall();
-		}
+	update() {
+		this.updateRightPaddle();
+		this.updateLeftPaddle();
+		this.updateGameEngine();
 	}
 
 	closeGame() {
