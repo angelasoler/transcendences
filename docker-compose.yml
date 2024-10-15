@@ -27,7 +27,7 @@ services:
       - "8000:8000"
     depends_on:
       - db
-      
+
   ngrok:
       build:
         context: .
@@ -41,9 +41,6 @@ services:
       networks:
         - default
       restart: unless-stopped
-
-      - redis
-
   test:
     build:
       context: .
