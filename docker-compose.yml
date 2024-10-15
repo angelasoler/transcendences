@@ -34,8 +34,6 @@ services:
       build:
         context: .
         dockerfile: Dockerfile.ngrok
-      depends_on:
-        - web
       environment:
         - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
       ports:
