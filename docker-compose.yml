@@ -11,6 +11,19 @@ services:
     image: transcendence/redis:latest
     ports:
       - "6379:6379"
+
+  ngrok:
+      build:
+        context: .
+        dockerfile: Dockerfile.ngrok
+      environment:
+        - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+      ports:
+        - "4040:4040"  
+      networks:
+        - default
+      restart: unless-stopped
+      
   web:
     build:
       context: .
@@ -29,18 +42,7 @@ services:
       - db
       - redis
       - ngrok
-
-  ngrok:
-      build:
-        context: .
-        dockerfile: Dockerfile.ngrok
-      environment:
-        - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
-      ports:
-        - "4040:4040"  
-      networks:
-        - default
-      restart: unless-stopped
+  
   test:
     build:
       context: .
