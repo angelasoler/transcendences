@@ -16,6 +16,5 @@ EXPOSE 8000
 COPY ./transcendences/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
 
 RUN chmod +x /usr/bin/docker-entrypoint.sh
-ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
