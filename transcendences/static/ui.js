@@ -2,6 +2,7 @@ import {initGame} from "./game.js";
 import { registerUser, loginUser, logoutUser } from './auth.js';
 import { LocalMovementStrategy } from './local_game.js'
 import { OnlineMovementStrategy } from './remote_game.js'
+import { AIMovementStrategy } from './ai_game.js'
 
 export const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournaments'];
 
@@ -99,9 +100,10 @@ const displaySection = async (route) => {
             if (gameMode === 'online') {
                 let websocket = initRemoteGame('new');
                 MovementStrategy = new OnlineMovementStrategy(websocket);
-            }
-            else if (gameMode === 'local') {
+            } else if (gameMode === 'local') {
                 MovementStrategy = new LocalMovementStrategy();
+            } else if (gameMode === 'ia') {
+                MovementStrategy = new AIMovementStrategy();
             }
             initGame(MovementStrategy);
             break;
