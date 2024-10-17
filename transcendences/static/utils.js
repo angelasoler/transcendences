@@ -15,6 +15,27 @@ export const getCookie = (name) => {
     return cookieValue;
 };
 
+export function closeModal() {
+    // Close the modal and remove any backdrops
+    const modals = document.querySelectorAll('.modal.show');
+    modals.forEach(modal => {
+        // Get the Bootstrap Modal instance
+        let modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) {
+            // If the instance exists, hide the modal
+            modalInstance.hide();
+        } else {
+            // If no instance exists (unlikely for shown modals), create one and hide it
+            modalInstance = new bootstrap.Modal(modal);
+            modalInstance.hide();
+        }
+    });
+
+    // Remove all existing backdrops
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => backdrop.remove());
+}
+
 // not being used for now
 export const loadLoader = async (loader) => {
     try {

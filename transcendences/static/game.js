@@ -9,8 +9,10 @@ export function initGame(mvStrategy) {
 
 export const gameLoop = (mvStrategy) => {
     // console.log('Game loop');
-    if (!mvStrategy.isRunning)
-        return ;
+    if (!mvStrategy.isRunning) {
+        console.log('Game loop stopped.');
+        return;
+    }
     if (mvStrategy.start) {
         mvStrategy.update();
         mvStrategy.draw();
@@ -23,6 +25,8 @@ class MovementStrategy {
         this.start = true;
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
+        this.my_score = 0;
+        this.opponent_score = 0;
 
         this.isRunning = true;
         this.animationFrameId = null;
@@ -72,11 +76,27 @@ class MovementStrategy {
         throw new Error('Método close deve ser implementado');
     }
 
+    displayWinnerMessage() {
+        throw new Error('Método displayWinnerMessage deve ser implementado');
+    }
+
+    handlePlayAgain() {
+        throw new Error('Método handlePlayAgain deve ser implementado');
+    }
+
+    resetGame() {
+        throw new Error('Método resetGame deve ser implementado');
+    }
+
     update() {
         throw new Error('Método update deve ser implementado');
     }
 
     draw () {
+        if (!this.ball) {
+            console.warn('Ball is undefined. Skipping draw.');
+            return;
+        }
         this.ctx.fillStyle = 'black';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     

@@ -2,7 +2,7 @@ import {initGame} from "./game.js";
 import { registerUser, loginUser, logoutUser } from './auth.js';
 import { LocalMovementStrategy } from './local_game.js'
 import { OnlineMovementStrategy } from './remote_game.js'
-import {getCookie} from "./utils.js";
+import {closeModal, getCookie} from "./utils.js";
 
 export const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournaments'];
 let roomsSocket;
@@ -106,20 +106,7 @@ const joinOrCreateRemoteRoom = (e) => {
     });
 }
 
-function closeModal() {
-    // Close the modal and remove any backdrops
-    const modals = document.querySelectorAll('.modal');
-    modals.forEach(modal => {
-        modal.classList.remove('show');
-        modal.style.display = 'none';
-        modal.setAttribute('aria-hidden', 'true');
-    });
-    // Remove modal backdrop
-    const backdrops = document.querySelectorAll('.modal-backdrop');
-    backdrops.forEach(backdrop => {
-        backdrop.parentNode.removeChild(backdrop);
-    });
-}
+
 
 const displaySection = async (route) => {
     // chama closeGame() se estiver dentro de um jogo e mudar de view
