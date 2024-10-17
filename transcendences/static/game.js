@@ -76,17 +76,18 @@ class MovementStrategy {
         throw new Error('Método close deve ser implementado');
     }
 
-    displayWinnerMessage() {
-        throw new Error('Método displayWinnerMessage deve ser implementado');
-    }
-
-    handlePlayAgain() {
-        throw new Error('Método handlePlayAgain deve ser implementado');
-    }
-
-    resetGame() {
-        throw new Error('Método resetGame deve ser implementado');
-    }
+    // Descomentar depois que implementar esses métodos no local_game!
+    // displayWinnerMessage() {
+    //     throw new Error('Método displayWinnerMessage deve ser implementado');
+    // }
+    //
+    // handlePlayAgain() {
+    //     throw new Error('Método handlePlayAgain deve ser implementado');
+    // }
+    //
+    // resetGame() {
+    //     throw new Error('Método resetGame deve ser implementado');
+    // }
 
     update() {
         throw new Error('Método update deve ser implementado');
