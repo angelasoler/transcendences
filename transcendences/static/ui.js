@@ -3,6 +3,7 @@ import { registerUser, loginUser, logoutUser } from './auth.js';
 import { LocalMovementStrategy } from './local_game.js'
 import { OnlineMovementStrategy } from './remote_game.js'
 import {closeModal, getCookie} from "./utils.js";
+import { AIMovementStrategy } from './ai_game.js'
 
 export const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournaments'];
 let roomsSocket;
@@ -166,9 +167,10 @@ const displaySection = async (route) => {
                 document.getElementById('room-name-display').textContent = `Sala ${gameId.substring(0, 8)}`;
                 let websocket = initRemoteGame(gameId);
                 MovementStrategy = new OnlineMovementStrategy(websocket);
-            }
-            else if (gameMode === 'local') {
+            } else if (gameMode === 'local') {
                 MovementStrategy = new LocalMovementStrategy();
+            } else if (gameMode === 'ia') {
+                MovementStrategy = new AIMovementStrategy();
             }
             initGame(MovementStrategy);
             break;

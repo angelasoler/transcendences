@@ -109,7 +109,7 @@ export class OnlineMovementStrategy extends MovementStrategy {
             // case 'room_full':
         }
     }
-      
+
     handleKeyDown(e) {
         if (e.key === 'ArrowUp') this.keys.up = true;
         if (e.key === 'ArrowDown') this.keys.down = true;
@@ -119,7 +119,7 @@ export class OnlineMovementStrategy extends MovementStrategy {
         if (e.key === 'ArrowUp') this.keys.up = false;
         if (e.key === 'ArrowDown') this.keys.down = false;
     }
-      
+
     update() {
         if (!this.isRunning) {
             console.log('Update called after game_over. Ignoring.');
@@ -135,7 +135,7 @@ export class OnlineMovementStrategy extends MovementStrategy {
                 this.leftPaddle.y + paddleSpeed));
             
             // Host atualiza a bola
-            this.updateBall();
+            this.updateGameEngine();
             
             // Envia estado do jogo
             this.sendGameState(this.leftPaddle.y);
@@ -173,30 +173,6 @@ export class OnlineMovementStrategy extends MovementStrategy {
             console.log('Sent game_over message:', message);
         } catch (error) {
             console.error('Failed to send game_over:', error);
-        }
-    }
-
-    //deve virar server side
-    updateBall() {
-        this.ball.x += this.ball.speedX;
-        this.ball.y += this.ball.speedY;
-        
-        if (this.ball.y <= 0 || this.ball.y >= this.canvas.height) {
-            this.ball.speedY = -this.ball.speedY;
-        }
-
-        if (this.checkPaddleCollision(this.leftPaddle, true) || 
-            this.checkPaddleCollision(this.rightPaddle, false)) {
-            this.ball.speedX = -this.ball.speedX;
-        }
-
-        if (this.ball.x < 0 || this.ball.x > this.canvas.width) {
-            if (this.ball.x < 0) {
-                this.opponent_score += 1;
-            } else if (this.ball.x > this.canvas.width) {
-                this.my_score += 1;
-            }
-            this.resetBall();
         }
     }
 
