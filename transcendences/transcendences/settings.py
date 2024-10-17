@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'daphne',
     'channels',
     'game',
+    'user'
 ]
 
 MIDDLEWARE = [

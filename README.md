@@ -12,5 +12,5 @@ Then access:
 
 - Remote:
 
-on `localhost:4040` you would find thw link where the app e expose
+on `localhost:4040` you would find the link where the app is expose
 

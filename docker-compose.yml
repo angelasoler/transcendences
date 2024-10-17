@@ -1,32 +1,21 @@
 services:
-  web:
-    build: .
-    command: >
-      sh -c "python manage.py migrate &&
-            python manage.py collectstatic --noinput &&
-            daphne -b 0.0.0.0 -p 8000 transcendences.asgi:application"
-    volumes:
-      - ./transcendences:/app
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-
   db:
-    image: postgres:13
-    environment:
-      POSTGRES_DB: transcedences
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: 123456
+    container_name: "transcendence_db"
+    build: ./postgres
+    image: transcendence/postgres:latest
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
+      - ./postgres/data:/var/lib/postgresql/data/
+  redis:
+    container_name: "transcendence_redis"
+    build: ./redis
+    image: transcendence/redis:latest
+    ports:
+      - "6379:6379"
 
   ngrok:
       build:
         context: .
         dockerfile: Dockerfile.ngrok
-      depends_on:
-        - web
       environment:
         - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
       ports:
@@ -34,6 +23,39 @@ services:
       networks:
         - default
       restart: unless-stopped
+      
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: "transcendence_web"
+    image: transcendence/web:latest
+    env_file: env.development
+    volumes:
+      - ./transcendences:/app
+      - ./requirements.txt:/app/requirements.txt
+
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+      - ngrok
+  
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile_test
+    container_name: "transcendence_web_test"
+    env_file: env.test
+    image: transcendenceTest/web:latest
+    command: python -m venv env  
+    volumes:
+      - ./transcendences:/app
+      - ./requirements.txt:/app/requirements.txt 
+    depends_on:
+      - db
+      - redis
 
 volumes:
   postgres_data:

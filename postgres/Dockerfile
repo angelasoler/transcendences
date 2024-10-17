@@ -1,0 +1,5 @@
+From postgres:13
+
+ENV POSTGRES_DB=transcedences
+ENV POSTGRES_USER=admin
+ENV POSTGRES_PASSWORD=123456
