@@ -33,7 +33,6 @@ services:
     env_file: env.development
     volumes:
       - ./transcendences:/app
-      - ./static:/app/staticfiles #dev env
       - ./requirements.txt:/app/requirements.txt
 
     ports:
@@ -53,10 +52,10 @@ services:
     command: python -m venv env  
     volumes:
       - ./transcendences:/app
-      - ./static:/app/staticfiles #dev env
       - ./requirements.txt:/app/requirements.txt 
     depends_on:
       - db
       - redis
+
 volumes:
   postgres_data:
