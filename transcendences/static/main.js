@@ -1,4 +1,4 @@
-import {updateNavbarActiveLink, checkAuthStatus} from "./utils.js";
+import {updateNavbarActiveLink, checkAuthStatus, closeModal} from "./utils.js";
 import {navigateTo, handleRoute} from "./routes.js";
 import "./local_game.js";
 
@@ -31,11 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const route = e.target.getAttribute('data-route');
         if (route) {
             e.preventDefault();
-            const openModals = document.querySelectorAll('.modal');
-            openModals.forEach(modal => {
-                const modalInstance = bootstrap.Modal.getInstance(modal);
-                modalInstance?.hide();
-            });
+            closeModal();
             navigateTo(`/${route}`);
         }
     });

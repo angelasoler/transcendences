@@ -5,6 +5,9 @@ export let canvas;
 export let context;
 
 export function initGame(mvStrategy) {
+    // Salva a atual instancia de MovementStrategy globalmente
+    // para que possamos chamar closeGame() quando mudar de view
+    window.currentMovementStrategy = mvStrategy;
     gameLoop(mvStrategy);
 }
 
@@ -26,6 +29,8 @@ class MovementStrategy {
         this.start = true;
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
+        this.my_score = 0;
+        this.opponent_score = 0;
 
         this.isRunning = true;
         this.animationFrameId = null;
@@ -51,21 +56,29 @@ class MovementStrategy {
             speed: new THREE.Vector2(3, 3),
         };
 
-        document.addEventListener('keydown', this.handleKeyDown.bind(this));
-        document.addEventListener('keyup', this.handleKeyUp.bind(this));
-        window.addEventListener('beforeunload', this.closeGame.bind(this));
-        window.addEventListener('popstate', this.closeGame.bind(this));
+        this.boundHandleKeyDown = this.handleKeyDown.bind(this);
+        this.boundHandleKeyUp = this.handleKeyUp.bind(this);
+        this.boundCloseGame = this.closeGame.bind(this);
+
+        document.addEventListener('keydown', this.boundHandleKeyDown);
+        document.addEventListener('keyup', this.boundHandleKeyUp);
+        window.addEventListener('beforeunload', this.boundCloseGame);
+        window.addEventListener('popstate', this.boundCloseGame);
 
     }
 
-	updateGameEngine() {
+	  updateGameEngine() {
         this.updateBall();
         this.handleBallCollision();
         this.checkPaddleCollision(this.leftPaddle, true);
         this.checkPaddleCollision(this.rightPaddle, false);
-	}
+	  }
 
     draw () {
+        if (!this.ball) {
+            console.warn('Ball is undefined. Skipping draw.');
+            return;
+        }
         this.ctx.fillStyle = 'black';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     
@@ -108,7 +121,13 @@ class MovementStrategy {
             this.ball.speed.sub(reflection);
         }
         if (this.ball.pos.x < 0 || this.ball.pos.x > this.canvas.width) {
+            if (this.ball.x < 0) {
+                this.opponent_score += 1;
+            } else if (this.ball.x > this.canvas.width) {
+                this.my_score += 1;
+            }
             this.resetBall();
+            
         }
     }
 
@@ -123,4 +142,26 @@ class MovementStrategy {
     update() {
         throw new Error('Método update deve ser implementado');
     }
+  
+    handleKeyUp() {
+        throw new Error('Método handleKeyUp deve ser implementado');
+    }
+
+    handleKeyDown() {
+        throw new Error('Método handleKeyDown deve ser implementado');
+    }
+  
+    // Descomentar depois que implementar esses métodos no local_game!
+    // displayWinnerMessage() {
+    //     throw new Error('Método displayWinnerMessage deve ser implementado');
+    // }
+    //
+    // handlePlayAgain() {
+    //     throw new Error('Método handlePlayAgain deve ser implementado');
+    // }
+    //
+    // resetGame() {
+    //     throw new Error('Método resetGame deve ser implementado');
+    // }
+
 }

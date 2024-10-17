@@ -1,6 +1,5 @@
 import {MovementStrategy} from './game.js';
 
-
 export class LocalMovementStrategy extends MovementStrategy {
 	constructor() {
 		super();
@@ -56,15 +55,17 @@ export class LocalMovementStrategy extends MovementStrategy {
 		this.updatePaddles();
 		this.updateGameEngine();
 	}
-
+  
 	closeGame() {
 		console.log('Game closed');
 		this.isRunning = false;
 		if (this.animationFrameId) {
 			cancelAnimationFrame(this.animationFrameId);
 		}
-		document.removeEventListener('keydown', this.handleKeyDown);
-		document.removeEventListener('keyup', this.handleKeyUp);
+		document.removeEventListener('keydown', this.boundHandleKeyDown);
+    document.removeEventListener('keyup', this.boundHandleKeyUp);
+    window.removeEventListener('beforeunload', this.boundCloseGame);
+    window.removeEventListener('popstate', this.boundCloseGame);
 	}
 }
 

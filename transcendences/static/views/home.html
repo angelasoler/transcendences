@@ -45,7 +45,7 @@
 </section>
 
 <!-- Local -->
-<div class="modal fade" id="localGameModal" tabindex="-1">
+<div class="modal fade" id="localGameModal" tabindex="-1" aria-modal="true" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -63,7 +63,7 @@
 </div>
 
 <!-- Online -->
-<div class="modal fade" id="onlineGameModal" tabindex="-1">
+<div class="modal fade" id="onlineGameModal" tabindex="-1" aria-modal="true" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -72,8 +72,9 @@
             </div>
             <div class="modal-body">
                 <div class="d-grid gap-2">
-                    <button class="btn btn-primary" data-route="online-rooms">Entrar em Sala</button> <!-- entrando aqui tem uma lista de salas a esquerda para entrar, e botão de cria sala a direita(caso na tiver salas disponiveis o jogador deve criar uma sala e esperar alguem entrar) -->
+                    <button class="btn btn-primary" id="joinOnlineRoomButton">Entrar em Sala</button> <!-- entrando aqui tem uma lista de salas a esquerda para entrar, e botão de cria sala a direita(caso na tiver salas disponiveis o jogador deve criar uma sala e esperar alguem entrar) -->
                     <button class="btn btn-primary" data-route="online-tournament">Torneio</button> <!-- entrando aqui tem uma lista de torneios para se inscrever, e botão de cria torneio a direita(caso na tiver salas torneios disponiveis o jogador deve criar um torneio e esperar o numeor de inscritos completar) -->
+
                 </div>
             </div>
         </div>

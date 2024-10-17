@@ -2,9 +2,11 @@ import {initGame} from "./game.js";
 import { registerUser, loginUser, logoutUser } from './auth.js';
 import { LocalMovementStrategy } from './local_game.js'
 import { OnlineMovementStrategy } from './remote_game.js'
+import {closeModal, getCookie} from "./utils.js";
 import { AIMovementStrategy } from './ai_game.js'
 
 export const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournaments'];
+let roomsSocket;
 
 const redirectToLogin = () => {
     window.history.pushState({}, '', '/login');
@@ -49,7 +51,7 @@ export const loadView = (route) => {
     }
 };
 
-const localMatch = (e) => {
+const createLocalRoom = (e) => {
     e.preventDefault();
     let nickname1 = document.getElementById('nickname1').value;
     let nickname2 = document.getElementById('nickname2').value;
@@ -59,21 +61,85 @@ const localMatch = (e) => {
     displaySection('/game-canva?mode=local');
 };
 
-const remoteMatch = (e) => {
+const joinOrCreateRemoteRoom = (e) => {
     e.preventDefault();
-    window.history.pushState({}, '', `/game-canva?mode=online`);
-    displaySection('/game-canva?mode=online');
+    fetch('/api/join_or_create_room/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        credentials: 'include',
+    })
+    .then(response => {
+        if (!response.ok) {
+            if (response.status === 401) {
+                // Unauthorized, need to redirect to login
+                throw new Error('Unauthorized');
+            } else if (response.status === 403) {
+                // Forbidden, need to redirect to login
+                throw new Error('Forbidden');
+            } else {
+                console.error('Erro ao criar ou dar fetch na sala: ', response.status);
+                return response.text().then(text => { throw new Error(text) });
+            }
+        }
+        // Attempt to parse JSON
+        return response.json().catch(() => {
+            throw new Error('Invalid JSON response');
+        });
+    })
+    .then(data => {
+        if (data.game_id) {
+            window.history.pushState({}, '', `/game-canva?mode=online&game_id=${data.game_id}`);
+            displaySection(`/game-canva?mode=online&game_id=${data.game_id}`);
+        } else {
+            alert(data.error);
+        }
+    })
+    .catch(error => {
+        if (error.message === 'Unauthorized' || error.message === 'Forbidden') {
+            redirectToLogin();
+        } else {
+            console.error('Erro ao criar a sala: ', error);
+            alert('Ocorreu um erro ao criar ou entrar na sala.');
+        }
+    });
 }
 
+
+
 const displaySection = async (route) => {
+    // chama closeGame() se estiver dentro de um jogo e mudar de view
+    if (window.currentMovementStrategy) {
+        window.currentMovementStrategy.closeGame();
+        window.currentMovementStrategy = null;
+    }
+
     let section = route.startsWith('/') ? route.slice(1) : route;
     console.log("displaySection section: ", section);
     document.querySelectorAll('section').forEach(s => s.style.display = 'none');
     let MovementStrategy;
+    closeModal();
 
     let gameMode = hasQueryString();
+    let gameId = '';
     if (gameMode !== '') {
         section = window.location.pathname.slice(1);
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('game_id')) {
+            gameId = params.get('game_id');
+        }
+    }
+
+    if (window.roomsInterval) {
+        clearInterval(window.roomsInterval);
+        window.roomsInterval = null;
+    }
+
+    if (roomsSocket) {
+        roomsSocket.close();
+        roomsSocket = null;
     }
 
     await fetchViews(section);
@@ -90,15 +156,16 @@ const displaySection = async (route) => {
         case 'profile':
             getProfile();
             break;
-        case 'online-rooms':
-            document.getElementById('createRoomForm').addEventListener('submit', remoteMatch);
+        case 'home':
+            document.getElementById('joinOnlineRoomButton').addEventListener('click', joinOrCreateRemoteRoom);
             break;
         case 'local-vs-friend':
-            document.getElementById('players-nicknames').addEventListener('submit', localMatch);
+            document.getElementById('players-nicknames').addEventListener('submit', createLocalRoom);
             break;
         case 'game-canva':
             if (gameMode === 'online') {
-                let websocket = initRemoteGame('new');
+                document.getElementById('room-name-display').textContent = `Sala ${gameId.substring(0, 8)}`;
+                let websocket = initRemoteGame(gameId);
                 MovementStrategy = new OnlineMovementStrategy(websocket);
             } else if (gameMode === 'local') {
                 MovementStrategy = new LocalMovementStrategy();
