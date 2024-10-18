@@ -1,4 +1,6 @@
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
+import { FontLoader, TextGeometry } from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
+
 export { MovementStrategy };
 
 export let canvas;
@@ -55,6 +57,11 @@ class MovementStrategy {
             speed: new THREE.Vector2(3, 3),
         };
 
+        this.scoreDigits = {
+            player: [],
+            opponent: []
+        };
+
         this.boundHandleKeyDown = this.handleKeyDown.bind(this);
         this.boundHandleKeyUp = this.handleKeyUp.bind(this);
         this.boundCloseGame = this.closeGame.bind(this);
@@ -76,41 +83,184 @@ class MovementStrategy {
         this.camera.position.z = 500;
         this.camera.position.y = -10;
         this.camera.lookAt(new THREE.Vector3(0, 0, 0));
-
-        this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas });
+    
+        this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
         this.renderer.setSize(this.canvas.width, this.canvas.height);
-
+    
         // Create floor
-        const floorGeometry = new THREE.PlaneGeometry(this.canvas.width, this.canvas.height);
-        const floorMaterial = new THREE.MeshBasicMaterial({ color: 0x990033 });
+        const floorGeometry = new THREE.PlaneGeometry(this.canvas.width + 60, this.canvas.height);
+        const floorMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x006400,
+            roughness: 0.8 // Added line to set roughness
+        });
         const floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
+        floorMesh.position.z = -10;
+        floorMesh.receiveShadow = true;
         this.scene.add(floorMesh);
-
+    
         // Create paddles
         const paddleGeometry = new THREE.BoxGeometry(this.paddleWidth, this.paddleHeight, 10);
-        const paddleMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-
-        this.leftPaddleMesh = new THREE.Mesh(paddleGeometry, paddleMaterial);
+    
+        this.leftPaddleMesh = new THREE.Mesh(paddleGeometry, new THREE.MeshStandardMaterial({ color: 0x7DFDFE }));
         this.leftPaddleMesh.position.x = -this.canvas.width / 2 + this.paddleWidth / 2;
+        this.leftPaddleMesh.castShadow = true;
+        this.leftPaddleMesh.receiveShadow = true;
         this.scene.add(this.leftPaddleMesh);
-
-        this.rightPaddleMesh = new THREE.Mesh(paddleGeometry, paddleMaterial);
+    
+        this.rightPaddleMesh = new THREE.Mesh(paddleGeometry, new THREE.MeshStandardMaterial({ color: 0xF7C530 }));
         this.rightPaddleMesh.position.x = this.canvas.width / 2 - this.paddleWidth / 2;
+        this.rightPaddleMesh.castShadow = true;
+        this.rightPaddleMesh.receiveShadow = true;
         this.scene.add(this.rightPaddleMesh);
-
+    
         // Create ball
         const ballGeometry = new THREE.SphereGeometry(this.ballRadius, 32, 32);
-        const ballMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const ballMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
         this.ballMesh = new THREE.Mesh(ballGeometry, ballMaterial);
+        this.ballMesh.castShadow = true;
         this.scene.add(this.ballMesh);
+    
+        // Create walls
+        const wallThickness = 20;
+        const wallHeight = this.canvas.height;
+        const wallWidth = this.canvas.width;
+        const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+    
+        // Left wall
+        const leftWallGeometry = new THREE.BoxGeometry(wallThickness, wallHeight, 15);
+        const leftWallMesh = new THREE.Mesh(leftWallGeometry, wallMaterial);
+        leftWallMesh.position.set(-this.canvas.width / 2 - wallThickness / 2 - 10, 0, 0);
+        leftWallMesh.receiveShadow = true;
+        this.scene.add(leftWallMesh);
+    
+        // Right wall
+        const rightWallGeometry = new THREE.BoxGeometry(wallThickness, wallHeight, 15);
+        const rightWallMesh = new THREE.Mesh(rightWallGeometry, wallMaterial);
+        rightWallMesh.position.set(this.canvas.width / 2 + wallThickness / 2 + 10, 0, 0);
+        rightWallMesh.receiveShadow = true;
+        this.scene.add(rightWallMesh);
+
+        // Top wall
+        const topWallGeometry = new THREE.BoxGeometry(wallWidth + 60, wallThickness, 15);
+        const topWallMesh = new THREE.Mesh(topWallGeometry, wallMaterial);
+        topWallMesh.position.set(0, this.canvas.height / 2 + wallThickness / 2, 0);
+        topWallMesh.receiveShadow = true;
+        this.scene.add(topWallMesh);
+
+        // Bottom wall
+        const bottomWallGeometry = new THREE.BoxGeometry(wallWidth + 60, wallThickness, 15);
+        const bottomWallMesh = new THREE.Mesh(bottomWallGeometry, wallMaterial);
+        bottomWallMesh.position.set(0, -this.canvas.height / 2 - wallThickness / 2, 0);
+        bottomWallMesh.receiveShadow = true;
+        this.scene.add(bottomWallMesh);
+    
+        this.addLights();
+    
+        this.loadFont();
     }
 
-	  updateGameEngine() {
+    addLights() {
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        this.scene.add(ambientLight);
+
+        const pointLight = new THREE.PointLight(0xffffff, 1);
+        pointLight.position.set(0, 30, 100);
+        pointLight.castShadow = true;
+        pointLight.lookAt(new THREE.Vector3(0, 0, 0));
+        this.scene.add(pointLight);
+    }
+
+    loadFont() {
+        const loader = new FontLoader();
+        loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+            this.font = font;
+            this.updateScoreboard();
+        });
+    }
+
+    updateScoreboard() {
+        const scoreMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+        // Update player score text
+        this.updateScore(this.my_score, -100, scoreMaterial, 'player');
+
+        // Update opponent score text
+        this.updateScore(this.opponent_score, 100, scoreMaterial, 'opponent');
+    }
+
+    updateScore(score, xOffset, material, type) {
+        const oldDigits = this.scoreDigits[type];
+        const newDigits = score.toString().split('').map(Number);
+    
+        // Remove old digits
+        oldDigits.forEach(digit => this.scene.remove(digit));
+        this.scoreDigits[type] = [];
+    
+        // Create new digits
+        for (let i = 0; i < newDigits.length; i++) {
+            const geometry = new TextGeometry(newDigits[i].toString(), {
+                font: this.font,
+                size: 40,
+                height: 5,
+                curveSegments: 12,
+                bevelEnabled: false
+            });
+            
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(xOffset + i * 30, this.canvas.height / 2 - 50, 0);
+            mesh.userData.digit = newDigits[i]; // Store digit value in user data
+            this.scene.add(mesh);
+            this.scoreDigits[type].push(mesh);
+        }
+    
+        // Animate changing digits
+        this.animateDigitChange(oldDigits, newDigits, type);
+    }
+    
+    animateDigitChange(oldDigits, newDigits, type) {
+        const maxLength = Math.max(oldDigits.length, newDigits.length);
+        oldDigits = oldDigits.map(digit => Number(digit.userData.digit));
+        oldDigits.push(...Array(maxLength - oldDigits.length).fill(0));
+    
+        for (let i = 0; i < maxLength; i++) {
+            if (oldDigits[i] !== newDigits[i]) {
+                this.animateRotation(this.scoreDigits[type][i]);
+            }
+        }
+    }
+
+    animateRotation(mesh) {
+        const duration = 1000; // Duration of the spin in milliseconds
+        const start = performance.now();
+        const initialRotation = mesh.rotation.y;
+        const targetRotation = initialRotation + Math.PI * 2;
+    
+        const animate = (time) => {
+            const elapsed = time - start;
+            const progress = Math.min(elapsed / duration, 1);
+            mesh.rotation.y = initialRotation + (targetRotation - initialRotation) * progress;
+    
+            console.log(`Animating rotation: progress=${progress}, rotation=${mesh.rotation.y}, visible=${mesh.visible}`);
+    
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                mesh.rotation.y = targetRotation; // Ensure final rotation is set
+                console.log(`Final rotation set: rotation=${mesh.rotation.y}`);
+            }
+    
+            this.renderer.render(this.scene, this.camera);
+        };
+    
+        requestAnimationFrame(animate);
+    }
+
+    updateGameEngine() {
         this.updateBall();
-        this.handleBallCollision();
+        this.handleBallCollision(); 
         this.checkPaddleCollision(this.leftPaddle, true);
         this.checkPaddleCollision(this.rightPaddle, false);
-	  }
+    }
 
     draw () {
         if (!this.ball) {
@@ -144,6 +294,7 @@ class MovementStrategy {
     resetBall() {
         this.ball.pos.set(this.canvas.width / 2, this.canvas.height / 2);
         this.ball.speed.set((Math.random() > 0.5 ? 1 : -1) * 3, (Math.random() > 0.5 ? 1 : -1) * 3);
+        this.updateScoreboard();
     }
 
 
@@ -154,15 +305,48 @@ class MovementStrategy {
             const reflection = normal.clone().multiplyScalar(2 * dotProduct);
             this.ball.speed.sub(reflection);
         }
-        if (this.ball.pos.x < 0 || this.ball.pos.x > this.canvas.width) {
-            if (this.ball.x < 0) {
-                this.opponent_score += 1;
-            } else if (this.ball.x > this.canvas.width) {
-                this.my_score += 1;
+        if (this.ball.pos.x < this.paddleWidth || this.ball.pos.x > this.canvas.width - this.paddleWidth) {
+            if (this.ball.pos.x < this.paddleWidth) {
+            this.opponent_score += 1;
+            } else if (this.ball.pos.x > this.canvas.width - this.paddleWidth) {
+            this.my_score += 1;
             }
-            this.resetBall();
-            
+            console.log('Pontos:', this.my_score, this.opponent_score);
+            this.updateScoreboard();
+            this.resetBall();    
+            this.checkGameEnd();
         }
+    }
+
+    //Mudar funcoes abaixo para local_game(?)
+    checkGameEnd() {
+        if (this.my_score >= 3 || this.opponent_score >= 3) {
+            this.isRunning = false;
+            this.displayWinnerMessage();
+        }
+    }
+
+    displayWinnerMessage() {
+        const winner = this.my_score >= 3 ? 'Player' : 'Opponent';
+        document.getElementById('resultMessage').innerText = `${winner} wins!`;
+        const winnerModal = new bootstrap.Modal(document.getElementById('displayWinnerMessageModal'));
+        winnerModal.show();
+
+        document.getElementById('playAgainButton').addEventListener('click', () => {
+            winnerModal.hide();
+            this.resetGame();
+        });
+
+        document.getElementById('returnToHome').addEventListener('click', () => {
+            window.location.href = '/';
+        });
+    }
+
+    resetGame() {
+        this.my_score = 0;
+        this.opponent_score = 0;
+        this.isRunning = true;
+        this.resetBall();
     }
 
     updateBall() {
