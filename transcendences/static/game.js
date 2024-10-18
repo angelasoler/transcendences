@@ -28,7 +28,6 @@ class MovementStrategy {
     constructor() {
         this.start = true;
         this.canvas = document.getElementById('gameCanvas');
-        this.ctx = this.canvas.getContext('2d');
         this.my_score = 0;
         this.opponent_score = 0;
 
@@ -65,6 +64,38 @@ class MovementStrategy {
         window.addEventListener('beforeunload', this.boundCloseGame);
         window.addEventListener('popstate', this.boundCloseGame);
 
+        this.initThreeJS();
+    }
+
+    initThreeJS() {
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.OrthographicCamera(
+            this.canvas.width / -2, this.canvas.width / 2,
+            this.canvas.height / 2, this.canvas.height / -2,
+            1, 1000
+        );
+        this.camera.position.z = 500;
+
+        this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas });
+        this.renderer.setSize(this.canvas.width, this.canvas.height);
+
+        // Create paddles
+        const paddleGeometry = new THREE.BoxGeometry(this.paddleWidth, this.paddleHeight, 10);
+        const paddleMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+
+        this.leftPaddleMesh = new THREE.Mesh(paddleGeometry, paddleMaterial);
+        this.leftPaddleMesh.position.x = -this.canvas.width / 2 + this.paddleWidth / 2;
+        this.scene.add(this.leftPaddleMesh);
+
+        this.rightPaddleMesh = new THREE.Mesh(paddleGeometry, paddleMaterial);
+        this.rightPaddleMesh.position.x = this.canvas.width / 2 - this.paddleWidth / 2;
+        this.scene.add(this.rightPaddleMesh);
+
+        // Create ball
+        const ballGeometry = new THREE.SphereGeometry(this.ballRadius, 32, 32);
+        const ballMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        this.ballMesh = new THREE.Mesh(ballGeometry, ballMaterial);
+        this.scene.add(this.ballMesh);
     }
 
 	  updateGameEngine() {
@@ -79,18 +110,14 @@ class MovementStrategy {
             console.warn('Ball is undefined. Skipping draw.');
             return;
         }
-        this.ctx.fillStyle = 'black';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    
-        this.ctx.fillStyle = 'green';
-    
-        this.ctx.fillRect(0, this.leftPaddle.y, this.paddleWidth, this.paddleHeight);
-    
-        this.ctx.fillRect(this.canvas.width - this.paddleWidth, this.rightPaddle.y, this.paddleWidth, this.paddleHeight);
-    
-        this.ctx.beginPath();
-        this.ctx.arc(this.ball.pos.x, this.ball.pos.y, this.ballRadius, 0, Math.PI * 2);
-        this.ctx.fill();
+
+        // Update Three.js objects positions
+        this.leftPaddleMesh.position.y = -(this.leftPaddle.y - this.canvas.height / 2 + this.paddleHeight / 2);
+        this.rightPaddleMesh.position.y = -(this.rightPaddle.y - this.canvas.height / 2 + this.paddleHeight / 2);
+        this.ballMesh.position.set(this.ball.pos.x - this.canvas.width / 2, -(this.ball.pos.y - this.canvas.height / 2), 0);
+
+        // Render the scene
+        this.renderer.render(this.scene, this.camera);
     }
 
     checkPaddleCollision(paddle, isLeft) {
