@@ -43,7 +43,8 @@ def register_user(request):
 
         if User.objects.filter(username=username).exists():
             return JsonResponse({'error': 'Nome de usuário já existe'}, status=400)
-
+        if User.objects.filter(email=email).exists():
+            return JsonResponse({'error': 'Email já está em uso'}, status=400)
         User.objects.create_user(username=username, email=email, password=password)
         return JsonResponse({'message': 'Usuário registrado com sucesso'})
     return JsonResponse({'error': 'Método não permitido'}, status=405)

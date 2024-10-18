@@ -28,6 +28,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['0.0.0.0', '*']
 
+CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app']
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Application definition
 
@@ -54,6 +57,10 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
+
+# AUTHENTICATION_BACKENDS = [
+#     'django.contrib.auth.backends.ModelBackend',
+# ]
 
 ROOT_URLCONF = 'transcendences.urls'
 

@@ -121,9 +121,9 @@ class MovementStrategy {
             this.ball.speed.sub(reflection);
         }
         if (this.ball.pos.x < 0 || this.ball.pos.x > this.canvas.width) {
-            if (this.ball.x < 0) {
+            if (this.ball.pos.x < 0) {
                 this.opponent_score += 1;
-            } else if (this.ball.x > this.canvas.width) {
+            } else if (this.ball.pos.x > this.canvas.width) {
                 this.my_score += 1;
             }
             this.resetBall();

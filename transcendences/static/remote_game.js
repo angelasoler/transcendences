@@ -1,3 +1,4 @@
+import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
 import {gameLoop, MovementStrategy} from './game.js';
 import {navigateTo} from "./routes.js";
 import {closeModal} from "./utils.js";
@@ -45,13 +46,28 @@ export class OnlineMovementStrategy extends MovementStrategy {
 
     resetGame() {
         // Reset positions
-        this.leftPaddle.y = this.canvas.height / 2 - this.paddleHeight / 2;
-        this.rightPaddle.y = this.canvas.height / 2 - this.paddleHeight / 2;
+        this.animationFrameId = null;
+        this.currentTime = 0;
 
-        this.ball.x = this.canvas.width / 2;
-        this.ball.y = this.canvas.height / 2;
-        this.ball.speedX = 3 * (Math.random() > 0.5 ? 1 : -1);
-        this.ball.speedY = 3 * (Math.random() > 0.5 ? 1 : -1);
+        this.paddleHeight = 100;
+        this.paddleWidth = 10;
+        this.ballRadius = 8;
+        this.paddleSpeed = 5;
+
+        this.leftPaddle = {
+            y: this.canvas.height / 2 - this.paddleHeight / 2,
+            speed: 0
+        };
+
+        this.rightPaddle = {
+            y: this.canvas.height / 2 - this.paddleHeight / 2,
+            speed: 0
+        };
+
+        this.ball = {
+            pos: new THREE.Vector2(this.canvas.width / 2, this.canvas.height / 2),
+            speed: new THREE.Vector2(3, 3),
+        };
 
         // Reset keys
         this.keys.up = false;
@@ -73,7 +89,11 @@ export class OnlineMovementStrategy extends MovementStrategy {
                     this.rightPaddle.y = data.opponent_paddle;
                 } else {
                     this.leftPaddle.y = data.opponent_paddle;
-                    this.ball = data.ball;
+                    if (data.ball) {
+                        // Update ball position and speed without overwriting the object
+                        this.ball.pos.set(data.ball.pos.x, data.ball.pos.y);
+                        this.ball.speed.set(data.ball.speed.x, data.ball.speed.y);
+                    }
                 }
                 break;
             case 'game_end':
@@ -154,7 +174,7 @@ export class OnlineMovementStrategy extends MovementStrategy {
             if (this.my_score >= 10) {
                 this.sendGameOver('win');
             } else if (this.opponent_score >= 10) {
-                this.sendGameOver('loose');
+                this.sendGameOver('lose');
             }
         }
     }
@@ -289,10 +309,6 @@ export class OnlineMovementStrategy extends MovementStrategy {
         if (messageDiv) {
             messageDiv.textContent = 'Esperando o outro jogador...';
         }
-
-        // Disable the "Play Again" button to prevent multiple clicks
-        const playAgainButton = document.getElementById('playAgainButton');
-        playAgainButton.disabled = true;
     }
 
     closeGame() {
