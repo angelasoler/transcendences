@@ -69,15 +69,22 @@ class MovementStrategy {
 
     initThreeJS() {
         this.scene = new THREE.Scene();
-        this.camera = new THREE.OrthographicCamera(
-            this.canvas.width / -2, this.canvas.width / 2,
-            this.canvas.height / 2, this.canvas.height / -2,
-            1, 1000
+        this.camera = new THREE.PerspectiveCamera(
+            50, this.canvas.width / this.canvas.height,
+            0.1, 1000
         );
         this.camera.position.z = 500;
+        this.camera.position.y = -10;
+        this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
         this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas });
         this.renderer.setSize(this.canvas.width, this.canvas.height);
+
+        // Create floor
+        const floorGeometry = new THREE.PlaneGeometry(this.canvas.width, this.canvas.height);
+        const floorMaterial = new THREE.MeshBasicMaterial({ color: 0x990033 });
+        const floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
+        this.scene.add(floorMesh);
 
         // Create paddles
         const paddleGeometry = new THREE.BoxGeometry(this.paddleWidth, this.paddleHeight, 10);
