@@ -35,6 +35,7 @@ class MovementStrategy {
 
         this.isRunning = true;
         this.animationFrameId = null;
+        this.ballPassedPaddle = false;
         this.currentTime = 0;
 
         this.paddleHeight = 100;
@@ -86,17 +87,22 @@ class MovementStrategy {
     
         this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
         this.renderer.setSize(this.canvas.width, this.canvas.height);
+        this.renderer.shadowMap.enabled = true;
     
         // Create floor
-        const floorGeometry = new THREE.PlaneGeometry(this.canvas.width + 60, this.canvas.height);
-        const floorMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x006400,
-            roughness: 0.8 // Added line to set roughness
-        });
+        const floorGeometry = new THREE.PlaneGeometry(this.canvas.width + 60, this.canvas.height + 20);
+        const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x006400 });
         const floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
         floorMesh.position.z = -10;
         floorMesh.receiveShadow = true;
         this.scene.add(floorMesh);
+
+        const bgGeometry = new THREE.PlaneGeometry(this.canvas.width + 150, this.canvas.height + 100);
+        const bgMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFE0 });
+        const bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
+        bgMesh.position.z = -15;
+        bgMesh.receiveShadow = true;
+        this.scene.add(bgMesh);
     
         // Create paddles
         const paddleGeometry = new THREE.BoxGeometry(this.paddleWidth, this.paddleHeight, 10);
@@ -120,24 +126,33 @@ class MovementStrategy {
         this.ballMesh.castShadow = true;
         this.scene.add(this.ballMesh);
     
+        this.addWalls();
+        this.addLights();
+    
+        this.loadFont();
+    }
+
+    addWalls() {
         // Create walls
         const wallThickness = 20;
         const wallHeight = this.canvas.height;
         const wallWidth = this.canvas.width;
         const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
-    
+
         // Left wall
         const leftWallGeometry = new THREE.BoxGeometry(wallThickness, wallHeight, 15);
         const leftWallMesh = new THREE.Mesh(leftWallGeometry, wallMaterial);
         leftWallMesh.position.set(-this.canvas.width / 2 - wallThickness / 2 - 10, 0, 0);
         leftWallMesh.receiveShadow = true;
+        leftWallMesh.castShadow = true;
         this.scene.add(leftWallMesh);
-    
+
         // Right wall
         const rightWallGeometry = new THREE.BoxGeometry(wallThickness, wallHeight, 15);
         const rightWallMesh = new THREE.Mesh(rightWallGeometry, wallMaterial);
         rightWallMesh.position.set(this.canvas.width / 2 + wallThickness / 2 + 10, 0, 0);
         rightWallMesh.receiveShadow = true;
+        rightWallMesh.castShadow = true;
         this.scene.add(rightWallMesh);
 
         // Top wall
@@ -145,6 +160,7 @@ class MovementStrategy {
         const topWallMesh = new THREE.Mesh(topWallGeometry, wallMaterial);
         topWallMesh.position.set(0, this.canvas.height / 2 + wallThickness / 2, 0);
         topWallMesh.receiveShadow = true;
+        topWallMesh.castShadow = true;
         this.scene.add(topWallMesh);
 
         // Bottom wall
@@ -152,11 +168,9 @@ class MovementStrategy {
         const bottomWallMesh = new THREE.Mesh(bottomWallGeometry, wallMaterial);
         bottomWallMesh.position.set(0, -this.canvas.height / 2 - wallThickness / 2, 0);
         bottomWallMesh.receiveShadow = true;
+        bottomWallMesh.castShadow = true;
         this.scene.add(bottomWallMesh);
-    
-        this.addLights();
-    
-        this.loadFont();
+        
     }
 
     addLights() {
@@ -164,9 +178,8 @@ class MovementStrategy {
         this.scene.add(ambientLight);
 
         const pointLight = new THREE.PointLight(0xffffff, 1);
-        pointLight.position.set(0, 30, 100);
+        pointLight.position.set(0, 125, 200);
         pointLight.castShadow = true;
-        pointLight.lookAt(new THREE.Vector3(0, 0, 0));
         this.scene.add(pointLight);
     }
 
@@ -180,12 +193,47 @@ class MovementStrategy {
 
     updateScoreboard() {
         const scoreMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    
+        // Calculate the total width of the scores
+        const playerScoreWidth = this.my_score.toString().length * 30;
+        const opponentScoreWidth = this.opponent_score.toString().length * 30;
+
+        // Calculate the offsets to center the scores
+        const playerScoreOffset = -playerScoreWidth / 2 - 50;
+        const opponentScoreOffset = -opponentScoreWidth / 2 + 50;
 
         // Update player score text
-        this.updateScore(this.my_score, -100, scoreMaterial, 'player');
-
+        this.updateScore(this.my_score, playerScoreOffset, scoreMaterial, 'player');
+        
         // Update opponent score text
-        this.updateScore(this.opponent_score, 100, scoreMaterial, 'opponent');
+        this.updateScore(this.opponent_score, opponentScoreOffset, scoreMaterial, 'opponent');
+
+            // Add player names to the sides of the scoreboard
+        const playerNameMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+        const playerNameGeometry = new THREE.TextGeometry('Player1', {
+            font: this.font,
+            size: 16,
+            height: 1,
+        });
+
+        playerNameGeometry.computeBoundingBox();
+        const playerNameOffset = playerNameGeometry.boundingBox.max.x - playerNameGeometry.boundingBox.min.x;
+        const playerNameMesh = new THREE.Mesh(playerNameGeometry, playerNameMaterial);
+        playerNameMesh.position.set(-150 - playerNameOffset / 2, 165, 0); // Adjust position as needed
+        this.scene.add(playerNameMesh);
+
+        const opponentNameGeometry = new THREE.TextGeometry('Player2', {
+            font: this.font,
+            size: 16,
+            height: 1,
+        });
+
+        opponentNameGeometry.computeBoundingBox();
+        const opponentNameOffset = opponentNameGeometry.boundingBox.max.x - opponentNameGeometry.boundingBox.min.x;
+        const opponentNameMesh = new THREE.Mesh(opponentNameGeometry, playerNameMaterial);
+        opponentNameMesh.position.set(150 - opponentNameOffset / 2, 165, 0); // Adjust position as needed
+        this.scene.add(opponentNameMesh);
     }
 
     updateScore(score, xOffset, material, type) {
@@ -212,47 +260,6 @@ class MovementStrategy {
             this.scene.add(mesh);
             this.scoreDigits[type].push(mesh);
         }
-    
-        // Animate changing digits
-        this.animateDigitChange(oldDigits, newDigits, type);
-    }
-    
-    animateDigitChange(oldDigits, newDigits, type) {
-        const maxLength = Math.max(oldDigits.length, newDigits.length);
-        oldDigits = oldDigits.map(digit => Number(digit.userData.digit));
-        oldDigits.push(...Array(maxLength - oldDigits.length).fill(0));
-    
-        for (let i = 0; i < maxLength; i++) {
-            if (oldDigits[i] !== newDigits[i]) {
-                this.animateRotation(this.scoreDigits[type][i]);
-            }
-        }
-    }
-
-    animateRotation(mesh) {
-        const duration = 1000; // Duration of the spin in milliseconds
-        const start = performance.now();
-        const initialRotation = mesh.rotation.y;
-        const targetRotation = initialRotation + Math.PI * 2;
-    
-        const animate = (time) => {
-            const elapsed = time - start;
-            const progress = Math.min(elapsed / duration, 1);
-            mesh.rotation.y = initialRotation + (targetRotation - initialRotation) * progress;
-    
-            console.log(`Animating rotation: progress=${progress}, rotation=${mesh.rotation.y}, visible=${mesh.visible}`);
-    
-            if (progress < 1) {
-                requestAnimationFrame(animate);
-            } else {
-                mesh.rotation.y = targetRotation; // Ensure final rotation is set
-                console.log(`Final rotation set: rotation=${mesh.rotation.y}`);
-            }
-    
-            this.renderer.render(this.scene, this.camera);
-        };
-    
-        requestAnimationFrame(animate);
     }
 
     updateGameEngine() {
@@ -280,8 +287,8 @@ class MovementStrategy {
     checkPaddleCollision(paddle, isLeft) {
         const paddleX = isLeft ? this.paddleWidth : this.canvas.width - this.paddleWidth;
         const withinPaddleYRange = this.ball.pos.y >= paddle.y && this.ball.pos.y <= paddle.y + this.paddleHeight;
-
-        if (withinPaddleYRange) {
+    
+        if (withinPaddleYRange && !this.ballPassedPaddle) {
             if ((isLeft && this.ball.pos.x <= paddleX + this.paddleWidth) ||
                 (!isLeft && this.ball.pos.x >= paddleX - this.paddleWidth)) {
                     this.ball.speed.x = -this.ball.speed.x;
@@ -294,27 +301,30 @@ class MovementStrategy {
     resetBall() {
         this.ball.pos.set(this.canvas.width / 2, this.canvas.height / 2);
         this.ball.speed.set((Math.random() > 0.5 ? 1 : -1) * 3, (Math.random() > 0.5 ? 1 : -1) * 3);
+        this.ballPassedPaddle = false; // Reset the flag
         this.updateScoreboard();
     }
 
 
     handleBallCollision() {
-        if (this.ball.pos.y <= 0 || this.ball.pos.y >= this.canvas.height) {
+        if (this.ball.pos.y - this.ballRadius <= 0  || this.ball.pos.y + this.ballRadius >= this.canvas.height) {
             const normal = new THREE.Vector2(0, 1);
             const dotProduct = this.ball.speed.dot(normal);
             const reflection = normal.clone().multiplyScalar(2 * dotProduct);
             this.ball.speed.sub(reflection);
         }
-        if (this.ball.pos.x < this.paddleWidth || this.ball.pos.x > this.canvas.width - this.paddleWidth) {
-            if (this.ball.pos.x < this.paddleWidth) {
-            this.opponent_score += 1;
-            } else if (this.ball.pos.x > this.canvas.width - this.paddleWidth) {
-            this.my_score += 1;
+        if (this.ball.pos.x < 0 || this.ball.pos.x > this.canvas.width) {
+            if (this.ball.pos.x < 0) {
+                this.opponent_score += 1;
+            } else if (this.ball.pos.x > this.canvas.width) {
+                this.my_score += 1;
             }
             console.log('Pontos:', this.my_score, this.opponent_score);
             this.updateScoreboard();
             this.resetBall();    
             this.checkGameEnd();
+        } else {
+            this.ballPassedPaddle = this.ball.pos.x < this.paddleWidth || this.ball.pos.x > this.canvas.width - this.paddleWidth;
         }
     }
 
