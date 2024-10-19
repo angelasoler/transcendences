@@ -98,12 +98,30 @@ class MovementStrategy {
         this.scene.add(floorMesh);
 
         const bgGeometry = new THREE.PlaneGeometry(this.canvas.width + 150, this.canvas.height + 100);
-        const bgMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFE0 });
+        const bgMaterial = new THREE.MeshStandardMaterial({ color: 0xADD8E6 });
         const bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
         bgMesh.position.z = -15;
         bgMesh.receiveShadow = true;
         this.scene.add(bgMesh);
     
+        this.addBall();
+        this.addPaddles();
+        this.addWalls();
+        this.addLights();
+    
+        this.loadFont();
+    }
+
+    addBall() {
+        // Create ball
+        const ballGeometry = new THREE.SphereGeometry(this.ballRadius, 32, 32);
+        const ballMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        this.ballMesh = new THREE.Mesh(ballGeometry, ballMaterial);
+        this.ballMesh.castShadow = true;
+        this.scene.add(this.ballMesh);
+    }
+
+    addPaddles() {
         // Create paddles
         const paddleGeometry = new THREE.BoxGeometry(this.paddleWidth, this.paddleHeight, 10);
     
@@ -118,18 +136,6 @@ class MovementStrategy {
         this.rightPaddleMesh.castShadow = true;
         this.rightPaddleMesh.receiveShadow = true;
         this.scene.add(this.rightPaddleMesh);
-    
-        // Create ball
-        const ballGeometry = new THREE.SphereGeometry(this.ballRadius, 32, 32);
-        const ballMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-        this.ballMesh = new THREE.Mesh(ballGeometry, ballMaterial);
-        this.ballMesh.castShadow = true;
-        this.scene.add(this.ballMesh);
-    
-        this.addWalls();
-        this.addLights();
-    
-        this.loadFont();
     }
 
     addWalls() {
@@ -177,8 +183,8 @@ class MovementStrategy {
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         this.scene.add(ambientLight);
 
-        const pointLight = new THREE.PointLight(0xffffff, 1);
-        pointLight.position.set(0, 125, 200);
+        const pointLight = new THREE.PointLight(0xffffff, 1, 10000);
+        pointLight.position.set(0, 250, 250);
         pointLight.castShadow = true;
         this.scene.add(pointLight);
     }
@@ -208,7 +214,7 @@ class MovementStrategy {
         // Update opponent score text
         this.updateScore(this.opponent_score, opponentScoreOffset, scoreMaterial, 'opponent');
 
-            // Add player names to the sides of the scoreboard
+        // Add player names
         const playerNameMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
         const playerNameGeometry = new THREE.TextGeometry('Player1', {
@@ -326,37 +332,6 @@ class MovementStrategy {
         } else {
             this.ballPassedPaddle = this.ball.pos.x < this.paddleWidth || this.ball.pos.x > this.canvas.width - this.paddleWidth;
         }
-    }
-
-    //Mudar funcoes abaixo para local_game(?)
-    checkGameEnd() {
-        if (this.my_score >= 3 || this.opponent_score >= 3) {
-            this.isRunning = false;
-            this.displayWinnerMessage();
-        }
-    }
-
-    displayWinnerMessage() {
-        const winner = this.my_score >= 3 ? 'Player' : 'Opponent';
-        document.getElementById('resultMessage').innerText = `${winner} wins!`;
-        const winnerModal = new bootstrap.Modal(document.getElementById('displayWinnerMessageModal'));
-        winnerModal.show();
-
-        document.getElementById('playAgainButton').addEventListener('click', () => {
-            winnerModal.hide();
-            this.resetGame();
-        });
-
-        document.getElementById('returnToHome').addEventListener('click', () => {
-            window.location.href = '/';
-        });
-    }
-
-    resetGame() {
-        this.my_score = 0;
-        this.opponent_score = 0;
-        this.isRunning = true;
-        this.resetBall();
     }
 
     updateBall() {

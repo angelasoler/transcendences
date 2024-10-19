@@ -1,4 +1,8 @@
-import {MovementStrategy} from './game.js';
+import {MovementStrategy, gameLoop} from './game.js';
+import {navigateTo} from "./routes.js";
+import {closeModal} from "./utils.js";
+
+const WINNING_SCORE = 1;
 
 export class LocalMovementStrategy extends MovementStrategy {
 	constructor() {
@@ -10,6 +14,9 @@ export class LocalMovementStrategy extends MovementStrategy {
 			ArrowUp: false,
 			ArrowDown: false
 		};
+
+		this.handlePlayAgainClick = this.handlePlayAgainClick.bind(this);
+    this.handleReturnToHomeClick = this.handleReturnToHomeClick.bind(this);
 	}
 
 	handleKeyDown(e) {
@@ -55,17 +62,99 @@ export class LocalMovementStrategy extends MovementStrategy {
 		this.updatePaddles();
 		this.updateGameEngine();
 	}
+
+	checkGameEnd() {
+		if (this.my_score >= WINNING_SCORE) {
+				this.displayWinnerMessage('win', 'Congratulations! You won the game.');
+				this.isRunning = false;
+		} else if (this.opponent_score >= WINNING_SCORE) {
+				this.displayWinnerMessage('lose', 'Sorry! You lost the game.');
+				this.isRunning = false;
+		}
+	}
   
 	closeGame() {
 		console.log('Game closed');
 		this.isRunning = false;
 		if (this.animationFrameId) {
-			cancelAnimationFrame(this.animationFrameId);
+				cancelAnimationFrame(this.animationFrameId);
 		}
 		document.removeEventListener('keydown', this.boundHandleKeyDown);
-    document.removeEventListener('keyup', this.boundHandleKeyUp);
-    window.removeEventListener('beforeunload', this.boundCloseGame);
-    window.removeEventListener('popstate', this.boundCloseGame);
+		document.removeEventListener('keyup', this.boundHandleKeyUp);
+		window.removeEventListener('beforeunload', this.boundCloseGame);
+		window.removeEventListener('popstate', this.boundCloseGame);
+	}
+
+	displayWinnerMessage(result, message) {
+		// First, close any existing modals
+		closeModal();
+
+		const modalDiv = document.getElementById('displayWinnerMessageModal');
+		const messageDiv = document.getElementById('game-message');
+
+		if (modalDiv) {
+			const modal = new bootstrap.Modal(modalDiv);
+			modal.show();
+
+			const resultMessage = document.getElementById('resultMessage');
+			resultMessage.textContent = result === 'win' ? "Você Ganhou!" : "Você Perdeu";
+			messageDiv.textContent = message;
+
+			const playAgainButton = modalDiv.querySelector('#playAgainButton');
+			const returnButton = modalDiv.querySelector('#returnToHome');
+
+			// Remove existing event listeners
+			playAgainButton.removeEventListener('click', this.handlePlayAgainClick);
+			returnButton.removeEventListener('click', this.handleReturnToHomeClick);
+
+			// Add event listeners
+			playAgainButton.addEventListener('click', this.handlePlayAgainClick.bind(this));
+			returnButton.addEventListener('click', this.handleReturnToHomeClick.bind(this));
+		}
+	}
+
+	handlePlayAgainClick() {
+		this.handlePlayAgain();
+	}
+
+	handleReturnToHomeClick() {
+		const modalDiv = document.getElementById('displayWinnerMessageModal');
+		const modal = bootstrap.Modal.getInstance(modalDiv);
+		modal.hide();
+		this.closeGame();
+		navigateTo('/home');
+	}
+
+	handlePlayAgain() {
+		// Hide the modal
+		const modalDiv = document.getElementById('displayWinnerMessageModal');
+		const modal = bootstrap.Modal.getInstance(modalDiv);
+		modal.hide();
+
+		// Reset the game
+		this.resetGame();
+
+		// Re-enable controls
+		this.isRunning = true;
+		this.start = true;
+
+		// Restart the game loop
+		gameLoop(this);
+	}
+
+	resetGame() {
+		// Reset positions
+		this.leftPaddle.y = this.canvas.height / 2 - this.paddleHeight / 2;
+		this.rightPaddle.y = this.canvas.height / 2 - this.paddleHeight / 2;
+
+		this.ball.pos.set(this.canvas.width / 2, this.canvas.height / 2);
+		this.ball.speed.set((Math.random() > 0.5 ? 1 : -1) * 3, (Math.random() > 0.5 ? 1 : -1) * 3);
+
+		// Reset scores
+		this.my_score = 0;
+		this.opponent_score = 0;
+
+		// Update the scoreboard
+		this.updateScoreboard();
 	}
 }
-
