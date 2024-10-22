@@ -1,5 +1,7 @@
 import json
 import asyncio
+from pydoc import plain
+
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from .models import Room
@@ -92,6 +94,16 @@ class PongConsumer(AsyncWebsocketConsumer):
                     'ball': data.get('ball')  # Apenas o host envia isso
                 }
             )
+        elif data['type'] == 'players_score':
+            await self.channel_layer.group_send(
+                self.game_group_name,
+                {
+                    'type': 'players_score',
+                    'sender_channel_name': self.channel_name,
+                    'player1_score': data['player1_score'],
+                    'player2_score': data['player2_score'],
+                }
+            )
         elif data['type'] == 'game_over':
             if self.channel_name != self.games[self.game_id]['host']:
                 # Apenas o host pode enviar game over
@@ -117,6 +129,14 @@ class PongConsumer(AsyncWebsocketConsumer):
                 'opponent_paddle': event['paddle_y'],
                 'ball': event['ball'] if is_sender_host else None
             }))
+
+    async def players_score(self, event):
+        await self.send(json.dumps({
+            'type': 'players_score',
+            'player1_score': event['player1_score'],
+            'player2_score': event['player2_score'],
+        }))
+
 
     async def game_start(self, event):
         await self.send(json.dumps({

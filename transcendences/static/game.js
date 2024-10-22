@@ -30,8 +30,8 @@ class MovementStrategy {
     constructor() {
         this.start = true;
         this.canvas = document.getElementById('gameCanvas');
-        this.my_score = 0;
-        this.opponent_score = 0;
+        this.player1_score = 0;
+        this.player2_score = 0;
 
         this.isRunning = true;
         this.animationFrameId = null;
@@ -42,6 +42,11 @@ class MovementStrategy {
         this.paddleWidth = 10;
         this.ballRadius = 8;
         this.paddleSpeed = 5;
+
+        // Define initial speeds
+        this.initialSpeed = 2; // Speed when the ball resets
+        this.collisionSpeedX = 3; // Horizontal speed after paddle collision
+        this.maxBallSpeed = 4;    // Maximum speed of the ball
 
         this.leftPaddle = {
             y: this.canvas.height / 2 - this.paddleHeight / 2,
@@ -201,18 +206,18 @@ class MovementStrategy {
         const scoreMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
     
         // Calculate the total width of the scores
-        const playerScoreWidth = this.my_score.toString().length * 30;
-        const opponentScoreWidth = this.opponent_score.toString().length * 30;
+        const playerScoreWidth = this.player1_score.toString().length * 30;
+        const opponentScoreWidth = this.player2_score.toString().length * 30;
 
         // Calculate the offsets to center the scores
         const playerScoreOffset = -playerScoreWidth / 2 - 50;
         const opponentScoreOffset = -opponentScoreWidth / 2 + 50;
 
         // Update player score text
-        this.updateScore(this.my_score, playerScoreOffset, scoreMaterial, 'player');
+        this.updateScore(this.player1_score, playerScoreOffset, scoreMaterial, 'player');
         
         // Update opponent score text
-        this.updateScore(this.opponent_score, opponentScoreOffset, scoreMaterial, 'opponent');
+        this.updateScore(this.player2_score, opponentScoreOffset, scoreMaterial, 'opponent');
 
         // Add player names
         const playerNameMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
@@ -297,20 +302,31 @@ class MovementStrategy {
         if (withinPaddleYRange && !this.ballPassedPaddle) {
             if ((isLeft && this.ball.pos.x <= paddleX + this.paddleWidth) ||
                 (!isLeft && this.ball.pos.x >= paddleX - this.paddleWidth)) {
-                    this.ball.speed.x = -this.ball.speed.x;
+                    this.ball.speed.x = isLeft ? this.collisionSpeedX : -this.collisionSpeedX;
+
+                    // Optionally, adjust the vertical speed based on where the ball hits the paddle
+                    const hitPosition = (this.ball.pos.y - paddle.y) / this.paddleHeight - 0.5; // Range from -0.5 to 0.5
+                    this.ball.speed.y = hitPosition * 5; // Adjust vertical speed
+
                     const spin = new THREE.Vector2(0, paddle.speed * 0.1);
                     this.ball.speed.add(spin);
+
+                    // Normalize speed to prevent excessive speed
+                    this.ball.speed.setLength(this.maxBallSpeed);
+
+                    // Adjust ball position to prevent sticking
+                    const offset = isLeft ? this.paddleWidth + this.ballRadius : -(this.paddleWidth + this.ballRadius);
+                    this.ball.pos.x = paddleX + offset;
             }
         }
     }
 
     resetBall() {
         this.ball.pos.set(this.canvas.width / 2, this.canvas.height / 2);
-        this.ball.speed.set((Math.random() > 0.5 ? 1 : -1) * 3, (Math.random() > 0.5 ? 1 : -1) * 3);
-        this.ballPassedPaddle = false; // Reset the flag
+        this.ball.speed.set((Math.random() > 0.5 ? 1 : -1) * this.initialSpeed, 0);
+        this.ballPassedPaddle = false;
         this.updateScoreboard();
     }
-
 
     handleBallCollision() {
         if (this.ball.pos.y - this.ballRadius <= 0  || this.ball.pos.y + this.ballRadius >= this.canvas.height) {
@@ -320,18 +336,14 @@ class MovementStrategy {
             this.ball.speed.sub(reflection);
         }
         if (this.ball.pos.x < 0 || this.ball.pos.x > this.canvas.width) {
-            if (this.ball.pos.x < 0) {
-                this.opponent_score += 1;
-            } else if (this.ball.pos.x > this.canvas.width) {
-                this.my_score += 1;
-            }
-            console.log('Pontos:', this.my_score, this.opponent_score);
-            this.updateScoreboard();
-            this.resetBall();    
-            this.checkGameEnd();
+            this.handleScores();
         } else {
             this.ballPassedPaddle = this.ball.pos.x < this.paddleWidth || this.ball.pos.x > this.canvas.width - this.paddleWidth;
         }
+    }
+
+    handleScores() {
+        throw new Error('Método handleScores deve ser implementado');
     }
 
     updateBall() {

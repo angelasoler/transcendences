@@ -3,6 +3,8 @@ import {gameLoop, MovementStrategy} from './game.js';
 import {navigateTo} from "./routes.js";
 import {closeModal} from "./utils.js";
 
+const WINNING_SCORE = 10;
+
 export class OnlineMovementStrategy extends MovementStrategy {
     constructor(websocket) {
         super();
@@ -45,35 +47,22 @@ export class OnlineMovementStrategy extends MovementStrategy {
     }
 
     resetGame() {
-        // Reset positions
-        this.animationFrameId = null;
-        this.currentTime = 0;
-
-        this.paddleHeight = 100;
-        this.paddleWidth = 10;
-        this.ballRadius = 8;
-        this.paddleSpeed = 5;
-
-        this.leftPaddle = {
-            y: this.canvas.height / 2 - this.paddleHeight / 2,
-            speed: 0
-        };
-
-        this.rightPaddle = {
-            y: this.canvas.height / 2 - this.paddleHeight / 2,
-            speed: 0
-        };
-
-        this.ball = {
-            pos: new THREE.Vector2(this.canvas.width / 2, this.canvas.height / 2),
-            speed: new THREE.Vector2(3, 3),
-        };
-
+        this.canvas = document.getElementById('gameCanvas');
         // Reset keys
         this.keys.up = false;
         this.keys.down = false;
-        this.my_score = 0;
-        this.opponent_score = 0;
+        this.player1_score = 0;
+        this.player2_score = 0;
+
+        this.animationFrameId = null;
+        this.ballPassedPaddle = false;
+        this.currentTime = 0;
+
+        // Reset positions
+        this.ball.pos.set(this.canvas.width / 2, this.canvas.height / 2);
+		this.ball.speed.set((Math.random() > 0.5 ? 1 : -1) * 3, (Math.random() > 0.5 ? 1 : -1) * 3);
+
+        this.updateScoreboard();
     }
 
     handleWebSocketMessage(data) {
@@ -95,6 +84,13 @@ export class OnlineMovementStrategy extends MovementStrategy {
                         this.ball.speed.set(data.ball.speed.x, data.ball.speed.y);
                     }
                 }
+                break;
+            case 'players_score':
+                this.player1_score = data.player1_score;
+                this.player2_score = data.player2_score;
+                console.log('Pontos:', this.player1_score, this.player2_score);
+                this.updateScoreboard();
+                this.checkGameEnd();
                 break;
             case 'game_end':
                 this.closeGame();
@@ -166,14 +162,31 @@ export class OnlineMovementStrategy extends MovementStrategy {
             // Client envia apenas sua posição
             this.sendGameState(this.rightPaddle.y);
         }
-        this.checkWinCondition();
     }
 
-    checkWinCondition() {
+    handleScores() {
+		if (this.ball.pos.x < 0) {
+			this.player2_score += 1;
+		} else if (this.ball.pos.x > this.canvas.width) {
+			this.player1_score += 1;
+		}
+
+        const gameScore = {
+            type: 'players_score',
+            player1_score: this.player1_score,
+            player2_score: this.player2_score,
+        };
+
+        this.websocket.send(JSON.stringify(gameScore));
+
+        this.resetBall();
+	}
+
+    checkGameEnd() {
         if (this.isHost) {
-            if (this.my_score >= 10) {
+            if (this.player1_score >= WINNING_SCORE) {
                 this.sendGameOver('win');
-            } else if (this.opponent_score >= 10) {
+            } else if (this.player2_score >= WINNING_SCORE) {
                 this.sendGameOver('lose');
             }
         }
