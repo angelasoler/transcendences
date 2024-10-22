@@ -2,7 +2,7 @@ import {MovementStrategy, gameLoop} from './game.js';
 import {navigateTo} from "./routes.js";
 import {closeModal} from "./utils.js";
 
-const WINNING_SCORE = 1;
+const WINNING_SCORE = 10;
 
 export class LocalMovementStrategy extends MovementStrategy {
 	constructor() {
@@ -63,11 +63,23 @@ export class LocalMovementStrategy extends MovementStrategy {
 		this.updateGameEngine();
 	}
 
+	handleScores() {
+		if (this.ball.pos.x < 0) {
+			this.player2_score += 1;
+		} else if (this.ball.pos.x > this.canvas.width) {
+			this.player1_score += 1;
+		}
+		console.log('Pontos:', this.player1_score, this.player2_score);
+		this.updateScoreboard();
+		this.resetBall();
+		this.checkGameEnd();
+	}
+
 	checkGameEnd() {
-		if (this.my_score >= WINNING_SCORE) {
+		if (this.player1_score >= WINNING_SCORE) {
 				this.displayWinnerMessage('win', 'Congratulations! You won the game.');
 				this.isRunning = false;
-		} else if (this.opponent_score >= WINNING_SCORE) {
+		} else if (this.player2_score >= WINNING_SCORE) {
 				this.displayWinnerMessage('lose', 'Sorry! You lost the game.');
 				this.isRunning = false;
 		}
@@ -151,8 +163,8 @@ export class LocalMovementStrategy extends MovementStrategy {
 		this.ball.speed.set((Math.random() > 0.5 ? 1 : -1) * 3, (Math.random() > 0.5 ? 1 : -1) * 3);
 
 		// Reset scores
-		this.my_score = 0;
-		this.opponent_score = 0;
+		this.player1_score = 0;
+		this.player2_score = 0;
 
 		// Update the scoreboard
 		this.updateScoreboard();
