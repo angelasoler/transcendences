@@ -1,4 +1,7 @@
 import uuid
+import base64
+
+from io import BytesIO
 
 class UserService:
 
@@ -10,3 +13,15 @@ class UserService:
             output.write(data.read());
         
         return  file_name;
+    
+    @staticmethod
+    def restore(user, dist = '/app/user/static/'):
+        try:
+            with open(dist + user.profile.avatar_path, 'rb') as file:
+                content = file.read()
+                return base64.b64encode(content).decode('utf-8')
+        except Exception as error:
+            with open(dist + 'homer.png', 'rb') as file:
+                content = file.read()
+                return base64.b64encode(content).decode('utf-8')
+            
