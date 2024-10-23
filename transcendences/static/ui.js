@@ -35,7 +35,7 @@ function hasQueryString() {
 export const loadView = (route) => {
     // console.log("load View route: ", route);
     if (protectedRoutes.includes(route)) {
-        fetch('/api/check_auth/')
+        fetch('/api/user/check_auth')
             .then(response => {
                 if (!response.ok)
                     redirectToLogin();
@@ -212,7 +212,7 @@ async function fetchViews(sectionId) {
 }
 
 async function getProfile() {
-    const response = await fetch('/api/profile/', {
+    const response = await fetch('/api/user/profile', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -224,6 +224,7 @@ async function getProfile() {
         const data = await response.json();
         document.getElementById('profileUsername').textContent = data.username;
         document.getElementById('profileEmail').textContent = data.email;
+        document.getElementById('profilePic').setAttribute('src', `data:image/${data.extension};base64,`+ data.photo);
     } else {
         alert('Erro ao obter perfil do usuário.');
         redirectToLogin();
