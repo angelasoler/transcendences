@@ -27,14 +27,12 @@ def not_found(request):
 
 def index(request):
     return render(request, 'index.html')
+    
+def home(request):
+    return render(request, 'home.html')
 
 def login_view(request):
     return render(request, 'login.html')
-
-def logout_user():
-    return render(render, 'logout.html')
-
-@login_required
 
 def register_view(request):
     return render(request, 'register.html')
@@ -80,6 +78,7 @@ def login_user(request):
 @ajax_login_required
 @csrf_protect
 @no_cache
+@login_required
 def profile_user(request):
     if request.method != 'GET':
         return JsonResponse({ 'error': ' Router Not found' }, status=404) 
@@ -92,6 +91,7 @@ def profile_user(request):
 
 
 @csrf_protect
+@login_required
 def logout_user(request):
     if request.method == 'POST':
         logout(request)

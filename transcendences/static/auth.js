@@ -1,5 +1,6 @@
 import {getCookie} from './utils.js';
 import {navigateTo} from "./routes.js";
+import { redirectToLogin } from "./ui.js";
 
 export const registerUser = async (event) => {
     event.preventDefault();
@@ -19,7 +20,7 @@ export const registerUser = async (event) => {
         const result = await response.json();
         if (response.ok) {
             alert(result.message);
-            navigateTo('/api/user/login');
+            redirectToLogin();
         } else {
             alert(result.error);
         }

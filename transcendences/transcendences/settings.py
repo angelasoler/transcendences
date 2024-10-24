@@ -58,16 +58,12 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
-# AUTHENTICATION_BACKENDS = [
-#     'django.contrib.auth.backends.ModelBackend',
-# ]
-
 ROOT_URLCONF = 'transcendences.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [BASE_DIR / 'templates', BASE_DIR / 'static/views'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
