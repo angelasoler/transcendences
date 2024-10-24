@@ -63,13 +63,6 @@ const createLocalRoom = (e) => {
 
 const joinOrCreateRemoteRoom = (e) => {
     e.preventDefault();
-    fetch('/api/user/check_auth')
-            .then(response => {
-                if (!response.ok)
-                    redirectToLogin();
-            }).catch(error => {
-                console.error('check auth request to back end fail', error.message);
-            });
     fetch('/api/join_or_create_room/', {
         method: 'POST',
         headers: {
@@ -109,6 +102,7 @@ const joinOrCreateRemoteRoom = (e) => {
             redirectToLogin();
         } else {
             console.error('Erro ao criar a sala: ', error);
+            return response.text().then(text => { throw new Error(text) });
         }
     });
 }
