@@ -8,7 +8,7 @@ import { AIMovementStrategy } from './ai_game.js'
 export const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournament'];
 let roomsSocket;
 
-const redirectToLogin = () => {
+export const redirectToLogin = () => {
     window.history.pushState({}, '', '/login');
     displaySection('/login');
 };
