@@ -20,15 +20,21 @@ import base64
 
 import json
 
-
-
 # Create your views here.
-@login_required
+
+def not_found(request):
+    return render(request, '404.html')
+
 def index(request):
     return render(request, 'index.html')
 
 def login_view(request):
     return render(request, 'login.html')
+
+def logout_user():
+    return render(render, 'logout.html')
+
+@login_required
 
 def register_view(request):
     return render(request, 'register.html')

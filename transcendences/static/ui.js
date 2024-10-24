@@ -5,7 +5,7 @@ import { OnlineMovementStrategy } from './remote_game.js'
 import {closeModal, getCookie} from "./utils.js";
 import { AIMovementStrategy } from './ai_game.js'
 
-export const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournaments'];
+export const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournament'];
 let roomsSocket;
 
 const redirectToLogin = () => {
@@ -33,7 +33,7 @@ function hasQueryString() {
 }
 
 export const loadView = (route) => {
-    // console.log("load View route: ", route);
+    console.log("load View route: ", route);
     if (protectedRoutes.includes(route)) {
         fetch('/api/user/check_auth')
             .then(response => {
@@ -63,6 +63,13 @@ const createLocalRoom = (e) => {
 
 const joinOrCreateRemoteRoom = (e) => {
     e.preventDefault();
+    fetch('/api/user/check_auth')
+            .then(response => {
+                if (!response.ok)
+                    redirectToLogin();
+            }).catch(error => {
+                console.error('check auth request to back end fail', error.message);
+            });
     fetch('/api/join_or_create_room/', {
         method: 'POST',
         headers: {
@@ -102,12 +109,9 @@ const joinOrCreateRemoteRoom = (e) => {
             redirectToLogin();
         } else {
             console.error('Erro ao criar a sala: ', error);
-            alert('Ocorreu um erro ao criar ou entrar na sala.');
         }
     });
 }
-
-
 
 const displaySection = async (route) => {
     // chama closeGame() se estiver dentro de um jogo e mudar de view

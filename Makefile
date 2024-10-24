@@ -1,4 +1,7 @@
 
+all:
+	docker compose up
+
 build:
 	docker compose build
 
@@ -27,3 +30,8 @@ fclean: down
 	if [ "$(shell docker image ls -a  | grep transcendence/postgres)" ];  then docker rmi transcendence/postgres:latest; fi
 
 	docker volume prune
+
+clean: down
+	docker system prune -a -f
+	docker volume prune -f
+
