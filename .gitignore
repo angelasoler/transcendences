@@ -6,3 +6,4 @@ notes/
 .env
 transcendences/requirement.txt
 */migrations/*
+./postgres/data/

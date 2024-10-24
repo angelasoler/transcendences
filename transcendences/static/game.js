@@ -3,9 +3,6 @@ import { FontLoader, TextGeometry } from 'https://cdnjs.cloudflare.com/ajax/libs
 
 export { MovementStrategy };
 
-export let canvas;
-export let context;
-
 export function initGame(mvStrategy) {
     // Salva a atual instancia de MovementStrategy globalmente
     // para que possamos chamar closeGame() quando mudar de view

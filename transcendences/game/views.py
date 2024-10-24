@@ -12,6 +12,9 @@ import json
 def index(request):
     return render(request, 'index.html')
 
+def not_found(request):
+    return render(request, '404.html')
+
 def no_cache(view):
     def view_wrapper(request, *args, **kwargs):
         response = view(request, *args, **kwargs)
