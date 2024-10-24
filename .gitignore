@@ -5,3 +5,4 @@ env/
 notes/
 .env
 transcendences/requirement.txt
+*/migrations/*

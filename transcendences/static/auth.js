@@ -3,19 +3,18 @@ import {navigateTo} from "./routes.js";
 
 export const registerUser = async (event) => {
     event.preventDefault();
-    const username = document.getElementById('registerUsername').value;
-    const email = document.getElementById('registerEmail').value;
-    const password = document.getElementById('registerPassword').value;
+    const csrftoken = getCookie('csrftoken');
+    const username  = document.getElementById('registerUsername').value;
+    const firstname = document.getElementById('registerName').value;
+    const lastname  = document.getElementById('registerLastName').value;
+    const email     = document.getElementById('registerEmail').value;
+    const password  = document.getElementById('registerPassword').value;
 
     try {
-        const response = await fetch('/api/register/', {
+        const response = await fetch('/api/user/create', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-            credentials: 'include',
-            body: JSON.stringify({ username, email, password })
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+            body:  JSON.stringify({ username, email, password, firstname, lastname })
         });
         // if (!response.ok) {
         // return response.text().then(text => { throw new Error(text) });
@@ -23,7 +22,7 @@ export const registerUser = async (event) => {
         const result = await response.json();
         if (response.ok) {
             alert(result.message);
-            navigateTo('/login');
+            navigateTo('/api/user/login');
         } else {
             alert(result.error);
         }
@@ -37,7 +36,7 @@ export const loginUser = async (event) => {
     const username = document.getElementById('loginUsername').value;
     const password = document.getElementById('loginPassword').value;
 
-    const response = await fetch('/api/login/', {
+    const response = await fetch('/api/user/api/user/login', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -60,7 +59,7 @@ export const loginUser = async (event) => {
 export const logoutUser = async () => {
     const csrftoken = getCookie('csrftoken');
     try {
-        const response = await fetch('/api/logout/', {
+        const response = await fetch('/api/user/logout', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrftoken},
         });

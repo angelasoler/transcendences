@@ -8,6 +8,10 @@ from .service import UserService
 
 #Garantindo que os emails sejam unicos
 DjangoUser._meta.get_field('email')._unique    = True
+#Garantindo que os emails sejam unicos
+DjangoUser._meta.get_field('first_name')._null = True
+#Garantindo que os emails sejam unicos
+DjangoUser._meta.get_field('last_name')._null  = True
 
 class User(models.Model):
     manager     = models.OneToOneField(DjangoUser, related_name='profile', on_delete=models.CASCADE, unique=True )
@@ -50,6 +54,13 @@ class User(models.Model):
 
     @staticmethod
     def create(**kwargs):
+
+      if DjangoUser.objects.filter(username=kwargs.get('username')).exists():
+        raise Exception('Esse username já existe')
+
+      if DjangoUser.objects.filter(email=kwargs.get('email')).exists():
+        raise Exception('Esse email já existe')
+
       manager = DjangoUser.objects.create_user(
         kwargs.get('username'), 
         kwargs.get('email'), 

@@ -69,7 +69,7 @@ export const updateNavbarActiveLink = (currentRoute) => {
 
 export const checkAuthStatus = async () => {
     try {
-        const response = await fetch('/api/check_auth/');
+        const response = await fetch('/api/user/check_auth');
         if (response.ok) {
             updateNavBar(true);
         } else {
