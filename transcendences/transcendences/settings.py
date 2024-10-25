@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'daphne',
     'channels',
     'game',
+    'matches',
     'user'
 ]
 

@@ -1,7 +1,7 @@
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
 import {gameLoop, MovementStrategy} from './game.js';
 import {navigateTo} from "./routes.js";
-import {closeModal} from "./utils.js";
+import {closeModal, getCookie} from "./utils.js";
 
 const WINNING_SCORE = 10;
 
@@ -61,6 +61,12 @@ export class OnlineMovementStrategy extends MovementStrategy {
         // Reset positions
         this.ball.pos.set(this.canvas.width / 2, this.canvas.height / 2);
 		this.ball.speed.set((Math.random() > 0.5 ? 1 : -1) * 3, (Math.random() > 0.5 ? 1 : -1) * 3);
+
+        this.newMatch = {
+            date: '',
+            opponent: '',
+            result: ''
+        };
 
         this.updateScoreboard();
     }
@@ -338,4 +344,34 @@ export class OnlineMovementStrategy extends MovementStrategy {
         window.removeEventListener('beforeunload', this.boundCloseGame);
         window.removeEventListener('popstate', this.boundCloseGame);
     }
+
+    async sendResult() {
+        this.newMatch.result = ''
+        const createdMatch = await createMatch(this.newMatch);
+        console.log('Nova partida criada:', createdMatch);
+    }
 }
+
+async function createMatch(matchData) {
+    try {
+        const csrftoken = getCookie('csrftoken');
+        const response = await fetch('/api/matches/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify(matchData),
+        });
+
+        if (!response.ok)
+            console.error('Erro ao criar nova partida', response.status);
+
+        const createdMatch = await response.json();
+        console.log('Partida criada com sucesso:', createdMatch);
+    } catch (error) {
+        console.error('Erro ao criar nova partida:', error);
+        return null;
+    }
+}
+

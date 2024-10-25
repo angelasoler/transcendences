@@ -4,6 +4,7 @@ import { LocalMovementStrategy } from './local_game.js'
 import { OnlineMovementStrategy } from './remote_game.js'
 import {closeModal, getCookie} from "./utils.js";
 import { AIMovementStrategy } from './ai_game.js'
+import { ProfileStats } from './profile_stats.js';
 
 export const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournament'];
 let roomsSocket;
@@ -153,6 +154,10 @@ const displaySection = async (route) => {
             break;
         case 'profile':
             getProfile();
+            break;
+        case 'show-stats':
+            const stats = new ProfileStats();
+            stats.loadStatistics();
             break;
         case 'home':
             document.getElementById('joinOnlineRoomButton').addEventListener('click', joinOrCreateRemoteRoom);
