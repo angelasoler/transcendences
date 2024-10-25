@@ -1,29 +1,42 @@
-export class StatsService {
-    constructor() {
-        this.API_URL = 'seu-backend-url/api'; // Substitua pela URL real da sua API
-    }
-
+class StatsService {
     async getStatistics() {
-        // Simulação de chamada API - substitua pelo fetch real
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve({
-                    matches: [
-                        { date: '2024-10-24', opponent: 'Player1', result: 'Vitória' },
-                        { date: '2024-10-23', opponent: 'Player2', result: 'Derrota' },
-                        { date: '2024-10-22', opponent: 'Player3', result: 'Vitória' }
-                    ],
-                    stats: {
-                        wins: 2,
-                        losses: 1
-                    }
-                });
-            }, 500);
-        });
+        try {
+            // Fetch para obter as partidas
+            const matchesResponse = await fetch('/api/matches', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            
+            if (!matchesResponse.ok) throw new Error('Erro ao obter partidas');
+            
+            const matches = await matchesResponse.json();
+    
+            // Fetch para obter as estatísticas
+            const statsResponse = await fetch('/api/stats', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+    
+            if (!statsResponse.ok) throw new Error('Erro ao obter estatísticas');
+    
+            const stats = await statsResponse.json();
+    
+            return {
+                matches,
+                stats,
+            };
+        } catch (error) {
+            console.error('Erro ao obter estatísticas:', error);
+            return null;
+        }
     }
 }
 
-export class StatsView {
+class StatsView {
     constructor() {
         this.elements = {
             statsSection: document.getElementById('statistics'),
@@ -112,7 +125,7 @@ export class ProfileStats {
     }
 
     bindEvents() {
-        document.querySelector('[data-route="back-to-profile"]')?.addEventListener('click', () => {
+        document.querySelector('[data-route="profile"]')?.addEventListener('click', () => {
             this.statsView.elements.statsSection.classList.add('d-none');
             this.statsView.elements.profileSection.classList.remove('d-none');
         });
