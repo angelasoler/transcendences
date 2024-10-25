@@ -1,3 +1,4 @@
+import { loadStatistics } from "./profile_stats.js";
 import {initGame} from "./game.js";
 import { registerUser, loginUser, logoutUser } from './auth.js';
 import { LocalMovementStrategy } from './local_game.js'
@@ -154,6 +155,8 @@ const displaySection = async (route) => {
         case 'profile':
             getProfile();
             break;
+        case 'show-stats':
+            loadStatistics();
         case 'home':
             document.getElementById('joinOnlineRoomButton').addEventListener('click', joinOrCreateRemoteRoom);
             break;
