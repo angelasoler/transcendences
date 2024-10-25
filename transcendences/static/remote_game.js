@@ -1,8 +1,7 @@
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
-import {gameLoop, MovementStrategy, } from './game.js';
+import {gameLoop, MovementStrategy} from './game.js';
 import {navigateTo} from "./routes.js";
-import {closeModal} from "./utils.js";
-import {getCookie} from './utils.js';
+import {closeModal, getCookie} from "./utils.js";
 
 const WINNING_SCORE = 10;
 
