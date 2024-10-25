@@ -1,20 +1,18 @@
-
-<section id="statistics" class="container my-5 d-none">
+<section id="statistics" class="container my-5">
     <div class="container">
         <div class="row mb-4">
             <div class="col">
                 <h2>Suas Estatísticas
-                    <button class="btn btn-outline-secondary btn-sm float-end" data-route="back-to-profile">
+                    <button class="btn btn-outline-secondary btn-sm float-end" data-route="profile">
                         Voltar ao Perfil
                     </button>
                 </h2>
             </div>
         </div>
-
         <!-- Resumo rápido -->
         <div class="row mb-4">
             <div class="col-md-4">
-                <div class="card text-center bg-success text-white">
+                <div class="card text-center bg-success text-white h-100">
                     <div class="card-body">
                         <h5 class="card-title">Vitórias</h5>
                         <h2 class="card-text" id="totalWins">0</h2>
@@ -22,7 +20,7 @@
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card text-center bg-danger text-white">
+                <div class="card text-center bg-danger text-white h-100">
                     <div class="card-body">
                         <h5 class="card-title">Derrotas</h5>
                         <h2 class="card-text" id="totalLosses">0</h2>
@@ -30,7 +28,7 @@
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card text-center bg-primary text-white">
+                <div class="card text-center bg-primary text-white h-100">
                     <div class="card-body">
                         <h5 class="card-title">Taxa de Vitória</h5>
                         <h2 class="card-text" id="winRate">0%</h2>
@@ -64,7 +62,6 @@
                                         <th>Data</th>
                                         <th>Oponente</th>
                                         <th>Resultado</th>
-                                        <th>Pontuação</th>
                                     </tr>
                                 </thead>
                                 <tbody id="matchHistory">
