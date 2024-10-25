@@ -1,20 +1,38 @@
 import {getCookie} from './utils.js';
 import {navigateTo} from "./routes.js";
 
+export const ImageToBase64  =  async () => {
+    return new Promise((resolve, reject) => {
+        const file    = document.getElementById('formFile').files[0];
+ 
+        const reader  = new FileReader()
+        
+        reader.onload = () => {
+            resolve(reader.result)
+        }
+
+        reader.readAsDataURL(file)
+        
+    })
+
+}
+
+
 export const registerUser = async (event) => {
     event.preventDefault();
-    const csrftoken = getCookie('csrftoken');
-    const username  = document.getElementById('registerUsername').value;
-    const firstname = document.getElementById('registerName').value;
-    const lastname  = document.getElementById('registerLastName').value;
-    const email     = document.getElementById('registerEmail').value;
-    const password  = document.getElementById('registerPassword').value;
-
+    const csrftoken    = getCookie('csrftoken');
+    const username     = document.getElementById('registerUsername').value;
+    const firstname    = document.getElementById('registerName').value;
+    const lastname     = document.getElementById('registerLastName').value;
+    const email        = document.getElementById('registerEmail').value;
+    const password     = document.getElementById('registerPassword').value;
+    const avatar       = await ImageToBase64()
+    
     try {
         const response = await fetch('/api/user/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
-            body:  JSON.stringify({ username, email, password, firstname, lastname })
+            body:  JSON.stringify({ username, email, password, firstname, lastname, avatar })
         });
         // if (!response.ok) {
         // return response.text().then(text => { throw new Error(text) });

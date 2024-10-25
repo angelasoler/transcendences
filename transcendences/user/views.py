@@ -97,10 +97,12 @@ def create_user(request):
     if request.method != 'POST':
         return JsonResponse({ 'message': ' Router Not found' }, status=404) 
 
-    if request.FILES.get('avatar') is not None:
-        avatar = UserService.persist(request.FILES.get('avatar').file, request.FILES.get('avatar').name)
+    params = json.loads(request.body)
+
+    if params['avatar'] is not None:
+        avatar = UserService.persist(params['avatar'])
     else:
-        avatar = UserService.persist( open('/app/user/static/homer.png', 'rb'), 'homer.png')
+        avatar = UserService.persistFile( open('/app/user/static/homer.png', 'rb'), 'homer.png')
 
     params = json.loads(request.body)
 
