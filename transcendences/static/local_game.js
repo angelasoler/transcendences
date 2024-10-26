@@ -2,7 +2,7 @@ import {MovementStrategy, gameLoop} from './game.js';
 import {navigateTo} from "./routes.js";
 import {closeModal} from "./utils.js";
 
-const WINNING_SCORE = 10;
+const WINNING_SCORE = 1; //MUDAR PARA 10
 
 export class LocalMovementStrategy extends MovementStrategy {
 	constructor() {

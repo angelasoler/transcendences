@@ -1,10 +1,12 @@
-import {initGame} from "./game.js";
+import { initGame } from "./game.js";
 import { registerUser, loginUser, logoutUser } from './auth.js';
 import { LocalMovementStrategy } from './local_game.js'
 import { OnlineMovementStrategy } from './remote_game.js'
-import {closeModal, getCookie} from "./utils.js";
+import { closeModal, getCookie } from "./utils.js";
 import { AIMovementStrategy } from './ai_game.js'
+import { TournamentGame } from "./tournament_game.js";
 import { ProfileStats } from './profile_stats.js';
+import { attachFormSubmitListener } from "./tournament.js";
 
 export const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournament'];
 let roomsSocket;
@@ -108,7 +110,7 @@ const joinOrCreateRemoteRoom = (e) => {
     });
 }
 
-const displaySection = async (route) => {
+export const displaySection = async (route) => {
     // chama closeGame() se estiver dentro de um jogo e mudar de view
     if (window.currentMovementStrategy) {
         window.currentMovementStrategy.closeGame();
@@ -141,6 +143,7 @@ const displaySection = async (route) => {
         roomsSocket = null;
     }
 
+    console.log("displaySection section 2: ", section);
     await fetchViews(section);
     switch (section) {
         case 'login':
@@ -174,9 +177,16 @@ const displaySection = async (route) => {
                 MovementStrategy = new LocalMovementStrategy();
             } else if (gameMode === 'ia') {
                 MovementStrategy = new AIMovementStrategy();
+            } else if (gameMode === 'tournament') {
+                const tournamentId = gameId; // Assuming gameId is the tournamentId
+                const currentMatchup = getCurrentMatchup(tournamentId); // Implement this function to get the current matchup
+                MovementStrategy = new TournamentGame(tournamentId, currentMatchup);
             }
             initGame(MovementStrategy);
             break;
+        case 'local-tournament':
+            attachFormSubmitListener();
+            break;  
     }
 }
 
