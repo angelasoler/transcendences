@@ -4,7 +4,8 @@
     <div class="alert alert-info">
         <strong>Informação:</strong> Para iniciar um torneio local, selecione o número de jogadores e registre seus nomes.
     </div>
-    <form id="local-tournament-form">
+    <form id="local-tournament-form" method="POST">
+        <input type="hidden" name="csrf-token" value="{% csrf_token %}">
         <div class="mb-3">
             <label for="tournamentName" class="form-label">Nome do Torneio</label>
             <input type="text" class="form-control" id="tournamentName" required>
