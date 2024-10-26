@@ -247,6 +247,8 @@ async function getProfile() {
         const data = await response.json();
         document.getElementById('profileUsername').textContent = data.username;
         document.getElementById('profileEmail').textContent = data.email;
+        document.getElementById('profilesList').addEventListener('click', showModalProfileList);
+        document.getElementById('profilesCloseList').addEventListener('click', closeModalProfileList);
         document.getElementById('profilePic').setAttribute('src', `data:image/${data.extension};base64,`+ data.photo);
     } else {
         alert('Erro ao obter perfil do usuário.');
@@ -288,4 +290,53 @@ function updateModalContentForTournament(winner, tournamentId) {
         displaySection(`/tournament?tournament_id=${tournamentId}`);
     };
     returnToHomeButton.style.display = 'none';
+}
+
+async function showModalProfileList() {
+    const response = await fetch('/api/user/profiles_list', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store',
+        },
+        cache: 'no-store',
+    });
+    if (response.ok) {
+        const data = await response.json();
+        const dadosString = JSON.stringify(data);
+        console.log(dadosString); 
+    } else {
+        alert('Erro ao obter perfil do usuário.');
+        closeModalProfileList();
+    }
+    const modalContent = document.createElement('ul');
+    // const items = [
+    //     "An item",
+    //     "A second item",
+    //     "A third item",
+    //     "A fourth item",
+    //     "And a fifth one"
+    // ];
+
+    // items.forEach(text => {
+    //     const listItem = document.createElement('li');
+    //     listItem.classList.add('list-group-flush');
+    //     listItem.innerText = text;
+    //     modalContent.appendChild(listItem);
+    // });
+    document.getElementById('modalProfileList').appendChild(modalContent)
+
+    document.getElementById('profilesList').style.display = "none";
+    document.getElementById('profilesCloseList').style.display = "inline";
+}
+
+function closeModalProfileList() {
+
+    const items = document.querySelectorAll('.list-group-flush');
+    items.forEach(item => {
+        item.remove();
+    });
+
+    document.getElementById('profilesList').style.display = "inline";
+    document.getElementById('profilesCloseList').style.display = "none";
 }

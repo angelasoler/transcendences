@@ -14,6 +14,8 @@ from urllib.parse import urlencode, quote_plus
 
 from django.contrib.auth.models import User as DjangoUser
 
+from django.core import serializers
+
 from .models import User
 
 from .service import UserService
@@ -280,8 +282,19 @@ def user_add_friend(request):
     friends = request.POST.getlist('newFriends')
     
     try:
-        request.user.profile.add_friends( friends )
+        request.user.profile.add_friends(friends)
         return JsonResponse( { 'message': 'Amigos adicionados com sucesso' }, status=200)
     except Exception as error:
         return JsonResponse( { 'message': str(error)  }, status=500)
 
+@login_required
+def profiles_list(request):
+    if request.method != 'GET':
+        return JsonResponse({ 'error': ' Router Not found' }, status=404)
+    
+    users_list = serializers.serialize('json', User.objects.all())
+    
+    
+    
+    return JsonResponse(users_list, status=200)
+    
