@@ -13,9 +13,7 @@ export const ImageToBase64  =  async () => {
         }
 
         reader.readAsDataURL(file)
-        
     })
-
 }
 
 

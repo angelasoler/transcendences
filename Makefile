@@ -1,21 +1,20 @@
 
-all:
-	docker compose up
+all: build upd
 
 build:
-	docker compose build
+	docker-compose build
 
 up:
-	docker compose up web
+	docker-compose up web
 
 upd:
-	docker compose up -d web
+	docker-compose up -d web
 
 test:
-	docker compose run --rm test bash
+	docker-compose run --rm test bash
 
 down:
-	docker compose down
+	docker-compose down
 
 fclean: down
 	@echo "Cleaning..."

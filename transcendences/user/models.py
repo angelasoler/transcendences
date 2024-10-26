@@ -23,7 +23,7 @@ class User(models.Model):
     loses       = models.IntegerField(default=0)
 
     def add_friend(self, friend ) -> None:
-        self.friends.add(friend);
+        self.friends.add(friend)
 
         friend.friends.add(self)
 
@@ -47,7 +47,7 @@ class User(models.Model):
 
       self.save()
 
-      return True;
+      return True
 
     def first_name(self):
       return self.manager.first_name
