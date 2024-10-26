@@ -54,7 +54,7 @@ def game_room(request, room_name):
         'room_name': room_name
     })
 
-@csrf_exempt
+@csrf_protect
 def create_tournament(request):
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -85,7 +85,7 @@ def create_tournament(request):
 
         redis_client.set(tournament_id, json.dumps(tournament_data))
 
-        return JsonResponse({'tournament_id': tournament_id})
+        return JsonResponse({'tournament_id': tournament_id, 'success': True})
     return JsonResponse({'error': 'Método não permitido'}, status=405)
 
 def get_tournament_matchups(request, tournament_id):
@@ -95,15 +95,6 @@ def get_tournament_matchups(request, tournament_id):
 
     tournament_data = json.loads(tournament_data)
     return JsonResponse(tournament_data)
-
-def get_next_matchup(tournament_data):
-    # Example logic to get the next matchup
-    # This should be customized based on your tournament structure
-    matchups = tournament_data.get('matchups', [])
-    for matchup in matchups:
-        if 'winner' not in matchup:
-            return matchup
-    return None
 
 @csrf_exempt
 def update_bracket(request, tournament_id):
@@ -119,26 +110,31 @@ def update_bracket(request, tournament_id):
             return JsonResponse({'error': 'Tournament not found'}, status=404)
 
         tournament_data = json.loads(tournament_data)
-        # Update the bracket logic here
-        # Form the next round of matches with the winners of the last round
         matchups = tournament_data.get('matchups', [])
         new_matchups = []
 
-        # Assuming matchups are a list of lists with two players each
-        winners = [matchup['winner'] for matchup in matchups if 'winner' in matchup]
+        # Update the current matchup with the winner
+        for matchup in matchups:
+            if 'winner' not in matchup:
+                matchup['winner'] = winner
+                break
 
-        if len(winners) < 2:
-            return JsonResponse({'error': 'Not enough winners to form the next round'}, status=400)
+        # Check if all matches in the current round have been played
+        all_matches_played = all('winner' in matchup for matchup in matchups)
 
-        # Pair up winners for the next round
-        for i in range(0, len(winners), 2):
-            if i + 1 < len(winners):
-                new_matchups.append([winners[i], winners[i + 1]])
-            else:
-            # If there's an odd number of winners, the last one gets a bye to the next round
-                new_matchups.append([winners[i]])
+        if all_matches_played:
+            # Form the next round of matches with the winners of the last round
+            winners = [matchup['winner'] for matchup in matchups]
 
-        tournament_data['matchups'] = new_matchups
+            # Pair up winners for the next round
+            for i in range(0, len(winners), 2):
+                if i + 1 < len(winners):
+                    new_matchups.append({'player1': winners[i], 'player2': winners[i + 1]})
+                else:
+                    # If there's an odd number of winners, the last one gets a placeholder
+                    new_matchups.append({'player1': winners[i], 'player2': 'TBD'})
+
+            tournament_data['matchups'] = new_matchups
 
         redis_client.set(tournament_id, json.dumps(tournament_data))
         return JsonResponse({'success': True})

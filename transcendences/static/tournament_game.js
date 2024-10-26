@@ -1,11 +1,15 @@
 import { LocalMovementStrategy } from './local_game.js';
-import { displayMatchups } from './tournament.js';
+import { showModal } from './ui.js';
+import { getCookie } from './utils.js';
+
+const WINNING_SCORE = 1;
 
 class TournamentGame extends LocalMovementStrategy {
   constructor(tournamentId, currentMatchup) {
       super();
       this.tournamentId = tournamentId;
       this.currentMatchup = currentMatchup;
+      console.log('currentMatchup: ', this.currentMatchup);
   }
 
   handleScores() {
@@ -23,36 +27,37 @@ class TournamentGame extends LocalMovementStrategy {
   checkGameEnd() {
       if (this.player1_score >= WINNING_SCORE) {
           this.updateBracket('player1');
-          this.displayWinnerMessage('win', 'Congratulations! You won the game.');
+        //   this.displayWinnerMessage('win', 'Congratulations! You won the game.');
           this.isRunning = false;
       } else if (this.player2_score >= WINNING_SCORE) {
           this.updateBracket('player2');
-          this.displayWinnerMessage('lose', 'Sorry! You lost the game.');
+        //   this.displayWinnerMessage('lose', 'Sorry! You lost the game.');
           this.isRunning = false;
       }
   }
 
   updateBracket(winner) {
-      fetch(`/api/update_bracket/${this.tournamentId}/`, {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': getCookie('csrftoken'),
-          },
-          body: JSON.stringify({ winner: this.currentMatchup[winner] })
-      })
-      .then(response => response.json())
-      .then(data => {
-          if (data.error) {
-              alert(data.error);
-          } else {
-              displayMatchups(this.tournamentId);
-          }
-      })
-      .catch(error => {
-          console.error('Error updating bracket:', error);
-      });
-  }
+    console.log('winner: ', this.currentMatchup[winner]);
+    fetch(`/api/update_bracket/${this.tournamentId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ winner: this.currentMatchup[winner] })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+        } else {
+            showModal('tournament', this.currentMatchup[winner], this.tournamentId);
+        }
+    })
+    .catch(error => {
+        console.error('Error updating bracket:', error);
+    });
+}
 }
 
 export { TournamentGame };
