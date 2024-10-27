@@ -29,10 +29,13 @@ class User(models.Model):
 
     def to_hash(self):
       return {
+        'id' : self.id,
+        'username' : self.manager.username,
         'first_name': self.manager.first_name,
         'last_name':  self.manager.last_name,
         'created_at': self.created_at,
-        'updated_at': self.updated_at
+        'updated_at': self.updated_at,
+        'is_active' : self.manager.is_active
       }
 
     @transaction.atomic

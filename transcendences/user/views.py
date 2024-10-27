@@ -291,10 +291,5 @@ def user_add_friend(request):
 def profiles_list(request):
     if request.method != 'GET':
         return JsonResponse({ 'error': ' Router Not found' }, status=404)
-    
-    users_list = serializers.serialize('json', User.objects.all())
-    
-    
-    
-    return JsonResponse(users_list, status=200)
+    return JsonResponse(list(map(lambda x: x.to_hash(), User.objects.all())), status=200, safe=False)
     

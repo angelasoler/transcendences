@@ -152,6 +152,8 @@ export const displaySection = async (route) => {
             logoutUser();
             break;
         case 'profile':
+            document.getElementById('profilesList').addEventListener('click', showModalProfileList);
+            document.getElementById('profilesCloseList').addEventListener('click', closeModalProfileList);
             getProfile();
             break;
         case 'show-stats':
@@ -244,11 +246,11 @@ async function getProfile() {
         cache: 'no-store',
     });
     if (response.ok) {
+        console.log("Im here");
+        console.log(response.json());
         const data = await response.json();
         document.getElementById('profileUsername').textContent = data.username;
         document.getElementById('profileEmail').textContent = data.email;
-        document.getElementById('profilesList').addEventListener('click', showModalProfileList);
-        document.getElementById('profilesCloseList').addEventListener('click', closeModalProfileList);
         document.getElementById('profilePic').setAttribute('src', `data:image/${data.extension};base64,`+ data.photo);
     } else {
         alert('Erro ao obter perfil do usuário.');
@@ -302,21 +304,18 @@ async function showModalProfileList() {
         cache: 'no-store',
     });
     if (response.ok) {
+        console.log(response.json());
         const data = await response.json();
-        const dadosString = JSON.stringify(data);
-        console.log(dadosString); 
-    } else {
-        alert('Erro ao obter perfil do usuário.');
-        closeModalProfileList();
-    }
-    const modalContent = document.createElement('ul');
-    // const items = [
-    //     "An item",
-    //     "A second item",
-    //     "A third item",
-    //     "A fourth item",
-    //     "And a fifth one"
-    // ];
+
+        for (let user of data) {
+            console.log(user.username);
+        }
+        for (let user of data) {
+            const listItem = document.createElement('li');
+            listItem.classList.add('list-group-flush');
+            listItem.innerText = `${user.id} | ${user.username}`
+            modalContent.appendChild(listItem);
+        }
 
     // items.forEach(text => {
     //     const listItem = document.createElement('li');
@@ -324,10 +323,18 @@ async function showModalProfileList() {
     //     listItem.innerText = text;
     //     modalContent.appendChild(listItem);
     // });
-    document.getElementById('modalProfileList').appendChild(modalContent)
 
-    document.getElementById('profilesList').style.display = "none";
-    document.getElementById('profilesCloseList').style.display = "inline";
+        document.getElementById('modalProfileList').appendChild(modalContent)
+
+        document.getElementById('profilesList').style.display = "none";
+        document.getElementById('profilesCloseList').style.display = "inline";
+    } else {
+        alert('Erro ao obter perfil do usuário.');
+        closeModalProfileList();
+    }
+    const modalContent = document.createElement('ul');
+
+
 }
 
 function closeModalProfileList() {
