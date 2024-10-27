@@ -5,11 +5,11 @@ import { getCookie } from './utils.js';
 const WINNING_SCORE = 1;
 
 class TournamentGame extends LocalMovementStrategy {
-  constructor(tournamentId, currentMatchup) {
+  constructor(tournamentId, currentMatch) {
       super();
       this.tournamentId = tournamentId;
-      this.currentMatchup = currentMatchup;
-      console.log('currentMatchup: ', this.currentMatchup);
+      this.currentMatch = currentMatch;
+      console.log('currentMatch: ', this.currentMatch);
   }
 
   handleScores() {
@@ -37,21 +37,21 @@ class TournamentGame extends LocalMovementStrategy {
   }
 
   updateBracket(winner) {
-    console.log('winner: ', this.currentMatchup[winner]);
+    console.log('winner: ', this.currentMatch[winner]);
     fetch(`/api/update_bracket/${this.tournamentId}/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': getCookie('csrftoken'),
         },
-        body: JSON.stringify({ winner: this.currentMatchup[winner] })
+        body: JSON.stringify({ winner: this.currentMatch[winner] })
     })
     .then(response => response.json())
     .then(data => {
         if (data.error) {
             alert(data.error);
         } else {
-            showModal('tournament', this.currentMatchup[winner], this.tournamentId);
+            showModal('tournament', this.currentMatch[winner], this.tournamentId);
         }
     })
     .catch(error => {

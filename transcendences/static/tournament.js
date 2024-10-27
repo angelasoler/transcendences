@@ -22,14 +22,11 @@ export function attachFormSubmitListener() {
             });
 
             const result = await response.json();
-            console.log(result);    
             if (result.success) {
-                console.log("here");
                 const tournamentId = result.tournament_id;
                 window.history.pushState({}, '', `/tournament?tournament_id=${tournamentId}`);
                 displaySection(`/tournament?tournament_id=${tournamentId}`);
             } else {
-                console.log("her2e");
                 alert(result.error);
             }
         } catch (error) {
@@ -37,10 +34,46 @@ export function attachFormSubmitListener() {
             alert('An error occurred while creating the tournament.');
         }
     });
+
+    const addPlayerButton = document.getElementById('addPlayer');
+    const removePlayerButton = document.getElementById('removePlayer');
+
+    addPlayerButton.addEventListener('click', () => {
+        const playersContainer = document.getElementById('playerInputs');
+        const playerInputs = playersContainer.querySelectorAll('input[name="player"]');
+        if (playerInputs.length < 8) {
+            const newPlayerInput = document.createElement('div');
+            newPlayerInput.classList.add('mb-3');
+            newPlayerInput.innerHTML = `
+                <label class="form-label">Jogador ${playerInputs.length + 1}</label>
+                <input type="text" class="form-control" name="player" required>
+            `;
+            playersContainer.appendChild(newPlayerInput);
+            updateButtonStates();
+        }
+    });
+
+    removePlayerButton.addEventListener('click', () => {
+        const playersContainer = document.getElementById('playerInputs');
+        const playerInputs = playersContainer.querySelectorAll('input[name="player"]');
+        if (playerInputs.length > 4) {
+            playersContainer.lastElementChild.remove();
+            updateButtonStates();
+        }
+    });
+
+    function updateButtonStates() {
+        const playersContainer = document.getElementById('playerInputs');
+        const playerInputs = playersContainer.querySelectorAll('input[name="player"]');
+        addPlayerButton.disabled = playerInputs.length >= 8;
+        removePlayerButton.disabled = playerInputs.length <= 4;
+    }
+
+    // Initial state update
+    updateButtonStates();
 }
 
-export async function displayMatchups(tournamentId) {
-    console.log(tournamentId);
+export async function displayMatches(tournamentId) {
     try {
         const response = await fetch(`/api/tournament/${tournamentId}/`);
         if (!response.ok) {
@@ -48,7 +81,6 @@ export async function displayMatchups(tournamentId) {
         }
         const data = await response.json();
         const content = document.getElementById('content');
-        console.log("here2");
         // Fetch the tournament view
         const viewResponse = await fetch('/static/views/tournament.html');
         if (!viewResponse.ok) {
@@ -56,21 +88,38 @@ export async function displayMatchups(tournamentId) {
         }
         const viewHtml = await viewResponse.text();
         content.innerHTML = viewHtml;
-        console.log("here");
-        // Populate the view with matchups data
-        document.querySelector('#tournament h2').textContent = `Matchups for ${data.name}`;
-        const matchupsList = document.querySelector('#tournament .list-group');
-        matchupsList.innerHTML = data.matchups.map(matchup => `
-            <li class="list-group-item">
-                ${matchup.player1} vs ${matchup.player2 || 'Bye'}
-            </li>
-        `).join('');
 
+        // Populate the view with matches data
+        document.querySelector('#tournament h2').textContent = `Partidas ${data.name}`;
+        const matchesList = document.querySelector('#tournament .list-group');
+
+        matchesList.innerHTML = '';
+        data.rounds.forEach((round, roundIndex) => {
+            const roundDiv = document.createElement('div');
+            roundDiv.classList.add('round');
+
+            const roundHeader = document.createElement('h3');
+            roundHeader.textContent = `Round ${roundIndex + 1}`;
+            roundDiv.appendChild(roundHeader);
+
+            const roundList = document.createElement('ul');
+            roundList.classList.add('list-group');
+
+            round.forEach(matchup => {
+                const listItem = document.createElement('li');
+                listItem.classList.add('list-group-item');
+                listItem.textContent = `${matchup.player1} vs ${matchup.player2 || 'Bye'}`;
+                roundList.appendChild(listItem);
+        });
+
+        roundDiv.appendChild(roundList);
+        matchesList.appendChild(roundDiv);
+    });
         // Add event listener to the start tournament button
         document.getElementById('startTournamentButton').addEventListener('click', () => startNextGame(tournamentId));
     } catch (error) {
-        console.error('Error loading matchups:', error);
-        alert('An error occurred while fetching matchups.');
+        console.error('Error loading matches:', error);
+        alert('An error occurred while fetching matches.');
     }
 }
 
@@ -87,7 +136,7 @@ function startNextGame(tournamentId) {
         if (data.error) {
             alert(data.error);
         } else {
-            const currentMatchup = data.matchup;
+            const currentMatch = data.match;
             const gameMode = 'tournament';
             const gameUrl = `/game-canva?mode=${gameMode}&tournament_id=${tournamentId}`;
             window.history.pushState({}, '', gameUrl);
@@ -99,23 +148,25 @@ function startNextGame(tournamentId) {
     });
 }
 
-export function getCurrentMatchup(tournamentId) {
+export function getCurrentMatch(tournamentId) {
     return fetch(`/api/tournament/${tournamentId}/`)
         .then(response => response.json())
         .then(data => {
             if (data.error) {
                 throw new Error(data.error);
             }
-            const matchups = data.matchups;
-            for (let matchup of matchups) {
-                if (!matchup.winner) {
-                    return matchup;
+            const rounds = data.rounds;
+            for (let round of rounds) {
+                for (let match of round) {
+                    if (!match.winner) {
+                        return match;
+                    }
                 }
             }
-            throw new Error('No more matchups available');
+            throw new Error('No more matches available');
         })
         .catch(error => {
-            console.error('Error fetching current matchup:', error);
+            console.error('Error fetching current match:', error);
             throw error;
         });
 }
