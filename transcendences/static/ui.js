@@ -246,8 +246,6 @@ async function getProfile() {
         cache: 'no-store',
     });
     if (response.ok) {
-        console.log("Im here");
-        console.log(response.json());
         const data = await response.json();
         document.getElementById('profileUsername').textContent = data.username;
         document.getElementById('profileEmail').textContent = data.email;
@@ -304,7 +302,6 @@ async function showModalProfileList() {
         cache: 'no-store',
     });
     if (response.ok) {
-        console.log(response.json());
         const data = await response.json();
 
         for (let user of data) {
@@ -312,8 +309,11 @@ async function showModalProfileList() {
         }
         for (let user of data) {
             const listItem = document.createElement('li');
+            
             listItem.classList.add('list-group-flush');
+        
             listItem.innerText = `${user.id} | ${user.username}`
+           
             modalContent.appendChild(listItem);
         }
 
