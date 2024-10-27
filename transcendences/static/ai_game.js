@@ -98,20 +98,19 @@ export class AIMovementStrategy extends LocalMovementStrategy {
 			this.moveToDefault();
 			return;
 		}
-
 		const variation = (1 - this.confidence) * 30;
-		const adjustedPrediction = this.predictedIntersection + (Math.random() - 0.5) * variation;
-
+		const impactOffset = this.calculatePaddleImpactPoint() * this.paddleHeight;
+		const adjustedPrediction = this.predictedIntersection + 
+									(Math.random() - 0.5) * variation + impactOffset;
 		const paddleCenter = this.leftPaddle.y + this.paddleHeight / 2;
 		const tolerance = 10;
 		let simulatedKeyEvent;
-
+	
 		let anticipation = 0;
 		if (this.ball.speed.x > 0) {
 			const preferredZone = this.getPreferredZone();
 			anticipation = (preferredZone - paddleCenter) * 0.2;
 		}
-
 		if (Math.abs(paddleCenter - adjustedPrediction - anticipation) < tolerance) {
 			simulatedKeyEvent = new Event('iaStop');
 		} else if (paddleCenter < adjustedPrediction + anticipation) {
@@ -119,7 +118,6 @@ export class AIMovementStrategy extends LocalMovementStrategy {
 		} else {
 			simulatedKeyEvent = new Event('iaMoveUp');
 		}
-
 		document.dispatchEvent(simulatedKeyEvent);
 	}
 
@@ -219,5 +217,34 @@ export class AIMovementStrategy extends LocalMovementStrategy {
 		if (maxProb === bottomProb)
 			return this.canvas.height * 0.75;
 		return this.canvas.height / 2;
+	}
+
+	calculatePaddleImpactPoint() {
+
+		if (this.ball.speed.x < 0) {
+			const ballSpeed = Math.sqrt(
+				this.ball.speed.x * this.ball.speed.x + 
+				this.ball.speed.y * this.ball.speed.y
+			);
+			const total = this.playerPatterns.topHits + 
+						this.playerPatterns.middleHits + 
+						this.playerPatterns.bottomHits;
+			if (total > 5) {
+				const topProb = this.playerPatterns.topHits / total;
+				const bottomProb = this.playerPatterns.bottomHits / total;
+				if (topProb > 0.5) {
+					return 0.3;
+				}
+				if (bottomProb > 0.5) {
+					return -0.3;
+				}
+			}
+			if (ballSpeed > this.maxBallSpeed * 0.8) {
+				return 0;
+			}
+		
+			return (Math.random() - 0.5) * 0.4;
+		}
+		return 0;
 	}
 }
