@@ -75,6 +75,17 @@ class User(models.Model):
       )
 
     @staticmethod
+    def find_by(**kwargs):
+      
+      if (kwargs.get('email') is not None):
+        return DjangoUser.objects.get( email = kwargs.get('email'))
+      
+      if (kwargs.get('username') is not None):
+        return DjangoUser.objects.get( username = kwargs.get('username'))
+      
+      return None      
+
+    @staticmethod
     def update(**kwargs):
       id          = kwargs.get('id')
       username    = kwargs.get('username')
