@@ -6,9 +6,6 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 import aioredis
 import uuid
 from pydoc import plain
-import logging
-
-logger = logging.getLogger(__name__)
 
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
