@@ -105,7 +105,7 @@ def create_user(request):
 
     params = json.loads(request.body)
 
-    if params['avatar'] is not None:
+    if params.get('avatar') is not None:
         avatar = UserService.persist(params['avatar'])
     else:
         avatar = UserService.persistFile( open('/app/user/static/homer.png', 'rb'), 'homer.png')
