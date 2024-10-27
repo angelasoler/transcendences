@@ -1,8 +1,6 @@
-import {MovementStrategy, gameLoop} from './game.js';
+import {MovementStrategy, gameLoop, WINNING_SCORE} from './game.js';
 import {navigateTo} from "./routes.js";
 import {closeModal} from "./utils.js";
-
-const WINNING_SCORE = 1; //MUDAR PARA 10
 
 export class LocalMovementStrategy extends MovementStrategy {
 	constructor() {
@@ -15,8 +13,9 @@ export class LocalMovementStrategy extends MovementStrategy {
 			ArrowDown: false
 		};
 
+		
 		this.handlePlayAgainClick = this.handlePlayAgainClick.bind(this);
-    this.handleReturnToHomeClick = this.handleReturnToHomeClick.bind(this);
+		this.handleReturnToHomeClick = this.handleReturnToHomeClick.bind(this);
 	}
 
 	handleKeyDown(e) {
@@ -100,27 +99,28 @@ export class LocalMovementStrategy extends MovementStrategy {
 	displayWinnerMessage(result, message) {
 		// First, close any existing modals
 		closeModal();
-
+	
 		const modalDiv = document.getElementById('displayWinnerMessageModal');
 		const messageDiv = document.getElementById('game-message');
-
+	
 		if (modalDiv) {
 			const modal = new bootstrap.Modal(modalDiv);
 			modal.show();
-
+	
 			const resultMessage = document.getElementById('resultMessage');
-			resultMessage.textContent = result === 'win' ? "Você Ganhou!" : "Você Perdeu";
-			messageDiv.textContent = message;
-
+			resultMessage.textContent = "Fim Do Jogo!";
+			messageDiv.textContent = "";
+	
 			const playAgainButton = modalDiv.querySelector('#playAgainButton');
 			const returnButton = modalDiv.querySelector('#returnToHome');
-
+	
+			// Esconde o botão de "Jogar Novamente"
+			playAgainButton.style.display = 'none';
+	
 			// Remove existing event listeners
-			playAgainButton.removeEventListener('click', this.handlePlayAgainClick);
 			returnButton.removeEventListener('click', this.handleReturnToHomeClick);
-
-			// Add event listeners
-			playAgainButton.addEventListener('click', this.handlePlayAgainClick.bind(this));
+	
+			// Add event listener para o botão de retornar
 			returnButton.addEventListener('click', this.handleReturnToHomeClick.bind(this));
 		}
 	}

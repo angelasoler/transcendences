@@ -34,4 +34,5 @@ fclean: down
 clean: down
 	docker system prune -a -f
 	docker volume prune -f
+	sudo rm -rf postgres/data
 
