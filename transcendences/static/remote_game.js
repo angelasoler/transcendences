@@ -22,6 +22,7 @@ export class OnlineMovementStrategy extends MovementStrategy {
         this.paddleInterpolationTime = 30; // in milliseconds
         this.paddleInterpolationStartTime = null;
 
+
         this.game_state = null;
 
         this.paddleSpeed = 6;
