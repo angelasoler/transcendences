@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 from django.contrib.auth.decorators import login_required
 
@@ -10,17 +10,29 @@ from django.http import JsonResponse
 
 from django.http import HttpResponse
 
+from urllib.parse import urlencode, quote_plus
+
+from django.contrib.auth.models import User as DjangoUser
+
 from .models import User
 
 from .service import UserService
 
 from .decorators import ajax_login_required
 
+from django.conf import settings
+
 import base64
+
+import requests
 
 import json
 
+import urllib
+
 # Create your views here.
+
+API_USER = 'https://api.intra.42.fr/v2/me'
 
 def not_found(request):
     return render(request, '404.html')
@@ -33,6 +45,123 @@ def home(request):
 
 def login_view(request):
     return render(request, 'login.html')
+
+def login_ft(request):
+    protocol = request.scheme
+    port     = '%3A8443' if protocol == "https" else '%3A8000'
+    host     =  request.get_host().split(':')[0]
+
+    params   = {
+        'client_id': settings.UID, 
+        'redirect_uri': f'{protocol}://0.0.0.0:8000/api/user/callback', 
+        'response_type':'code' 
+    }
+
+    api_url  = "https://api.intra.42.fr/oauth/authorize?" + urlencode( params , quote_via=quote_plus)
+    
+    return redirect(api_url)
+
+def handle_42_callback(request, code):
+	port         = '8443' if request.scheme == 'https' else '8000'
+	host         = request.get_host().split(':')[0]
+	redirect_uri = request.scheme + f"://{host}:" + port + '/api/user/callback'
+	token_url    = "https://api.intra.42.fr/oauth/token"
+	token_params = {
+		'grant_type': 'authorization_code',
+		'client_id': settings.UID,
+		'client_secret': settings.SECRET,
+		'code': code,
+		'redirect_uri': redirect_uri
+	}
+
+	response = requests.post(token_url, data=token_params)
+
+	if response.status_code == 200:
+		token_data = response.json()
+		access_token = token_data['access_token']
+		return access_token 
+	else:
+		return None
+
+def make_api_request_with_token(api_url, token):
+    headers = {'Authorization': f'Bearer {token}'}
+    try:
+        response = requests.get(api_url, headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            return data
+        else:
+            return None
+    except requests.RequestException as e:
+        return None
+
+
+def authenticate_42_user(email, username):
+	try:
+		user = DjangoUser.objects.get(email=email)
+		return user
+	except DjangoUser.DoesNotExist:
+		pass
+
+	try:
+		user = DjangoUser.objects.get(username=username)
+		return user
+	except DjangoUser.DoesNotExist:
+		return None
+
+
+def	connect_42_user(request, response_data):
+    
+    user = authenticate_42_user(email=response_data['email'], username=response_data['login'])
+    
+    if user is not None:
+        login(request, user)
+        return redirect('home')
+    
+    photo_url  = response_data['image']['link']
+    
+    avatarpath = ""
+ 	
+    print(response_data)
+    
+    
+    if response_data['image']['link'] is None:
+        avatar_path = UserService.persistFile( open('/app/user/static/homer.png', 'rb'), 'homer.png')
+    else:
+        with urllib.request.urlopen(photo_url) as file:
+            avatar_path = UserService.persistFile(file, response_data['login'])
+	
+    user = User.create(
+		username      = response_data['login'],
+		email         = response_data['email'],
+        avatar        = avatar_path,
+        first_name    = response_data['first_name'],
+        last_name     = response_data['last_name']
+	)
+	
+    login(request, user.manager)
+    
+    return redirect('home')
+
+def callback(request):
+    if request.method == 'GET' and 'code' in request.GET:
+        code = request.GET['code']
+
+    if request.method == 'GET' and 'code' not in request.GET:
+        print('Nao autorizado')
+        return JsonResponse({'authenticated': False}, status=401)
+        
+    response_token = handle_42_callback(request, code)
+    
+    if response_token is None:
+        print('Nao autorizado')
+        return JsonResponse({'authenticated': False}, status=401)
+    
+    response_data = make_api_request_with_token(API_USER, response_token)
+	
+    if response_data is None:
+        return JsonResponse({'authenticated': False}, status=401)
+    return connect_42_user(request, response_data)
 
 def register_view(request):
     return render(request, 'register.html')
