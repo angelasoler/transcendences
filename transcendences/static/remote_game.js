@@ -1,9 +1,7 @@
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
-import {gameLoop, MovementStrategy} from './game.js';
+import {gameLoop, MovementStrategy, WINNING_SCORE} from './game.js';
 import {navigateTo} from "./routes.js";
 import {closeModal, getCookie} from "./utils.js";
-
-const WINNING_SCORE = 10;
 
 export class OnlineMovementStrategy extends MovementStrategy {
     constructor(websocket) {

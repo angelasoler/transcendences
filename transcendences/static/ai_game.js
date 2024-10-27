@@ -9,6 +9,9 @@ export class AIMovementStrategy extends LocalMovementStrategy {
 			ArrowDown: false
 		};
 
+        this.player1 = 'AI';
+        this.player2 = 'YOU';
+
         this.aiKeys = {
 			w: false,
 			s: false

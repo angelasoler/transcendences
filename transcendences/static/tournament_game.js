@@ -1,8 +1,8 @@
 import { LocalMovementStrategy } from './local_game.js';
-import { showModal } from './ui.js';
+import { WINNING_SCORE } from './game.js'
 import { getCookie } from './utils.js';
 
-const WINNING_SCORE = 1;
+
 
 export class TournamentGame extends LocalMovementStrategy {
   constructor(tournamentId, currentMatch) {
