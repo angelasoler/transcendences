@@ -366,18 +366,4 @@ class MovementStrategy {
     handleKeyDown() {
         throw new Error('Método handleKeyDown deve ser implementado');
     }
-  
-    // Descomentar depois que implementar esses métodos no local_game!
-    // displayWinnerMessage() {
-    //     throw new Error('Método displayWinnerMessage deve ser implementado');
-    // }
-    //
-    // handlePlayAgain() {
-    //     throw new Error('Método handlePlayAgain deve ser implementado');
-    // }
-    //
-    // resetGame() {
-    //     throw new Error('Método resetGame deve ser implementado');
-    // }
-
 }
