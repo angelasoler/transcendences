@@ -3,7 +3,7 @@ import { FontLoader, TextGeometry } from 'https://cdnjs.cloudflare.com/ajax/libs
 
 export { MovementStrategy };
 
-export const WINNING_SCORE = 1;
+export const WINNING_SCORE = 10;
 
 export function initGame(mvStrategy) {
     // Salva a atual instancia de MovementStrategy globalmente
