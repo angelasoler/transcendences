@@ -16,5 +16,4 @@ urlpatterns = [
     path('register/',  views.register_view,  name='register_view'),
     path('login/',  views.login_view,  name='login_view'),
     path('api/user/add_friends/',  views.user_add_friend,  name='user_add_friend'),
-    re_path(r'^.*$', views.not_found, name='catch_all')
 ]

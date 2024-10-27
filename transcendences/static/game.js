@@ -29,6 +29,8 @@ class MovementStrategy {
         this.canvas = document.getElementById('gameCanvas');
         this.player1_score = 0;
         this.player2_score = 0;
+        this.player1 = 'Player1';
+        this.player2 = 'Player2';
 
         this.isRunning = true;
         this.animationFrameId = null;
@@ -219,7 +221,7 @@ class MovementStrategy {
         // Add player names
         const playerNameMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
-        const playerNameGeometry = new THREE.TextGeometry('Player1', {
+        const playerNameGeometry = new THREE.TextGeometry(this.player1, {
             font: this.font,
             size: 16,
             height: 1,
@@ -231,7 +233,7 @@ class MovementStrategy {
         playerNameMesh.position.set(-150 - playerNameOffset / 2, 165, 0); // Adjust position as needed
         this.scene.add(playerNameMesh);
 
-        const opponentNameGeometry = new THREE.TextGeometry('Player2', {
+        const opponentNameGeometry = new THREE.TextGeometry(this.player2, {
             font: this.font,
             size: 16,
             height: 1,

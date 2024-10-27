@@ -1,10 +1,12 @@
-import {initGame} from "./game.js";
+import { initGame } from "./game.js";
 import { registerUser, loginUser, logoutUser } from './auth.js';
 import { LocalMovementStrategy } from './local_game.js'
 import { OnlineMovementStrategy } from './remote_game.js'
-import {closeModal, getCookie} from "./utils.js";
+import { closeModal, getCookie } from "./utils.js";
 import { AIMovementStrategy } from './ai_game.js'
+import { TournamentGame } from "./tournament_game.js";
 import { ProfileStats } from './profile_stats.js';
+import { attachFormSubmitListener, getCurrentMatch, displayMatches } from "./tournament.js";
 
 export const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournament'];
 let roomsSocket;
@@ -108,7 +110,7 @@ const joinOrCreateRemoteRoom = (e) => {
     });
 }
 
-const displaySection = async (route) => {
+export const displaySection = async (route) => {
     // chama closeGame() se estiver dentro de um jogo e mudar de view
     if (window.currentMovementStrategy) {
         window.currentMovementStrategy.closeGame();
@@ -130,6 +132,7 @@ const displaySection = async (route) => {
             gameId = params.get('game_id');
         }
     }
+    section = section.split('?')[0];
 
     if (window.roomsInterval) {
         clearInterval(window.roomsInterval);
@@ -174,9 +177,32 @@ const displaySection = async (route) => {
                 MovementStrategy = new LocalMovementStrategy();
             } else if (gameMode === 'ia') {
                 MovementStrategy = new AIMovementStrategy();
+            } else if (gameMode === 'tournament') {
+                const tournamentId = getTournamentId();
+                getCurrentMatch(tournamentId).then(currentMatch => {
+                    MovementStrategy = new TournamentGame(tournamentId, currentMatch);
+                    initGame(MovementStrategy);
+                }).catch(error => {
+                    console.error('Error initializing tournament game:', error);
+                });
+                return;
             }
             initGame(MovementStrategy);
             break;
+        case 'local-tournament':
+            attachFormSubmitListener();
+            break;  
+        case 'tournament':
+            const tournamentId = getTournamentId();
+            displayMatches(tournamentId);
+            break;
+    }
+}
+
+function getTournamentId() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('tournament_id')) {
+        return params.get('tournament_id');
     }
 }
 
@@ -232,4 +258,40 @@ async function getProfile() {
         alert('Erro ao obter perfil do usuário.');
         redirectToLogin();
     }
+}
+
+export function showModal(gameMode, winner, tournamentId) {
+    const displayWinnerMessageModal = new bootstrap.Modal(document.getElementById('displayWinnerMessageModal'), {
+        backdrop: 'static',
+        keyboard: false
+    });
+
+    updateModalContentForTournament(winner, tournamentId);
+
+    const modalElement = document.getElementById('displayWinnerMessageModal');
+    modalElement.addEventListener('hidden.bs.modal', () => {
+        window.history.pushState({}, '', `/tournament?tournament_id=${tournamentId}`);
+    }, { once: true }); // Ensure the event listener is called only once
+
+    displayWinnerMessageModal.show();
+}
+
+function updateModalContentForTournament(winner, tournamentId) {
+    const resultMessage = document.getElementById('resultMessage');
+    const gameMessage = document.getElementById('game-message');
+    const playAgainButton = document.getElementById('playAgainButton');
+    const returnToHomeButton = document.getElementById('returnToHome');
+
+    resultMessage.textContent = 'Resultado';
+    gameMessage.textContent = `Vencedor: ${winner}`;
+    playAgainButton.textContent = 'Voltar ao torneio';
+ 
+    playAgainButton.onclick = () => {
+        const modalElement = document.getElementById('displayWinnerMessageModal');
+        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+        modalInstance.hide();
+        window.history.pushState({}, '', `/tournament?tournament_id=${tournamentId}`);
+        displaySection(`/tournament?tournament_id=${tournamentId}`);
+    };
+    returnToHomeButton.style.display = 'none';
 }

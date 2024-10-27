@@ -15,15 +15,20 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings  # Importar as configurações
 from django.conf.urls.static import static  # Importar static
+
+def not_found(request, exception=None):
+    from django.http import HttpResponseNotFound
+    return HttpResponseNotFound("Page not found")
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('user.urls')),
     path('', include('game.urls')),
     path('', include('matches.urls')),
+    re_path(r'^.*$', not_found, name='catch_all')
 ]
 
 if settings.DEBUG:

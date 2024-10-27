@@ -4,30 +4,32 @@
     <div class="alert alert-info">
         <strong>Informação:</strong> Para iniciar um torneio local, selecione o número de jogadores e registre seus nomes.
     </div>
-    <form id="local-tournament-form">
+    <form id="local-tournament-form" method="POST">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{% csrf_token %}">
         <div class="mb-3">
             <label for="tournamentName" class="form-label">Nome do Torneio</label>
-            <input type="text" class="form-control" id="tournamentName" required>
+            <input type="text" class="form-control" id="tournamentName" name="tournamentName" required>
         </div>
         <div id="playerInputs">
             <div class="mb-3">
                 <label class="form-label">Jogador 1</label>
-                <input type="text" class="form-control" name="player1" required>
+                <input type="text" class="form-control" name="player" required>
             </div>
             <div class="mb-3">
                 <label class="form-label">Jogador 2</label>
-                <input type="text" class="form-control" name="player2" required>
+                <input type="text" class="form-control" name="player" required>
             </div>
             <div class="mb-3">
                 <label class="form-label">Jogador 3</label>
-                <input type="text" class="form-control" name="player3" required>
+                <input type="text" class="form-control" name="player" required>
             </div>
             <div class="mb-3">
                 <label class="form-label">Jogador 4</label>
-                <input type="text" class="form-control" name="player4" required>
+                <input type="text" class="form-control" name="player" required>
             </div>
         </div>
         <button type="button" class="btn btn-secondary" id="addPlayer">Adicionar Jogador</button>
+        <button type="button" class="btn btn-danger" id="removePlayer">Remover Jogador</button>
         <button type="submit" class="btn btn-primary">Iniciar Torneio</button>
     </form>
 </section>
