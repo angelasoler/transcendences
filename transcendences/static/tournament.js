@@ -81,6 +81,7 @@ export async function displayMatches(tournamentId) {
         }
         const data = await response.json();
         const content = document.getElementById('content');
+        
         // Fetch the tournament view
         const viewResponse = await fetch('/static/views/tournament.html');
         if (!viewResponse.ok) {
@@ -92,29 +93,19 @@ export async function displayMatches(tournamentId) {
         // Populate the view with matches data
         document.querySelector('#tournament h2').textContent = `Partidas ${data.name}`;
         const matchesList = document.querySelector('#tournament .list-group');
+        matchesList.innerHTML = data.rounds.map((round, roundIndex) => `
+            <div class="round">
+                <h3>Round ${roundIndex + 1}</h3>
+                <ul class="list-group">
+                    ${round.map(matchup => `
+                        <li class="list-group-item">
+                            ${matchup.player1} vs ${matchup.player2 || 'Bye'}
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+        `).join('');
 
-        matchesList.innerHTML = '';
-        data.rounds.forEach((round, roundIndex) => {
-            const roundDiv = document.createElement('div');
-            roundDiv.classList.add('round');
-
-            const roundHeader = document.createElement('h3');
-            roundHeader.textContent = `Round ${roundIndex + 1}`;
-            roundDiv.appendChild(roundHeader);
-
-            const roundList = document.createElement('ul');
-            roundList.classList.add('list-group');
-
-            round.forEach(matchup => {
-                const listItem = document.createElement('li');
-                listItem.classList.add('list-group-item');
-                listItem.textContent = `${matchup.player1} vs ${matchup.player2 || 'Bye'}`;
-                roundList.appendChild(listItem);
-        });
-
-        roundDiv.appendChild(roundList);
-        matchesList.appendChild(roundDiv);
-    });
         // Add event listener to the start tournament button
         document.getElementById('startTournamentButton').addEventListener('click', () => startNextGame(tournamentId));
     } catch (error) {

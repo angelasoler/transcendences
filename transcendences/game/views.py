@@ -63,32 +63,35 @@ def create_tournament(request):
         players = data.get('players')
 
         if not tournament_name or not players:
-            return JsonResponse({'error': 'Invalid data'}, status=400)
+            return JsonResponse({'error': 'Invalid data', 'success': False}, status=400)
 
-        # Shuffle players to randomize matchups
+        # Shuffle players to randomize matches
         random.shuffle(players)
 
         # Add a "bye" if the number of players is odd
         if len(players) % 2 != 0:
             players.append('Bye')
 
-        # Create matchups
-        matchups = []
+        # Create matches grouped by round
+        rounds = []
+        current_round = []
         for i in range(0, len(players), 2):
-            matchups.append({'player1': players[i], 'player2': players[i + 1]})
+            current_round.append({'player1': players[i], 'player2': players[i + 1]})
+        rounds.append(current_round)
 
         tournament_id = str(uuid.uuid4())
         tournament_data = {
             'name': tournament_name,
-            'matchups': matchups
+            'rounds': rounds
         }
 
+        # Assuming you have a Redis client set up to store tournament data
         redis_client.set(tournament_id, json.dumps(tournament_data))
 
         return JsonResponse({'tournament_id': tournament_id, 'success': True})
-    return JsonResponse({'error': 'Método não permitido'}, status=405)
+    return JsonResponse({'error': 'Método não permitido', 'success': False}, status=405)
 
-def get_tournament_matchups(request, tournament_id):
+def get_tournament_matches(request, tournament_id):
     tournament_data = redis_client.get(tournament_id)
     if not tournament_data:
         return JsonResponse({'error': 'Tournament not found'}, status=404)
@@ -96,45 +99,49 @@ def get_tournament_matchups(request, tournament_id):
     tournament_data = json.loads(tournament_data)
     return JsonResponse(tournament_data)
 
+def update_tournament_rounds(tournament_id, new_round):
+    tournament_data = redis_client.get(tournament_id)
+    if not tournament_data:
+        return {'error': 'Tournament not found'}
+
+    tournament_data = json.loads(tournament_data)
+    tournament_data['rounds'].append(new_round)
+    redis_client.set(tournament_id, json.dumps(tournament_data))
+    return {'success': True}
+
 @csrf_exempt
 def update_bracket(request, tournament_id):
     if request.method == 'POST':
         data = json.loads(request.body)
         winner = data.get('winner')
 
-        if not winner:
-            return JsonResponse({'error': 'Invalid data'}, status=400)
-
         tournament_data = redis_client.get(tournament_id)
         if not tournament_data:
             return JsonResponse({'error': 'Tournament not found'}, status=404)
 
         tournament_data = json.loads(tournament_data)
-        matchups = tournament_data.get('matchups', [])
-        new_matchups = []
+        rounds = tournament_data['rounds']
 
-        # Update the current matchup with the winner
-        for matchup in matchups:
-            if 'winner' not in matchup:
-                matchup['winner'] = winner
-                break
+        # Find the current round and match
+        for round in rounds:
+            for match in round:
+                if 'winner' not in match:
+                    match['winner'] = winner
+                    break
 
-        # Check if all matches in the current round have been played
-        all_matches_played = all('winner' in matchup for matchup in matchups)
+        # Check if the current round is complete
+        current_round_complete = all('winner' in match for match in rounds[-1])
 
-        if all_matches_played:
-            # Form the next round of matches with the winners of the last round
-            winners = [matchup['winner'] for matchup in matchups]
-
-            # Pair up winners for the next round
+        if current_round_complete:
+            # Generate the next round
+            winners = [match['winner'] for match in rounds[-1]]
+            new_round = []
             for i in range(0, len(winners), 2):
                 if i + 1 < len(winners):
-                    new_matchups.append({'player1': winners[i], 'player2': winners[i + 1]})
+                    new_round.append({'player1': winners[i], 'player2': winners[i + 1]})
                 else:
-                    # If there's an odd number of winners, the last one gets a placeholder
-                    new_matchups.append({'player1': winners[i], 'player2': 'TBD'})
-
-            tournament_data['matchups'] = new_matchups
+                    new_round.append({'player1': winners[i], 'player2': 'Bye'})
+            update_tournament_rounds(tournament_id, new_round)
 
         redis_client.set(tournament_id, json.dumps(tournament_data))
         return JsonResponse({'success': True})
@@ -148,18 +155,18 @@ def start_next_game(request, tournament_id):
             return JsonResponse({'error': 'Tournament not found'}, status=404)
 
         tournament_data = json.loads(tournament_data)
-        next_matchup = get_next_matchup(tournament_data)
-        if not next_matchup:
-            return JsonResponse({'error': 'No more matchups available'}, status=400)
+        next_match = get_next_match(tournament_data)
+        if not next_match:
+            return JsonResponse({'error': 'No more matches available'}, status=400)
 
-        return JsonResponse({'matchup': next_matchup})
+        return JsonResponse({'match': next_match})
     return JsonResponse({'error': 'Método não permitido'}, status=405)
 
-def get_next_matchup(tournament_data):
-    # Example logic to get the next matchup
-    # This should be customized based on your tournament structure
-    matchups = tournament_data.get('matchups', [])
-    for matchup in matchups:
-        if 'winner' not in matchup:
-            return matchup
+def get_next_match(tournament_data):
+    # Iterate through rounds to find the next match
+    rounds = tournament_data.get('rounds', [])
+    for round_matches in rounds:
+        for match in round_matches:
+            if 'winner' not in match:
+                return match
     return None

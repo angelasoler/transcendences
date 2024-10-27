@@ -6,7 +6,7 @@ import { closeModal, getCookie } from "./utils.js";
 import { AIMovementStrategy } from './ai_game.js'
 import { TournamentGame } from "./tournament_game.js";
 import { ProfileStats } from './profile_stats.js';
-import { attachFormSubmitListener, getCurrentMatchup, displayMatchups } from "./tournament.js";
+import { attachFormSubmitListener, getCurrentMatch, displayMatches } from "./tournament.js";
 
 export const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournament'];
 let roomsSocket;
@@ -179,8 +179,8 @@ export const displaySection = async (route) => {
                 MovementStrategy = new AIMovementStrategy();
             } else if (gameMode === 'tournament') {
                 const tournamentId = getTournamentId();
-                getCurrentMatchup(tournamentId).then(currentMatchup => {
-                    MovementStrategy = new TournamentGame(tournamentId, currentMatchup);
+                getCurrentMatch(tournamentId).then(currentMatch => {
+                    MovementStrategy = new TournamentGame(tournamentId, currentMatch);
                     initGame(MovementStrategy);
                 }).catch(error => {
                     console.error('Error initializing tournament game:', error);
@@ -194,7 +194,7 @@ export const displaySection = async (route) => {
             break;  
         case 'tournament':
             const tournamentId = getTournamentId();
-            displayMatchups(tournamentId);
+            displayMatches(tournamentId);
             break;
     }
 }
@@ -262,17 +262,15 @@ async function getProfile() {
 
 export function showModal(gameMode, winner, tournamentId) {
     const displayWinnerMessageModal = new bootstrap.Modal(document.getElementById('displayWinnerMessageModal'), {
-        backdrop: 'static', // Prevent closing by clicking outside
-        keyboard: false // Prevent closing with the keyboard
+        backdrop: 'static',
+        keyboard: false
     });
 
     updateModalContentForTournament(winner, tournamentId);
 
-    // Add event listener to navigate to tournament view when the modal is closed
     const modalElement = document.getElementById('displayWinnerMessageModal');
     modalElement.addEventListener('hidden.bs.modal', () => {
         window.history.pushState({}, '', `/tournament?tournament_id=${tournamentId}`);
-        // displaySection(`/tournament?tournament_id=${tournamentId}`);
     }, { once: true }); // Ensure the event listener is called only once
 
     displayWinnerMessageModal.show();
@@ -284,14 +282,14 @@ function updateModalContentForTournament(winner, tournamentId) {
     const playAgainButton = document.getElementById('playAgainButton');
     const returnToHomeButton = document.getElementById('returnToHome');
 
-    resultMessage.textContent = 'Tournament Result';
-    gameMessage.textContent = `Winner: ${winner}`;
-    playAgainButton.textContent = 'Back to Tournament';
-    console.log('tournamentId: ', tournamentId);
+    resultMessage.textContent = 'Resultado';
+    gameMessage.textContent = `Vencedor: ${winner}`;
+    playAgainButton.textContent = 'Voltar ao torneio';
+ 
     playAgainButton.onclick = () => {
         const modalElement = document.getElementById('displayWinnerMessageModal');
         const modalInstance = bootstrap.Modal.getInstance(modalElement);
-        modalInstance.hide(); // Hide the modal
+        modalInstance.hide();
         window.history.pushState({}, '', `/tournament?tournament_id=${tournamentId}`);
         displaySection(`/tournament?tournament_id=${tournamentId}`);
     };
