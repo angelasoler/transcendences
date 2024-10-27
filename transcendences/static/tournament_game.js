@@ -4,9 +4,11 @@ import { getCookie } from './utils.js';
 
 const WINNING_SCORE = 1;
 
-class TournamentGame extends LocalMovementStrategy {
+export class TournamentGame extends LocalMovementStrategy {
   constructor(tournamentId, currentMatch) {
       super();
+      this.player1 = currentMatch.player1;
+      this.player2 = currentMatch.player2;
       this.tournamentId = tournamentId;
       this.currentMatch = currentMatch;
       console.log('currentMatch: ', this.currentMatch);
@@ -37,7 +39,6 @@ class TournamentGame extends LocalMovementStrategy {
   }
 
   updateBracket(winner) {
-    console.log('winner: ', this.currentMatch[winner]);
     fetch(`/api/update_bracket/${this.tournamentId}/`, {
         method: 'POST',
         headers: {
@@ -59,5 +60,3 @@ class TournamentGame extends LocalMovementStrategy {
     });
 }
 }
-
-export { TournamentGame };

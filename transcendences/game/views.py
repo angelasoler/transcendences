@@ -121,17 +121,18 @@ def update_bracket(request, tournament_id):
 
         tournament_data = json.loads(tournament_data)
         rounds = tournament_data['rounds']
-
+        print("Rounds:", rounds)  # Debug statement
+        # Update the tournament data with the winner
         # Find the current round and match
         for round in rounds:
             for match in round:
                 if 'winner' not in match:
                     match['winner'] = winner
                     break
-
+        print("Rounds:", rounds)  # Debug statement
         # Check if the current round is complete
         current_round_complete = all('winner' in match for match in rounds[-1])
-
+        print("Round complete:", current_round_complete)  # Debug statement
         if current_round_complete:
             # Generate the next round
             winners = [match['winner'] for match in rounds[-1]]
@@ -141,7 +142,7 @@ def update_bracket(request, tournament_id):
                     new_round.append({'player1': winners[i], 'player2': winners[i + 1]})
                 else:
                     new_round.append({'player1': winners[i], 'player2': 'Bye'})
-            update_tournament_rounds(tournament_id, new_round)
+            tournament_data['rounds'].append(new_round)
 
         redis_client.set(tournament_id, json.dumps(tournament_data))
         return JsonResponse({'success': True})
@@ -155,18 +156,13 @@ def start_next_game(request, tournament_id):
             return JsonResponse({'error': 'Tournament not found'}, status=404)
 
         tournament_data = json.loads(tournament_data)
-        next_match = get_next_match(tournament_data)
-        if not next_match:
-            return JsonResponse({'error': 'No more matches available'}, status=400)
+        rounds = tournament_data['rounds']
+        print(rounds)  # Debug statement
+        # Find the next match without a winner
+        for round in rounds:
+            for match in round:
+                if 'winner' not in match:
+                    return JsonResponse({'match': match})
 
-        return JsonResponse({'match': next_match})
+        return JsonResponse({'error': 'No more matches available'}, status=400)
     return JsonResponse({'error': 'Método não permitido'}, status=405)
-
-def get_next_match(tournament_data):
-    # Iterate through rounds to find the next match
-    rounds = tournament_data.get('rounds', [])
-    for round_matches in rounds:
-        for match in round_matches:
-            if 'winner' not in match:
-                return match
-    return None

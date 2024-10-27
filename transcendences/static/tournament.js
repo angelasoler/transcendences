@@ -97,14 +97,21 @@ export async function displayMatches(tournamentId) {
             <div class="round">
                 <h3>Round ${roundIndex + 1}</h3>
                 <ul class="list-group">
-                    ${round.map(matchup => `
+                    ${round.map(match => `
                         <li class="list-group-item">
-                            ${matchup.player1} vs ${matchup.player2 || 'Bye'}
+                            ${match.player2 == 'Bye' ? `${match.player1} gets a bye` :
+                            (match.winner ? 
+                            `<strong>${match.winner}</strong> defeated ${match.winner === match.player1 ? match.player2 : match.player1}` :
+                            `${match.player1} vs ${match.player2}`)
+                            }
                         </li>
                     `).join('')}
                 </ul>
             </div>
         `).join('');
+
+        // Show the content div
+        content.style.display = 'block';
 
         // Add event listener to the start tournament button
         document.getElementById('startTournamentButton').addEventListener('click', () => startNextGame(tournamentId));
