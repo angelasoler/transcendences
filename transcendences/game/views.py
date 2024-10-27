@@ -12,6 +12,8 @@ import json
 import redis
 import random
 
+#TODO: Add tournament end check and winner display
+
 redis_client = redis.StrictRedis(
     host=settings.REDIS_HOST,
     port=settings.REDIS_PORT,
@@ -121,28 +123,32 @@ def update_bracket(request, tournament_id):
 
         tournament_data = json.loads(tournament_data)
         rounds = tournament_data['rounds']
-        print("Rounds:", rounds)  # Debug statement
-        # Update the tournament data with the winner
+
         # Find the current round and match
         for round in rounds:
             for match in round:
                 if 'winner' not in match:
                     match['winner'] = winner
                     break
-        print("Rounds:", rounds)  # Debug statement
+
         # Check if the current round is complete
         current_round_complete = all('winner' in match for match in rounds[-1])
-        print("Round complete:", current_round_complete)  # Debug statement
+
         if current_round_complete:
-            # Generate the next round
-            winners = [match['winner'] for match in rounds[-1]]
-            new_round = []
-            for i in range(0, len(winners), 2):
-                if i + 1 < len(winners):
-                    new_round.append({'player1': winners[i], 'player2': winners[i + 1]})
+            # Generate the next round only if there is no winner yet
+            if 'winner' not in tournament_data:
+                winners = [match['winner'] for match in rounds[-1]]
+                if len(winners) == 1:
+                    # Tournament has ended
+                    tournament_data['winner'] = winners[0]
                 else:
-                    new_round.append({'player1': winners[i], 'player2': 'Bye'})
-            tournament_data['rounds'].append(new_round)
+                    new_round = []
+                    for i in range(0, len(winners), 2):
+                        if i + 1 < len(winners):
+                            new_round.append({'player1': winners[i], 'player2': winners[i + 1]})
+                        else:
+                            new_round.append({'player1': winners[i], 'player2': 'Bye'})
+                    tournament_data['rounds'].append(new_round)
 
         redis_client.set(tournament_id, json.dumps(tournament_data))
         return JsonResponse({'success': True})
@@ -157,7 +163,11 @@ def start_next_game(request, tournament_id):
 
         tournament_data = json.loads(tournament_data)
         rounds = tournament_data['rounds']
-        print(rounds)  # Debug statement
+
+        # Check if the tournament has ended
+        if 'winner' in tournament_data:
+            return JsonResponse({'winner': tournament_data['winner']})
+
         # Find the next match without a winner
         for round in rounds:
             for match in round:

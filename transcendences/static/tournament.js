@@ -93,15 +93,16 @@ export async function displayMatches(tournamentId) {
         // Populate the view with matches data
         document.querySelector('#tournament h2').textContent = `Partidas ${data.name}`;
         const matchesList = document.querySelector('#tournament .list-group');
-        matchesList.innerHTML = data.rounds.map((round, roundIndex) => `
+        const reversedRounds = data.rounds.slice().reverse(); // Reverse the rounds array
+        matchesList.innerHTML = reversedRounds.map((round, roundIndex) => `
             <div class="round">
-                <h3>Round ${roundIndex + 1}</h3>
+                <h3>Round ${data.rounds.length - roundIndex}</h3>
                 <ul class="list-group">
                     ${round.map(match => `
                         <li class="list-group-item">
-                            ${match.player2 == 'Bye' ? `${match.player1} gets a bye` :
+                            ${match.player2 == 'Bye' ? `${match.player1} ganha um bye` :
                             (match.winner ? 
-                            `<strong>${match.winner}</strong> defeated ${match.winner === match.player1 ? match.player2 : match.player1}` :
+                            `<strong>${match.winner}</strong> derrotou ${match.winner === match.player1 ? match.player2 : match.player1}` :
                             `${match.player1} vs ${match.player2}`)
                             }
                         </li>
@@ -133,6 +134,16 @@ function startNextGame(tournamentId) {
     .then(data => {
         if (data.error) {
             alert(data.error);
+        } else if (data.winner) {
+            // Show the winner modal
+            const winnerModal = new bootstrap.Modal(document.getElementById('winnerModal'));
+            document.getElementById('winnerName').textContent = `Winner: ${data.winner}`;
+            winnerModal.show();
+
+            // Add event listener to the back to home button
+            document.getElementById('backToHomeButton').addEventListener('click', () => {
+                window.location.href = '/';
+            });
         } else {
             const currentMatch = data.match;
             const gameMode = 'tournament';
@@ -145,6 +156,7 @@ function startNextGame(tournamentId) {
         console.error('Error starting next game:', error);
     });
 }
+
 
 export function getCurrentMatch(tournamentId) {
     return fetch(`/api/tournament/${tournamentId}/`)
