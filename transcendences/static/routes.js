@@ -15,7 +15,6 @@ export const navigateTo = async (route) => {
 }
 
 export const handleRoute = (route) => {
-    // console.log("handleRoute: ", route);
     let routeRequested = route;
     if (route === '/')
         routeRequested = '/home';

@@ -59,6 +59,7 @@ class MovementStrategy {
             speed: 0
         };
 
+
         this.ball = {
             pos: new THREE.Vector2(this.canvas.width / 2, this.canvas.height / 2),
             speed: new THREE.Vector2(3, 3),
@@ -68,15 +69,6 @@ class MovementStrategy {
             player: [],
             opponent: []
         };
-
-        this.boundHandleKeyDown = this.handleKeyDown.bind(this);
-        this.boundHandleKeyUp = this.handleKeyUp.bind(this);
-        this.boundCloseGame = this.closeGame.bind(this);
-
-        document.addEventListener('keydown', this.boundHandleKeyDown);
-        document.addEventListener('keyup', this.boundHandleKeyUp);
-        window.addEventListener('beforeunload', this.boundCloseGame);
-        window.addEventListener('popstate', this.boundCloseGame);
 
         this.initThreeJS();
     }
@@ -116,6 +108,13 @@ class MovementStrategy {
         this.addLights();
     
         this.loadFont();
+        this.updateCamera();
+    }
+
+    updateCamera() {
+        const aspect = this.canvas.width / this.canvas.height;
+        this.camera.aspect = aspect;
+        this.camera.updateProjectionMatrix();
     }
 
     addBall() {
@@ -223,6 +222,7 @@ class MovementStrategy {
         // Add player names
         const playerNameMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
+
         const playerNameGeometry = new THREE.TextGeometry(this.player1, {
             font: this.font,
             size: 16,
@@ -274,12 +274,6 @@ class MovementStrategy {
         }
     }
 
-    updateGameEngine() {
-        this.updateBall();
-        this.handleBallCollision(); 
-        this.checkPaddleCollision(this.leftPaddle, true);
-        this.checkPaddleCollision(this.rightPaddle, false);
-    }
 
     draw () {
         if (!this.ball) {
@@ -296,64 +290,14 @@ class MovementStrategy {
         this.renderer.render(this.scene, this.camera);
     }
 
-    checkPaddleCollision(paddle, isLeft) {
-        const paddleX = isLeft ? this.paddleWidth : this.canvas.width - this.paddleWidth;
-        const withinPaddleYRange = this.ball.pos.y >= paddle.y && this.ball.pos.y <= paddle.y + this.paddleHeight;
-    
-        if (withinPaddleYRange && !this.ballPassedPaddle) {
-            if ((isLeft && this.ball.pos.x <= paddleX + this.paddleWidth) ||
-                (!isLeft && this.ball.pos.x >= paddleX - this.paddleWidth)) {
-                    this.ball.speed.x = isLeft ? this.collisionSpeedX : -this.collisionSpeedX;
-
-                    // Optionally, adjust the vertical speed based on where the ball hits the paddle
-                    const hitPosition = (this.ball.pos.y - paddle.y) / this.paddleHeight - 0.5; // Range from -0.5 to 0.5
-                    this.ball.speed.y = hitPosition * 5; // Adjust vertical speed
-
-                    const spin = new THREE.Vector2(0, paddle.speed * 0.1);
-                    this.ball.speed.add(spin);
-
-                    // Normalize speed to prevent excessive speed
-                    this.ball.speed.setLength(this.maxBallSpeed);
-
-                    // Adjust ball position to prevent sticking
-                    const offset = isLeft ? this.paddleWidth + this.ballRadius : -(this.paddleWidth + this.ballRadius);
-                    this.ball.pos.x = paddleX + offset;
-            }
-        }
-    }
-
-    resetBall() {
-        this.ball.pos.set(this.canvas.width / 2, this.canvas.height / 2);
-        this.ball.speed.set((Math.random() > 0.5 ? 1 : -1) * this.initialSpeed, 0);
-        this.ballPassedPaddle = false;
-        this.updateScoreboard();
-    }
-
-    handleBallCollision() {
-        if (this.ball.pos.y - this.ballRadius <= 0  || this.ball.pos.y + this.ballRadius >= this.canvas.height) {
-            const normal = new THREE.Vector2(0, 1);
-            const dotProduct = this.ball.speed.dot(normal);
-            const reflection = normal.clone().multiplyScalar(2 * dotProduct);
-            this.ball.speed.sub(reflection);
-        }
-        if (this.ball.pos.x < 0 || this.ball.pos.x > this.canvas.width) {
-            this.handleScores();
-        } else {
-            this.ballPassedPaddle = this.ball.pos.x < this.paddleWidth || this.ball.pos.x > this.canvas.width - this.paddleWidth;
-        }
-    }
-
     handleScores() {
         throw new Error('Método handleScores deve ser implementado');
-    }
-
-    updateBall() {
-        this.ball.pos.add(this.ball.speed);
     }
 
     closeGame() {
         throw new Error('Método close deve ser implementado');
     }
+
 
     update() {
         throw new Error('Método update deve ser implementado');
@@ -366,18 +310,4 @@ class MovementStrategy {
     handleKeyDown() {
         throw new Error('Método handleKeyDown deve ser implementado');
     }
-  
-    // Descomentar depois que implementar esses métodos no local_game!
-    // displayWinnerMessage() {
-    //     throw new Error('Método displayWinnerMessage deve ser implementado');
-    // }
-    //
-    // handlePlayAgain() {
-    //     throw new Error('Método handlePlayAgain deve ser implementado');
-    // }
-    //
-    // resetGame() {
-    //     throw new Error('Método resetGame deve ser implementado');
-    // }
-
 }

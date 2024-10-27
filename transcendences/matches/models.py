@@ -9,4 +9,3 @@ class Match(models.Model):
 
     def __str__(self):
         return f"{self.player1.username} vs {self.player2.username} on {self.date.strftime('%Y-%m-%d %H:%M')}"
-

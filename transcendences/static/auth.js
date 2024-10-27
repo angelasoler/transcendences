@@ -18,7 +18,6 @@ export const ImageToBase64  =  async () => {
 
 }
 
-
 export const registerUser = async (event) => {
     event.preventDefault();
     const csrftoken    = getCookie('csrftoken');
