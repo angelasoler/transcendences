@@ -128,8 +128,8 @@ export const displaySection = async (route) => {
             gameId = params.get('game_id');
         }
     }
-    section = section.split('?')[0];
 
+    section = section.split('?')[0];
     if (window.roomsInterval) {
         clearInterval(window.roomsInterval);
         window.roomsInterval = null;
@@ -154,6 +154,7 @@ export const displaySection = async (route) => {
         case 'profile':
             getProfile();
             break;
+
         case 'show-stats':
             const stats = new ProfileStats();
             stats.loadStatistics();

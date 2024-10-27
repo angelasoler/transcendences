@@ -7,3 +7,5 @@ notes/
 transcendences/requirement.txt
 */migrations/*
 ./postgres/data/
+__pycache__/
+*.py[cod]

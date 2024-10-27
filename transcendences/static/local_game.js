@@ -1,3 +1,4 @@
+import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
 import {MovementStrategy, gameLoop, WINNING_SCORE} from './game.js';
 import {navigateTo} from "./routes.js";
 import {closeModal} from "./utils.js";
@@ -13,9 +14,17 @@ export class LocalMovementStrategy extends MovementStrategy {
 			ArrowDown: false
 		};
 
-		
-		this.handlePlayAgainClick = this.handlePlayAgainClick.bind(this);
+
 		this.handleReturnToHomeClick = this.handleReturnToHomeClick.bind(this);
+		this.boundHandleKeyDown = this.handleKeyDown.bind(this);
+        this.boundHandleKeyUp = this.handleKeyUp.bind(this);
+        this.boundCloseGame = this.closeGame.bind(this);
+
+        document.addEventListener('keydown', this.boundHandleKeyDown);
+        document.addEventListener('keyup', this.boundHandleKeyUp);
+        window.addEventListener('beforeunload', this.boundCloseGame);
+        window.addEventListener('popstate', this.boundCloseGame);
+    	this.handleReturnToHomeClick = this.handleReturnToHomeClick.bind(this);
 	}
 
 	handleKeyDown(e) {
@@ -83,6 +92,64 @@ export class LocalMovementStrategy extends MovementStrategy {
 				this.isRunning = false;
 		}
 	}
+
+	updateGameEngine() {
+        this.updateBall();
+        this.handleBallCollision();
+        this.checkPaddleCollision(this.leftPaddle, true);
+        this.checkPaddleCollision(this.rightPaddle, false);
+    }
+
+	updateBall() {
+        this.ball.pos.add(this.ball.speed);
+    }
+
+	checkPaddleCollision(paddle, isLeft) {
+        const paddleX = isLeft ? this.paddleWidth : this.canvas.width - this.paddleWidth;
+        const withinPaddleYRange = this.ball.pos.y >= paddle.y && this.ball.pos.y <= paddle.y + this.paddleHeight;
+
+        if (withinPaddleYRange && !this.ballPassedPaddle) {
+            if ((isLeft && this.ball.pos.x <= paddleX + this.paddleWidth) ||
+                (!isLeft && this.ball.pos.x >= paddleX - this.paddleWidth)) {
+                    this.ball.speed.x = isLeft ? this.collisionSpeedX : -this.collisionSpeedX;
+
+                    // Optionally, adjust the vertical speed based on where the ball hits the paddle
+                    const hitPosition = (this.ball.pos.y - paddle.y) / this.paddleHeight - 0.5; // Range from -0.5 to 0.5
+                    this.ball.speed.y = hitPosition * 5; // Adjust vertical speed
+
+                    const spin = new THREE.Vector2(0, paddle.speed * 0.1);
+                    this.ball.speed.add(spin);
+
+                    // Normalize speed to prevent excessive speed
+                    this.ball.speed.setLength(this.maxBallSpeed);
+
+                    // Adjust ball position to prevent sticking
+                    const offset = isLeft ? this.paddleWidth + this.ballRadius : -(this.paddleWidth + this.ballRadius);
+                    this.ball.pos.x = paddleX + offset;
+            }
+        }
+    }
+
+    resetBall() {
+        this.ball.pos.set(this.canvas.width / 2, this.canvas.height / 2);
+        this.ball.speed.set((Math.random() > 0.5 ? 1 : -1) * this.initialSpeed, 0);
+        this.ballPassedPaddle = false;
+        this.updateScoreboard();
+    }
+
+    handleBallCollision() {
+        if (this.ball.pos.y - this.ballRadius <= 0  || this.ball.pos.y + this.ballRadius >= this.canvas.height) {
+            const normal = new THREE.Vector2(0, 1);
+            const dotProduct = this.ball.speed.dot(normal);
+            const reflection = normal.clone().multiplyScalar(2 * dotProduct);
+            this.ball.speed.sub(reflection);
+        }
+        if (this.ball.pos.x < 0 || this.ball.pos.x > this.canvas.width) {
+            this.handleScores();
+        } else {
+            this.ballPassedPaddle = this.ball.pos.x < this.paddleWidth || this.ball.pos.x > this.canvas.width - this.paddleWidth;
+        }
+    }
   
 	closeGame() {
 		console.log('Game closed');
@@ -99,7 +166,6 @@ export class LocalMovementStrategy extends MovementStrategy {
 	displayWinnerMessage(result, message) {
 		// First, close any existing modals
 		closeModal();
-	
 		const modalDiv = document.getElementById('displayWinnerMessageModal');
 		const messageDiv = document.getElementById('game-message');
 	
@@ -110,12 +176,8 @@ export class LocalMovementStrategy extends MovementStrategy {
 			const resultMessage = document.getElementById('resultMessage');
 			resultMessage.textContent = "Fim Do Jogo!";
 			messageDiv.textContent = "";
-	
-			const playAgainButton = modalDiv.querySelector('#playAgainButton');
+
 			const returnButton = modalDiv.querySelector('#returnToHome');
-	
-			// Esconde o botão de "Jogar Novamente"
-			playAgainButton.style.display = 'none';
 	
 			// Remove existing event listeners
 			returnButton.removeEventListener('click', this.handleReturnToHomeClick);
@@ -125,48 +187,11 @@ export class LocalMovementStrategy extends MovementStrategy {
 		}
 	}
 
-	handlePlayAgainClick() {
-		this.handlePlayAgain();
-	}
-
 	handleReturnToHomeClick() {
 		const modalDiv = document.getElementById('displayWinnerMessageModal');
 		const modal = bootstrap.Modal.getInstance(modalDiv);
 		modal.hide();
 		this.closeGame();
 		navigateTo('/home');
-	}
-
-	handlePlayAgain() {
-		// Hide the modal
-		const modalDiv = document.getElementById('displayWinnerMessageModal');
-		const modal = bootstrap.Modal.getInstance(modalDiv);
-		modal.hide();
-
-		// Reset the game
-		this.resetGame();
-
-		// Re-enable controls
-		this.isRunning = true;
-		this.start = true;
-
-		// Restart the game loop
-		gameLoop(this);
-	}
-
-	resetGame() {
-		// Reset positions
-		this.leftPaddle.y = this.canvas.height / 2 - this.paddleHeight / 2;
-		this.rightPaddle.y = this.canvas.height / 2 - this.paddleHeight / 2;
-
-		this.ball.pos.set(this.canvas.width / 2, this.canvas.height / 2);
-		this.ball.speed.set((Math.random() > 0.5 ? 1 : -1) * 3, (Math.random() > 0.5 ? 1 : -1) * 3);
-
-		// Reset scores
-		this.player1_score = 0;
-		this.player2_score = 0;
-
-		// Update the scoreboard
-		this.updateScoreboard();
 	}
 }
