@@ -6,6 +6,9 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 import aioredis
 import uuid
 from pydoc import plain
+import logging
+
+logger = logging.getLogger(__name__)
 
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
@@ -115,7 +118,6 @@ class PongConsumer(AsyncWebsocketConsumer):
             # Perform database operations asynchronously
             room = await database_sync_to_async(Room.objects.get)(game_id=self.game_id)
             room.players -= 1
-
             if room.players == 1:
                 # Get the channel name of the remaining player
                 remaining_player_channel = await self.get_remaining_player_channel()
@@ -440,3 +442,4 @@ class PongConsumer(AsyncWebsocketConsumer):
 
         # Close the connection
         await self.close()
+

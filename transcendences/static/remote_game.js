@@ -22,7 +22,6 @@ export class OnlineMovementStrategy extends MovementStrategy {
         this.paddleInterpolationTime = 30; // in milliseconds
         this.paddleInterpolationStartTime = null;
 
-
         this.game_state = null;
 
         this.paddleSpeed = 6;
@@ -125,6 +124,7 @@ export class OnlineMovementStrategy extends MovementStrategy {
         }
         this.player1_score = gs.score_left;
         this.player2_score = gs.score_right;
+
         if (this.player1_score >= WINNING_SCORE) {
             this.websocket.send(JSON.stringify({
                 type: 'game_over',

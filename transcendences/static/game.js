@@ -59,7 +59,6 @@ class MovementStrategy {
             speed: 0
         };
 
-
         this.ball = {
             pos: new THREE.Vector2(this.canvas.width / 2, this.canvas.height / 2),
             speed: new THREE.Vector2(3, 3),

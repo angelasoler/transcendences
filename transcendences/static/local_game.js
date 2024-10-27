@@ -14,6 +14,7 @@ export class LocalMovementStrategy extends MovementStrategy {
 			ArrowDown: false
 		};
 
+
 		this.handleReturnToHomeClick = this.handleReturnToHomeClick.bind(this);
 		this.boundHandleKeyDown = this.handleKeyDown.bind(this);
         this.boundHandleKeyUp = this.handleKeyUp.bind(this);
