@@ -291,5 +291,13 @@ def user_add_friend(request):
 def profiles_list(request):
     if request.method != 'GET':
         return JsonResponse({ 'error': ' Router Not found' }, status=404)
-    return JsonResponse(list(map(lambda x: x.to_hash(), User.objects.all())), status=200, safe=False)
+    currentUser = {
+        "username" : request.user.username,
+        "id" : request.user.id,
+    }
+    concat = json.dumps
+    jsonReturn = json.loads('{"username": ${request.user.username}}')
+    return JsonResponse(list(map(lambda x: x.to_hash(), User.objects.all())),
+        status=200,
+        safe=False)
     

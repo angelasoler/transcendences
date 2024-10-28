@@ -304,27 +304,28 @@ async function showModalProfileList() {
     if (response.ok) {
         const data = await response.json();
 
+        const modalContent = document.createElement('ul');
+        modalContent.classList.add('list-group');
+        modalContent.classList.add('list-groupa-flush');
         for (let user of data) {
-            console.log(user.username);
-        }
-        for (let user of data) {
+            if (user.username === data.username)
+                continue;
             const listItem = document.createElement('li');
+            listItem.classList.add('list-group-item');
+            let active = user.is_active ? `online` : `offline`;
+            listItem.innerText = `${user.id}    |    ${user.username}    |    ${active}    |`;
             
-            listItem.classList.add('list-group-flush');
-        
-            listItem.innerText = `${user.id} | ${user.username}`
-           
+            const button = document.createElement('button');
+            button.classList.add('btn');
+            button.classList.add('btn-outline-success');
+            button.innerText = "+";
+            listItem.appendChild(button);
+            
             modalContent.appendChild(listItem);
         }
-
-    // items.forEach(text => {
-    //     const listItem = document.createElement('li');
-    //     listItem.classList.add('list-group-flush');
-    //     listItem.innerText = text;
-    //     modalContent.appendChild(listItem);
-    // });
-
         document.getElementById('modalProfileList').appendChild(modalContent)
+//<button type="button" class="btn btn-outline-success">+</button>
+//<button type="button" class="btn btn-outline-danger">-</button>
 
         document.getElementById('profilesList').style.display = "none";
         document.getElementById('profilesCloseList').style.display = "inline";
@@ -332,9 +333,6 @@ async function showModalProfileList() {
         alert('Erro ao obter perfil do usuário.');
         closeModalProfileList();
     }
-    const modalContent = document.createElement('ul');
-
-
 }
 
 function closeModalProfileList() {
@@ -343,7 +341,7 @@ function closeModalProfileList() {
     items.forEach(item => {
         item.remove();
     });
-
+    document.getElementById('modalProfileList').removeChild(modalProfileList.firstChild);
     document.getElementById('profilesList').style.display = "inline";
     document.getElementById('profilesCloseList').style.display = "none";
 }
