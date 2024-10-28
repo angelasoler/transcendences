@@ -1,5 +1,5 @@
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
-import {gameLoop, MovementStrategy, WINNING_SCORE} from './game.js';
+import {MovementStrategy, WINNING_SCORE} from './game.js';
 import {navigateTo} from "./routes.js";
 import {closeModal, getCookie} from "./utils.js";
 
@@ -7,7 +7,7 @@ export class OnlineMovementStrategy extends MovementStrategy {
     constructor(websocket) {
         super();
         this.websocket = websocket;
-        this.isHost = false;
+        this.player_side = null;
 
         this.start = false;
 
@@ -15,10 +15,32 @@ export class OnlineMovementStrategy extends MovementStrategy {
             up: false,
             down: false
         };
-        this.handlePlayAgainClick = this.handlePlayAgainClick.bind(this);
+
+        // Variables for smoothing own paddle position
+        this.serverPaddleY = null;
+        this.localPaddleY = null;
+        this.paddleInterpolationTime = 30; // in milliseconds
+        this.paddleInterpolationStartTime = null;
+
+        this.game_state = null;
+
+        this.paddleSpeed = 6;
+
+        // Initialize logical dimensions (should match the server's dimensions)
+        this.logicalWidth = 600;
+        this.logicalHeight = 400;
+
+        this.boundHandleKeyDown = this.handleKeyDown.bind(this);
+        this.boundHandleKeyUp = this.handleKeyUp.bind(this);
+        this.boundCloseGame = this.closeGame.bind(this);
+
+        document.addEventListener('keydown', this.boundHandleKeyDown);
+        document.addEventListener('keyup', this.boundHandleKeyUp);
+        window.addEventListener('beforeunload', this.boundCloseGame);
+        window.addEventListener('popstate', this.boundCloseGame);
+
+
         this.handleReturnToHomeClick = this.handleReturnToHomeClick.bind(this);
-        this.handleAcceptPlayAgainClick = this.handleAcceptPlayAgainClick.bind(this);
-        this.handleDeclinePlayAgainClick = this.handleDeclinePlayAgainClick.bind(this);
         this.setupWebSocket();
     }
 
@@ -29,72 +51,36 @@ export class OnlineMovementStrategy extends MovementStrategy {
         };
     }
 
-    startNewGame() {
-        // Reset game variables
-        this.resetGame();
-
-        // Hide the modal
-        closeModal();
-
-        // Re-enable controls
-        this.isRunning = true;
-        this.start = true;
-
-        // Restart the game loop
-        gameLoop(this);
-    }
-
-    resetGame() {
-        this.canvas = document.getElementById('gameCanvas');
-        // Reset keys
-        this.keys.up = false;
-        this.keys.down = false;
-        this.player1_score = 0;
-        this.player2_score = 0;
-
-        this.animationFrameId = null;
-        this.ballPassedPaddle = false;
-        this.currentTime = 0;
-
-        // Reset positions
-        this.ball.pos.set(this.canvas.width / 2, this.canvas.height / 2);
-		this.ball.speed.set((Math.random() > 0.5 ? 1 : -1) * 3, (Math.random() > 0.5 ? 1 : -1) * 3);
-
-        this.newMatch = {
-            date: '',
-            opponent: '',
-            result: ''
-        };
-
-        this.updateScoreboard();
-    }
-
     handleWebSocketMessage(data) {
         switch(data.type) {
-            case 'game_status':
-                this.isHost = data.is_host;
+            case 'game_joined':
+                this.player_side = data.player_side;
+                if (data.canvas_width && data.canvas_height) {
+                    this.logicalWidth = data.canvas_width;
+                    this.logicalHeight = data.canvas_height;
+                }
+                this.initializeGameElements();
+                // Initialize game state with default values
+                this.game_state = {
+                    ball_x: this.logicalWidth / 2,
+                    ball_y: this.logicalHeight / 2,
+                    ball_speed_x: 0,
+                    ball_speed_y: 0,
+                    paddle_left_y: this.logicalHeight / 2 - this.paddleHeight / 2,
+                    paddle_right_y: this.logicalHeight / 2 - this.paddleHeight / 2,
+                    score_left: 0,
+                    score_right: 0,
+                };
                 break;
             case 'game_start':
+                this.game_state = data.game_state;
                 this.start = true;
+                this.isRunning = true;
                 break;
-            case 'game_state':
-                if (this.isHost) {
-                    this.rightPaddle.y = data.opponent_paddle;
-                } else {
-                    this.leftPaddle.y = data.opponent_paddle;
-                    if (data.ball) {
-                        // Update ball position and speed without overwriting the object
-                        this.ball.pos.set(data.ball.pos.x, data.ball.pos.y);
-                        this.ball.speed.set(data.ball.speed.x, data.ball.speed.y);
-                    }
-                }
-                break;
-            case 'players_score':
-                this.player1_score = data.player1_score;
-                this.player2_score = data.player2_score;
-                console.log('Pontos:', this.player1_score, this.player2_score);
+            case 'game_update':
+                this.game_state = data;
+                this.serverPaddleY = this.player_side === 'left' ? data.paddle_left_y : data.paddle_right_y;
                 this.updateScoreboard();
-                this.checkGameEnd();
                 break;
             case 'game_end':
                 this.closeGame();
@@ -102,128 +88,146 @@ export class OnlineMovementStrategy extends MovementStrategy {
             case 'game_over':
                 this.isRunning = false;
                 this.start = false;
-                this.displayWinnerMessage(data.result, data.reason || "");
+                const winner = data.winner;
+                const message = winner === this.player_side ? "Você venceu!" : "Você perdeu!";
+                this.displayWinnerMessage(winner === this.player_side ? 'win' : 'lose', message);
                 break;
-            case 'play_again_request':
-                // The opponent wants to play again
-                console.log('play again received');
-                this.handleOpponentPlayAgainRequest();
-                break;
-            case 'play_again_response':
-                if (data.accepted) {
-                    // Both players agreed to play again
-                    console.log('play again accepted');
-                    this.startNewGame();
-                } else {
-                    // Opponent declined
-                    this.closeGame();
-                    alert('O oponente não quer jogar novamente.');
-                    navigateTo('/home');
-                }
-                break;
-            case 'start_new_game':
-                // Handle the start of a new game
-                console.log('Received start_new_game message.');
-                this.startNewGame();
-                break;
-            // case 'room_full':
+        }
+    }
+
+    initializeGameElements() {
+        // Initialize paddles
+        this.leftPaddle = {
+            y: this.canvas.height / 2 - this.paddleHeight / 2,
+            speed: 0
+        };
+
+        this.rightPaddle = {
+            y: this.canvas.height / 2 - this.paddleHeight / 2,
+            speed: 0
+        };
+    }
+
+    update() {
+        if (!this.isRunning) return;
+        const gs = this.game_state;
+        // Update ball position and speed from game state
+        this.ball.pos.set(gs.ball_x, gs.ball_y);
+        this.ball.speed.set(gs.ball_speed_x, gs.ball_speed_y);
+		this.updatePaddleAndSendInput();
+        // // Smooth own paddle position towards server value
+        this.smoothOwnPaddlePosition();
+        if (this.player_side === 'left') {
+            this.rightPaddle.y = gs.paddle_right_y;
+        } else {
+            this.leftPaddle.y = gs.paddle_left_y;
+        }
+        this.player1_score = gs.score_left;
+        this.player2_score = gs.score_right;
+
+        if (this.player1_score >= WINNING_SCORE) {
+            this.websocket.send(JSON.stringify({
+                type: 'game_over',
+                winner: 'left'
+            }));
+        } else if (this.player2_score >= WINNING_SCORE) {
+            this.websocket.send(JSON.stringify({
+                type: 'game_over',
+                winner: 'right'
+            }));
+        }
+    }
+
+    smoothOwnPaddlePosition() {
+        if (this.serverPaddleY === null) return;
+
+        const currentTime = performance.now();
+
+        // Initialize interpolation start time and local paddle Y if not set
+        if (this.paddleInterpolationStartTime === null) {
+            this.paddleInterpolationStartTime = currentTime;
+            this.localPaddleY = this.player_side === 'left' ? this.leftPaddle.y : this.rightPaddle.y;
+        }
+
+        const elapsedTime = currentTime - this.paddleInterpolationStartTime;
+        const t = Math.min(elapsedTime / this.paddleInterpolationTime, 1); // Ensure t is between 0 and 1
+
+        const interpolatedY = THREE.MathUtils.lerp(
+            this.localPaddleY,
+            this.serverPaddleY,
+            t
+        );
+
+        // Update own paddle position with interpolated value
+        if (this.player_side === 'left') {
+            this.leftPaddle.y = interpolatedY;
+        } else {
+            this.rightPaddle.y = interpolatedY;
+        }
+
+        // Reset interpolation if complete
+        if (t >= 1) {
+            this.paddleInterpolationStartTime = null;
+            this.localPaddleY = null;
         }
     }
 
     handleKeyDown(e) {
-        if (e.key === 'ArrowUp') this.keys.up = true;
-        if (e.key === 'ArrowDown') this.keys.down = true;
-    }
-      
-    handleKeyUp(e) {
-        if (e.key === 'ArrowUp') this.keys.up = false;
-        if (e.key === 'ArrowDown') this.keys.down = false;
-    }
+        if (!this.isRunning) return;
+        if (e.key === 'ArrowUp') {
+            this.keys.up = true;
+        } else if (e.key === 'ArrowDown') {
+            this.keys.down = true;
 
-    update() {
-        if (!this.isRunning) {
-            console.log('Update called after game_over. Ignoring.');
-            return;
         }
+        // Send input to server
+        this.updatePaddleAndSendInput();
+    }
 
+    handleKeyUp(e) {
+        if (!this.isRunning) return;
+        if (e.key === 'ArrowUp') {
+            this.keys.up = false;
+        } else if (e.key === 'ArrowDown') {
+            this.keys.down = false;
+        }
+        // Send input to server
+        this.updatePaddleAndSendInput();
+    }
+
+    updatePaddleAndSendInput() {
         let paddleSpeed = 0;
         if (this.keys.up && !this.keys.down) paddleSpeed = -this.paddleSpeed;
         else if (this.keys.down && !this.keys.up) paddleSpeed = this.paddleSpeed;
+        // Update own paddle position locally
+        if (this.player_side === null) {
+            // Wait until player_side is set
+            return;
+        }
 
-        if (this.isHost) {
-            this.leftPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, 
+        // Update own paddle position locally
+        if (this.player_side === 'left') {
+            this.leftPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight,
                 this.leftPaddle.y + paddleSpeed));
-            
-            // Host atualiza a bola
-            this.updateGameEngine();
-            
-            // Envia estado do jogo
-            this.sendGameState(this.leftPaddle.y);
         } else {
-            this.rightPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight, 
+            this.rightPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight,
                 this.rightPaddle.y + paddleSpeed));
-            
-            // Client envia apenas sua posição
-            this.sendGameState(this.rightPaddle.y);
         }
+
+        // // Reset interpolation when player moves paddle
+        this.paddleInterpolationStartTime = null;
+        this.localPaddleY = null;
+
+        // Send paddle input to server
+        this.sendPaddleInput(paddleSpeed);
     }
 
-    handleScores() {
-		if (this.ball.pos.x < 0) {
-			this.player2_score += 1;
-		} else if (this.ball.pos.x > this.canvas.width) {
-			this.player1_score += 1;
-		}
-
-        const gameScore = {
-            type: 'players_score',
-            player1_score: this.player1_score,
-            player2_score: this.player2_score,
-        };
-
-        this.websocket.send(JSON.stringify(gameScore));
-
-        this.resetBall();
-	}
-
-    checkGameEnd() {
-        if (this.isHost) {
-            if (this.player1_score >= WINNING_SCORE) {
-                this.sendGameOver('win');
-            } else if (this.player2_score >= WINNING_SCORE) {
-                this.sendGameOver('lose');
-            }
-        }
-    }
-
-    sendGameOver(result) {
-        if (!this.isHost) {
-        console.warn('Only the host can send game_over.');
-        return;
-        }
-        const message = {
-            type: 'game_over',
-            result: result
-        };
-        try {
-            this.websocket.send(JSON.stringify(message));
-            console.log('Sent game_over message:', message);
-        } catch (error) {
-            console.error('Failed to send game_over:', error);
-        }
-    }
-
-    sendGameState(paddleY) {
-        const gameState = {
-            type: 'paddle_update',
-            paddle_y: paddleY
-        };
-
-        if (this.isHost) {
-            gameState.ball = this.ball;
-        }
-
-        this.websocket.send(JSON.stringify(gameState));
+    sendPaddleInput(paddleSpeed) {
+        if (!this.isRunning || this.websocket.readyState !== WebSocket.OPEN) return;
+        this.websocket.send(JSON.stringify({
+            type: 'paddle_move',
+            paddle_speed: paddleSpeed
+        }));
     }
 
     displayWinnerMessage(result, message) {
@@ -241,70 +245,11 @@ export class OnlineMovementStrategy extends MovementStrategy {
             resultMessage.textContent = result === 'win' ? "Você Ganhou!" : "Você Perdeu";
             messageDiv.textContent = message;
 
-            const playAgainButton = modalDiv.querySelector('#playAgainButton');
             const returnButton = modalDiv.querySelector('#returnToHome');
 
-            // Remove existing event listeners
-            playAgainButton.removeEventListener('click', this.handlePlayAgainClick);
             returnButton.removeEventListener('click', this.handleReturnToHomeClick);
-
-            // Add event listeners
-            playAgainButton.addEventListener('click', this.handlePlayAgainClick);
             returnButton.addEventListener('click', this.handleReturnToHomeClick);
         }
-    }
-
-    handleOpponentPlayAgainRequest() {
-        const modalElement = document.getElementById('playAgainRequestModal');
-        const modal = new bootstrap.Modal(modalElement);
-
-        // Show the modal
-        modal.show();
-
-        const acceptButton = modalElement.querySelector('#acceptPlayAgain');
-        const declineButton = modalElement.querySelector('#declinePlayAgain');
-
-        acceptButton.removeEventListener('click', this.handleAcceptPlayAgainClick);
-        declineButton.removeEventListener('click', this.handleDeclinePlayAgainClick);
-
-        acceptButton.addEventListener('click', this.handleAcceptPlayAgainClick);
-        declineButton.addEventListener('click', this.handleDeclinePlayAgainClick);
-    }
-
-    handleAcceptPlayAgainClick() {
-        const modalDiv = document.getElementById('playAgainRequestModal');
-        const modal = bootstrap.Modal.getInstance(modalDiv);
-        modal.hide();
-        this.respondToPlayAgain(true);
-    }
-
-    handleDeclinePlayAgainClick() {
-        const modalDiv = document.getElementById('playAgainRequestModal');
-        const modal = bootstrap.Modal.getInstance(modalDiv);
-        modal.hide();
-        this.respondToPlayAgain(false);
-    }
-
-    respondToPlayAgain(accept) {
-        // envia resposta de Jogar Novamente para o servidor
-        this.websocket.send(JSON.stringify({
-            type: 'play_again_response',
-            accepted: accept
-        }));
-
-        if (accept) {
-            this.startNewGame();
-        } else {
-            this.closeGame();
-            navigateTo('/home');
-        }
-    }
-
-    handlePlayAgainClick() {
-        const modalDiv = document.getElementById('displayWinnerMessageModal');
-        const modal = bootstrap.Modal.getInstance(modalDiv);
-        modal.hide();
-        this.handlePlayAgain();
     }
 
     handleReturnToHomeClick() {
@@ -313,19 +258,6 @@ export class OnlineMovementStrategy extends MovementStrategy {
         modal.hide();
         this.closeGame();
         navigateTo('/home');
-    }
-
-    handlePlayAgain() {
-        // Send 'play_again' request to the server
-        this.websocket.send(JSON.stringify({
-            type: 'play_again_request'
-        }));
-        console.log('request to play again sent');
-        // Show a waiting message
-        const messageDiv = document.getElementById('game-message');
-        if (messageDiv) {
-            messageDiv.textContent = 'Esperando o outro jogador...';
-        }
     }
 
     closeGame() {
