@@ -315,17 +315,21 @@ async function showModalProfileList() {
             let active = user.is_active ? `online` : `offline`;
             listItem.innerText = `${user.id}    |    ${user.username}    |    ${active}    |`;
             
-            const button = document.createElement('button');
-            button.classList.add('btn');
-            button.classList.add('btn-outline-success');
-            button.innerText = "+";
-            listItem.appendChild(button);
+            const buttonAddFriend = document.createElement('button');
+            buttonAddFriend.classList.add('btn');
+            buttonAddFriend.classList.add('btn-outline-success');
+            buttonAddFriend.innerText = "+";
+            listItem.appendChild(buttonAddFriend);
+
+            const buttonRemoveFriend = document.createElement('button');
+            buttonRemoveFriend.classList.add('btn');
+            buttonRemoveFriend.classList.add('btn-outline-danger');
+            buttonRemoveFriend.innerText = "-";
+            listItem.appendChild(buttonRemoveFriend);
             
             modalContent.appendChild(listItem);
         }
-        document.getElementById('modalProfileList').appendChild(modalContent)
-//<button type="button" class="btn btn-outline-success">+</button>
-//<button type="button" class="btn btn-outline-danger">-</button>
+        document.getElementById('modalProfileList').appendChild(modalContent);
 
         document.getElementById('profilesList').style.display = "none";
         document.getElementById('profilesCloseList').style.display = "inline";
