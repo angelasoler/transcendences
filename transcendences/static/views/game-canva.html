@@ -2,7 +2,7 @@
     <h2 class="text-center mb-4"><span id="room-name-display"></span></h2>
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <canvas class="bg-dark" id="gameCanvas" width="600" height="400"></canvas>
+            <canvas class="w-100 h-auto bg-dark" id="gameCanvas" width="600" height="400"></canvas>
         </div>
     </div>
     <!-- Modal quando acontece Game Over(aparece o resultado do jogo e aopção de voltar para página inicial) -->
@@ -16,7 +16,26 @@
                 <div class="modal-body">
                     <div class="d-grid gap-2">
                         <div id="game-message"></div>
+                        <button class="btn btn-primary" id="playAgainButton">Jogar novamente</button>
                         <button class="btn btn-primary" id="returnToHome">Retornar à página inicial</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal para o request de Jogar Novamente -->
+    <div class="modal fade" id="playAgainRequestModal" tabindex="-1" aria-modal="true" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Jogar Novamente?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>O oponente quer jogar novamente. Deseja aceitar?</p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" id="acceptPlayAgain">Sim</button>
+                        <button class="btn btn-secondary" id="declinePlayAgain">Não</button>
                     </div>
                 </div>
             </div>

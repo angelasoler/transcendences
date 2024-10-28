@@ -50,3 +50,4 @@ def user_stats(request):
     wins = Match.objects.filter(winner=user).count()
     losses = total_matches - wins
     return JsonResponse({'wins': wins, 'losses': losses})
+
