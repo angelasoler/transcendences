@@ -41,25 +41,38 @@ export function attachFormSubmitListener() {
     addPlayerButton.addEventListener('click', () => {
         const playersContainer = document.getElementById('playerInputs');
         const playerInputs = playersContainer.querySelectorAll('input[name="player"]');
-        if (playerInputs.length < 8) {
+        const playersToAdd = Math.min(4, 8 - playerInputs.length);
+
+        for (let i = 0; i < playersToAdd; i++) {
             const newPlayerInput = document.createElement('div');
             newPlayerInput.classList.add('mb-3');
-            newPlayerInput.innerHTML = `
-                <label class="form-label">Jogador ${playerInputs.length + 1}</label>
-                <input type="text" class="form-control" name="player" required>
-            `;
+
+            const label = document.createElement('label');
+            label.classList.add('form-label');
+            label.textContent = `Jogador ${playerInputs.length + i + 1}`;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.classList.add('form-control');
+            input.name = 'player';
+            input.required = true;
+
+            newPlayerInput.appendChild(label);
+            newPlayerInput.appendChild(input);
             playersContainer.appendChild(newPlayerInput);
-            updateButtonStates();
         }
+        updateButtonStates();
     });
 
     removePlayerButton.addEventListener('click', () => {
         const playersContainer = document.getElementById('playerInputs');
         const playerInputs = playersContainer.querySelectorAll('input[name="player"]');
-        if (playerInputs.length > 4) {
+        const playersToRemove = Math.min(4, playerInputs.length - 4); // Remove up to 4 players, but not less than 4 total
+
+        for (let i = 0; i < playersToRemove; i++) {
             playersContainer.lastElementChild.remove();
-            updateButtonStates();
         }
+        updateButtonStates();
     });
 
     function updateButtonStates() {
@@ -90,26 +103,69 @@ export async function displayMatches(tournamentId) {
         const viewHtml = await viewResponse.text();
         content.innerHTML = viewHtml;
 
+        // Center the content
+        content.style.display = 'flex';
+        content.style.flexDirection = 'column';
+        content.style.alignItems = 'center';
+
         // Populate the view with matches data
         document.querySelector('#tournament h2').textContent = `Partidas ${data.name}`;
         const matchesList = document.querySelector('#tournament .list-group');
+        matchesList.innerHTML = ''; // Clear existing content
+
+        // Check if the tournament has a winner
+        if (data.winner) {
+            const winnerDiv = document.createElement('div');
+            winnerDiv.classList.add('winner');
+            winnerDiv.innerHTML = `<h2>Campeão: ${data.winner}</h2>`;
+            winnerDiv.style.textAlign = 'center'; // Center the winner text
+            matchesList.appendChild(winnerDiv);
+            document.getElementById('startTournamentButton').style.display = 'none';
+            document.getElementById('returnHomeButton').style.display = 'inline-block';
+            document.getElementById('returnHomeButton').addEventListener('click', () => {
+                window.location.href = '/';
+            });
+        }
+
         const reversedRounds = data.rounds.slice().reverse(); // Reverse the rounds array
-        matchesList.innerHTML = reversedRounds.map((round, roundIndex) => `
-            <div class="round">
-                <h3>Round ${data.rounds.length - roundIndex}</h3>
-                <ul class="list-group">
-                    ${round.map(match => `
-                        <li class="list-group-item">
-                            ${match.player2 == 'Bye' ? `${match.player1} ganha um bye` :
-                            (match.winner ? 
-                            `<strong>${match.winner}</strong> derrotou ${match.winner === match.player1 ? match.player2 : match.player1}` :
-                            `${match.player1} vs ${match.player2}`)
-                            }
-                        </li>
-                    `).join('')}
-                </ul>
-            </div>
-        `).join('');
+        let nextMatchFound = false;
+
+        reversedRounds.forEach((round, roundIndex) => {
+            const roundDiv = document.createElement('div');
+            roundDiv.classList.add('round');
+
+            const roundHeader = document.createElement('h3');
+            roundHeader.textContent = `Round ${data.rounds.length - roundIndex}`;
+            roundHeader.style.textAlign = 'center'; // Center the round header
+            roundDiv.appendChild(roundHeader);
+
+            const roundList = document.createElement('ul');
+            roundList.classList.add('list-group');
+
+            round.forEach(match => {
+                const matchItem = document.createElement('li');
+                matchItem.classList.add('list-group-item');
+                matchItem.style.textAlign = 'center'; // Center the match item text
+
+                if (match.player2 === 'Bye') {
+                    matchItem.textContent = `${match.player1} ganha um bye`;
+                } else if (match.winner) {
+                    matchItem.innerHTML = `<strong>${match.winner}</strong> derrotou ${match.winner === match.player1 ? match.player2 : match.player1}`;
+                } else {
+                    matchItem.textContent = `${match.player1} vs ${match.player2}`;
+                    if (!nextMatchFound) {
+                        matchItem.style.backgroundColor = '#ffff99'; // Highlight the next match
+                        matchItem.style.fontWeight = 'bold';
+                        nextMatchFound = true;
+                    }
+                }
+
+                roundList.appendChild(matchItem);
+            });
+
+            roundDiv.appendChild(roundList);
+            matchesList.appendChild(roundDiv);
+        });
 
         // Show the content div
         content.style.display = 'block';
@@ -134,16 +190,6 @@ function startNextGame(tournamentId) {
     .then(data => {
         if (data.error) {
             alert(data.error);
-        } else if (data.winner) {
-            // Show the winner modal
-            const winnerModal = new bootstrap.Modal(document.getElementById('winnerModal'));
-            document.getElementById('winnerName').textContent = `Winner: ${data.winner}`;
-            winnerModal.show();
-
-            // Add event listener to the back to home button
-            document.getElementById('backToHomeButton').addEventListener('click', () => {
-                window.location.href = '/';
-            });
         } else {
             const currentMatch = data.match;
             const gameMode = 'tournament';

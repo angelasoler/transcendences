@@ -12,8 +12,6 @@ import json
 import redis
 import random
 
-#TODO: Add tournament end check and winner display
-
 redis_client = redis.StrictRedis(
     host=settings.REDIS_HOST,
     port=settings.REDIS_PORT,
