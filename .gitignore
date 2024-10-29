@@ -10,3 +10,8 @@ transcendences/requirement.txt
 ./postgres/data/
 __pycache__/
 *.py[cod]
+static/*
+*.png
+*/static/*
+*static/*
+*static*

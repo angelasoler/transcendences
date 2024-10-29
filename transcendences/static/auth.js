@@ -44,6 +44,7 @@ export const registerUser = async (event) => {
         if (response.ok) {
             alert(result.message);
             redirectToLogin();
+            updateNavBar(false);
         } else {
             alert(result.error);
         }
