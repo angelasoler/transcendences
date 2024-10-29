@@ -14,6 +14,7 @@ urlpatterns = [
     path('api/user/login42', views.login_ft, name='login_ft'),
     path('api/user/callback',  views.callback,  name='callback'),
     path('register/',  views.register_view,  name='register_view'),
+    path('update/',  views.update_view,  name='update_view'),
     path('login/',  views.login_view,  name='login_view'),
     path('api/user/add_friends',  views.user_add_friend,  name='user_add_friend'),
     path('api/user/remove_friends',  views.remove_friends,  name='remove_friends'),

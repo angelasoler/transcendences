@@ -48,6 +48,12 @@ def home(request):
 def login_view(request):
     return render(request, 'login.html')
 
+def register_view(request):
+    return render(request, 'register.html')
+
+def update_view(request):
+    return render(request, 'update.html', { 'user': request.user })
+
 def login_ft(request):
     protocol = request.scheme
     port     = '%3A8443' if protocol == "https" else '%3A8000'
@@ -165,8 +171,6 @@ def callback(request):
         return JsonResponse({'authenticated': False}, status=401)
     return connect_42_user(request, response_data)
 
-def register_view(request):
-    return render(request, 'register.html')
 
 def check_auth(request):
     if request.user.is_authenticated:
@@ -232,31 +236,47 @@ def logout_user(request):
     return JsonResponse({'error': 'Método não permitido'}, status=405)
 
 def create_user(request):
-
-    if request.method != 'POST':
+    
+    if request.method != 'POST' and request.method != 'PATCH':
         return JsonResponse({ 'message': ' Router Not found' }, status=404) 
-
+        
     params = json.loads(request.body)
-
+    
     if params.get('avatar') is not None:
         avatar = UserService.persist(params['avatar'])
     else:
         avatar = UserService.persistFile( open('/app/user/static/homer.png', 'rb'), 'homer.png')
-
     params = json.loads(request.body)
-
     try:
-        user = User.create(
-            username   = params.get('username'), 
-            email      = params.get('email'), 
-            password   = params.get('password'), 
-            avatar     = avatar,
-            first_name = params.get('firstname'),
-            last_name  = params.get('lastname')
-        )
-        return JsonResponse( { 'message': 'Usuario criado com sucesso', 'user': user.to_hash() }, status=200)
+        if request.method == 'POST':
+            user = User.create(
+                username   = params.get('username'), 
+                email      = params.get('email'), 
+                password   = params.get('password'), 
+                avatar     = avatar,
+                first_name = params.get('firstname'),
+                last_name  = params.get('lastname')
+            )
+            return JsonResponse( { 'message': 'Usuario criado com sucesso', 'user': user.to_hash() }, status=200)
+            
+            
+        if request.method == 'PATCH':
+            user = User.update(
+                user       = request.user,
+                username   = params.get('username'), 
+                email      = params.get('email'), 
+                password   = params.get('password'), 
+                avatar     = avatar,
+                first_name = params.get('firstname'),
+                last_name  = params.get('lastname')
+            )
+            return JsonResponse( { 'message': 'Usuario Atualizado com sucesso', 'user': user.to_hash() }, status=200)
+            
     except Exception as error:
         return JsonResponse( { 'error': str(error) }, status=500)
+        
+    
+
 
 @login_required
 def update_user(request):

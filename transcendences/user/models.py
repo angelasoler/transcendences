@@ -5,10 +5,9 @@ from django.contrib.auth.models import User as DjangoUser
 
 from .service import UserService
 
-
-#Garantindo que os emails sejam unicos
-DjangoUser._meta.get_field('email')._unique    = True
-#Garantindo que os emails sejam unicos
+# Garantindo que os emails sejam unicos
+DjangoUser._meta.get_field('email')._unique = True
+# Garantindo que os emails sejam unicos
 DjangoUser._meta.get_field('first_name')._null = True
 #Garantindo que os emails sejam unicos
 DjangoUser._meta.get_field('last_name')._null  = True
@@ -63,62 +62,86 @@ class User(models.Model):
     @staticmethod
     def create(**kwargs):
 
+      # Validate field lengths
+      if len(kwargs.get('username')) > 30:
+          raise Exception('Nome de usuário não pode ser maior que 30 caracteres.')
+      if len(kwargs.get('email')) > 30:
+          raise Exception('Email não pode ser maior que 30 caracteres.')
+      if kwargs.get('first_name') and len(kwargs.get('first_name')) > 30:
+          raise Exception('Primeiro nome não pode ser maior que 30 caracteres.')
+      if kwargs.get('last_name') and len(kwargs.get('last_name')) > 30:
+          raise Exception('Último nome não pode ser maior que 30 caracteres.')
+      if len(kwargs.get('password')) > 30:
+          raise Exception('Senha não pode ser maior que 30 caracteres.')
+
       if DjangoUser.objects.filter(username=kwargs.get('username')).exists():
         raise Exception('Esse username já existe')
 
       if DjangoUser.objects.filter(email=kwargs.get('email')).exists():
         raise Exception('Esse email já existe')
 
+      if DjangoUser.objects.filter(email=kwargs.get('email')).len >= 30:
+          raise Exception('Tamanho máximo 30 caracteres')
+
       manager = DjangoUser.objects.create_user(
-        kwargs.get('username'), 
-        kwargs.get('email'), 
+        kwargs.get('username'),
+        kwargs.get('email'),
         kwargs.get('password'),
         first_name = kwargs.get('first_name'),
         last_name  = kwargs.get('last_name' )
-      )      
+      )
 
       return User.objects.create(
         manager=manager,
         avatar_path=kwargs.get('avatar')
       )
-
-    @staticmethod
-    def find_by(**kwargs):
       
-      if (kwargs.get('email') is not None):
-        return DjangoUser.objects.get( email = kwargs.get('email'))
-      
-      if (kwargs.get('username') is not None):
-        return DjangoUser.objects.get( username = kwargs.get('username'))
-      
-      return None      
-
     @staticmethod
     def update(**kwargs):
-      id          = kwargs.get('id')
-      username    = kwargs.get('username')
-      first_name  = kwargs.get('first_name')
-      last_name   = kwargs.get('last_name')
-      email       = kwargs.get('email')
-      avatar      = kwargs.get('avatar')
-
-
-      user = User.objects.get(pk = id)
       
-      if (user is None):
-        raise 'user com o id: {} não encontrado'.format(id)
-      
-      user.manager.username    = username                     if username   is not None else user.manager.username
-      user.manager.first_name  = first_name                   if first_name is not None else user.manager.first_name
-      user.manager.last_name   = last_name                    if last_name  is not None else user.manager.last_name
-      user.manager.email       = email                        if email      is not None else user.manager.email
-      user.avatar_path         = UserService.persist(avatar.file, avatar.name)  if avatar is not None else user.avatar_path
+      user = kwargs.get('user')
 
-      user.manager.save()
+      # Validate field lengths
+      if len(kwargs.get('username')) > 30:
+        raise Exception('Nome de usuário não pode ser maior que 30 caracteres.')
+      if len(kwargs.get('email')) > 30:
+        raise Exception('Email não pode ser maior que 30 caracteres.')
+      if kwargs.get('first_name') and len(kwargs.get('first_name')) > 30:
+        raise Exception('Primeiro nome não pode ser maior que 30 caracteres.')
+      if kwargs.get('last_name') and len(kwargs.get('last_name')) > 30:
+        raise Exception('Último nome não pode ser maior que 30 caracteres.')
+      if len(kwargs.get('password')) > 30:
+        raise Exception('Senha não pode ser maior que 30 caracteres.')
+
+      if DjangoUser.objects.filter(username=kwargs.get('username')).exists() and user.username != kwargs.get('username'):
+        raise Exception('Esse username já existe')
+
+      if (DjangoUser.objects.filter(email=kwargs.get('email')).exists() and user.email != kwargs.get('email')):
+        raise Exception('Esse email já existe')
+      
+      user.username            = kwargs.get('username')
+      user.email               = kwargs.get('email')
+      user.first_name          = kwargs.get('first_name')
+      user.last_name           = kwargs.get('last_name')
+      user.profile.avatar_path = kwargs.get('avatar')
+
+      user.set_password(kwargs.get('password'))
+
       user.save()
+      user.profile.save()
 
-      return user
+      return user.profile
+    
+    @staticmethod
+    def find_by(**kwargs):
 
+      if (kwargs.get('email') is not None):
+        return DjangoUser.objects.get( email = kwargs.get('email'))
+
+      if (kwargs.get('username') is not None):
+        return DjangoUser.objects.get( username = kwargs.get('username'))
+
+      return None
 
 # Create your models here.
 

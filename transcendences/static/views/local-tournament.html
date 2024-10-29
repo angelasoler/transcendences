@@ -1,33 +1,35 @@
 <!-- Local Tournament Section -->
 <section id="local-tournament">
     <h2 class="mb-4">Torneio Local</h2>
-    <div class="alert alert-info">
+    <div class="alert alert-info col-md-8">
         <strong>Informação:</strong> Para iniciar um torneio local, selecione o número de jogadores e registre seus nomes.
     </div>
     <form id="local-tournament-form" method="POST">
         <input type="hidden" name="csrfmiddlewaretoken" value="{% csrf_token %}">
-        <div class="mb-3">
+        <div class="mb-3 col-md-8"">
             <label for="tournamentName" class="form-label">Nome do Torneio</label>
             <input type="text" class="form-control" id="tournamentName" name="tournamentName" required>
         </div>
         <div id="playerInputs">
-            <div class="mb-3">
+            <div class="mb-3 col-md-8">
                 <label class="form-label">Jogador 1</label>
                 <input type="text" class="form-control" name="player" required>
             </div>
-            <div class="mb-3">
+            <div class="mb-3 col-md-8">
                 <label class="form-label">Jogador 2</label>
                 <input type="text" class="form-control" name="player" required>
             </div>
-            <div class="mb-3">
+            <div class="mb-3 col-md-8">
                 <label class="form-label">Jogador 3</label>
                 <input type="text" class="form-control" name="player" required>
             </div>
-            <div class="mb-3">
+            <div class="mb-3 col-md-8">
                 <label class="form-label">Jogador 4</label>
                 <input type="text" class="form-control" name="player" required>
             </div>
         </div>
+        <button type="button" class="btn btn-primary" id="addPlayer">Adicionar jogadores</button>
+        <button type="button" class="btn btn-danger" id="removePlayer">Remover jogadores</button>
         <button type="submit" class="btn btn-primary">Iniciar Torneio</button>
     </form>
 </section>
