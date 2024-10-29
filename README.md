@@ -8,7 +8,7 @@ Then access:
 
 - Local:
 
-`http://00.0.0:8000/`
+`http://0.0.0.0:8000/`
 
 - Remote:
 

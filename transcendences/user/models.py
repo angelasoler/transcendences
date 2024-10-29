@@ -17,7 +17,7 @@ class User(models.Model):
     avatar_path = models.CharField(max_length=150)
     created_at  = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     updated_at  = models.DateTimeField(auto_now=True, blank=True, null=True)
-    friends     = models.ManyToManyField('User', related_name='users', default=None, blank=True, null=True)
+    friends     = models.ManyToManyField('self', related_name='users', default=None, blank=True)
     wins        = models.IntegerField(default=0)
     loses       = models.IntegerField(default=0)
 
@@ -26,12 +26,40 @@ class User(models.Model):
 
         friend.friends.add(self)
 
+    def remove_friend(self, friend ) -> None:
+        if self.friends.filter(id=friend.id).exists():
+            self.friends.remove(friend)
+            friend.friends.remove(self)
+            
+    
+    def friend_and_users_relation(self) -> list:
+      friends = self.friends.all()
+      
+      users   = User.objects.all()
+      
+      result  = []
+      
+      for user in users:
+
+        if user == self:
+          continue
+        
+        if user in friends:
+          result.append(dict(user.to_hash() | { 'friend': True }))
+        else:
+          result.append(dict(user.to_hash() | { 'friend': False }))
+          
+      return result
+
     def to_hash(self):
       return {
+        'id' : self.id,
+        'username' : self.manager.username,
         'first_name': self.manager.first_name,
         'last_name':  self.manager.last_name,
         'created_at': self.created_at,
-        'updated_at': self.updated_at
+        'updated_at': self.updated_at,
+        'is_active' : self.manager.is_active
       }
 
     @transaction.atomic
@@ -46,7 +74,7 @@ class User(models.Model):
 
       self.save()
 
-      return True;
+      return True
 
     def first_name(self):
       return self.manager.first_name

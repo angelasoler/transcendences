@@ -153,6 +153,8 @@ export const displaySection = async (route) => {
             logoutUser();
             break;
         case 'profile':
+            document.getElementById('profilesList').addEventListener('click', showModalProfileList);
+            document.getElementById('profilesCloseList').addEventListener('click', closeModalProfileList);
             getProfile();
             break;
         case 'show-stats':
@@ -290,4 +292,160 @@ function updateModalContentForTournament(winner, tournamentId) {
         displaySection(`/tournament?tournament_id=${tournamentId}`);
     };
     returnToHomeButton.style.display = 'none';
+}
+
+async function showModalProfileList() {
+    const response = await fetch('/api/user/profiles_list', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store',
+        },
+        cache: 'no-store',
+    });
+    if (response.ok) {
+        
+        const data        = await response.json();
+
+        const currentUser = document.getElementById('profileUsername').textContent;
+
+        const modalContent = document.createElement('ul');
+        
+        modalContent.classList.add('list-group');
+        
+        modalContent.classList.add('list-group-flush');
+		
+        let friends = data.find(user => user.username === currentUser)?.friends || [];
+		
+        console.log(friends);
+        
+        
+        for (let user of data) {
+
+            const listItem = document.createElement('li');
+            
+            listItem.classList.add('list-group-item');
+
+            const internDiv = document.createElement('div');
+            
+            internDiv.classList.add('d-flex');
+            
+            internDiv.classList.add('justify-content-between');
+
+            const is_active = document.createElement('div');
+            is_active.style.width = '20px';
+            is_active.style.height = '20px';
+            is_active.style.borderRadius = '50%';
+            is_active.style.display = 'inline-block';
+            is_active.style.backgroundColor = 'red';
+
+            if (user.is_active)
+                is_active.style.backgroundColor = 'green';
+        
+            internDiv.appendChild(is_active);
+            internDiv.innerText = `${user.username}`
+
+            const button = document.createElement('button');
+            
+            button.classList.add('btn');
+
+			button.dataset.friendId = user.id;
+
+            if (user.friend) {
+                button.classList.add('btn-outline-danger');
+                button.innerText = "+";
+                button.addEventListener('click',  removeFriend(user,  button) );
+
+            } else {
+                button.classList.add('btn-outline-success');
+                button.innerText = "+";
+                button.addEventListener('click', addNewFriend(user, button) );
+            }
+            
+            internDiv.appendChild(is_active);
+            internDiv.appendChild(button);
+
+            listItem.appendChild(internDiv);
+            
+            modalContent.appendChild(listItem);
+        }
+        document.getElementById('modalProfileList').appendChild(modalContent);
+
+        document.getElementById('profilesList').style.display = "none";
+        document.getElementById('profilesCloseList').style.display = "inline";
+    } else {
+        alert('Erro ao obter json de usuários.');
+    }
+}
+
+function closeModalProfileList() {
+    document.getElementById('modalProfileList').firstElementChild.remove()
+    document.getElementById('profilesList').style.display = "inline";
+    document.getElementById('profilesCloseList').style.display = "none";
+}
+
+async function addNewFriend(friend, button) {
+    try {
+        const response = await fetch('/api/user/add_friends', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            credentials: 'include',
+            body: JSON.stringify({'newFriendID' : friend.id})
+        });
+        if (!response.ok) {
+            throw new Error(`Erro na requisição: ${response.status}`);
+        }
+
+
+        let buttonClone = button.cloneNode(true)
+
+		
+        buttonClone.classList.replace('btn-outline-success', 'btn-outline-danger');
+        
+        buttonClone.innerText = "-";
+
+        buttonClone.addEventListener('click', () => { removeFriend( friend, buttonClone ) })
+
+        button.parentNode.replaceChild(buttonClone, button)
+
+        console.log("Amigo adicionado:", response.json());
+    } catch (error) {
+        console.error("Erro ao adicionar amigo:", error);
+    }
+}
+
+async function removeFriend(friend, button) {
+    try {
+        const response = await fetch('/api/user/remove_friends', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            credentials: 'include',
+            body: JSON.stringify({'removeFriendID' : friend.id})
+        });
+        if (!response.ok) {
+            throw new Error(`Erro na requisição: ${response.status}`);
+        }
+
+
+        let buttonClone = button.cloneNode(true)
+
+        buttonClone.classList.replace('btn-outline-danger', 'btn-outline-success');
+        
+        buttonClone.innerText        = "+";
+
+        buttonClone.addEventListener('click', () => { addNewFriend( friend, buttonClone ) })
+
+        button.parentNode.replaceChild(buttonClone, button)
+
+
+
+    } catch (error) {
+        console.error("Erro ao remover amigo:", error);
+    }
 }

@@ -14,6 +14,8 @@ from urllib.parse import urlencode, quote_plus
 
 from django.contrib.auth.models import User as DjangoUser
 
+from django.core import serializers
+
 from .models import User
 
 from .service import UserService
@@ -204,6 +206,7 @@ def login_user(request):
     
     if (user is not None):
         login(request, user)
+        # request.user.profile.is_active(True)
         return JsonResponse({'message': 'Login realizado com sucesso'}, status=200)
 
     return JsonResponse({'error': 'Credenciais inválidas'}, status=403)
@@ -227,6 +230,7 @@ def profile_user(request):
 @login_required
 def logout_user(request):
     if request.method == 'POST':
+        request.user.profile.is_active(False)
         logout(request)
         return JsonResponse({'message': 'Logout realizado com sucesso'})
     return JsonResponse({'error': 'Método não permitido'}, status=405)
@@ -291,17 +295,64 @@ def update_user(request):
         return JsonResponse( { 'message': 'Usuario atualizado com sucesso', 'user': user.to_hash() }, status=200)
     except Exception as error:
         return JsonResponse( { 'message': str(error)  }, status=500)
-
+    
+@csrf_protect
 @login_required
 def user_add_friend(request):
     if request.method != 'POST':
         return JsonResponse({ 'message': ' Router Not found' }, status=404) 
-    
-    friends = request.POST.getlist('newFriends')
+
+    params    = json.loads(request.body)
+    friendID  = params.get('newFriendID')
+    friend    = User.objects.get(pk=friendID)
     
     try:
-        request.user.profile.add_friends( friends )
+        request.user.profile.add_friend(friend)
         return JsonResponse( { 'message': 'Amigos adicionados com sucesso' }, status=200)
     except Exception as error:
         return JsonResponse( { 'message': str(error)  }, status=500)
 
+@login_required
+def profiles_list(request):
+    if request.method != 'GET':
+        return JsonResponse({ 'error': ' Router Not found' }, status=404)
+
+    return JsonResponse( request.user.profile.friend_and_users_relation(), status=200, safe=False)
+
+@login_required
+def user_friends(request):
+    if request.method != 'GET':
+        return JsonResponse({ 'message': ' Router Not found' }, status=404)
+    return JsonResponse( list(map(lambda user: user.to_hash(),
+                     request.user.profile.friends.all())),
+                     status=200,
+                     safe=False)
+
+@csrf_protect
+@login_required
+def remove_friends(request):
+    if request.method != 'POST':
+        return JsonResponse({ 'message': ' Router Not found' }, status=404) 
+
+    params    = json.loads(request.body)
+    friendID  = params.get('removeFriendID')
+    friend    = User.objects.get(pk=friendID)
+    
+    try:
+        request.user.profile.remove_friend(friend)
+        return JsonResponse( { 'message': 'Amigo removido com sucesso' }, status=200)
+    except Exception as error:
+        return JsonResponse( { 'message': str(error)  }, status=500)
+    
+@login_required
+def user_online_status(request):
+    if request.method != 'POST':
+        return JsonResponse({ 'error': ' Router Not found' }, status=404)
+    
+    status = request.POST.get('status')
+    
+    try:
+        request.user.profile.update_status(status)
+        return JsonResponse( { 'message': 'Status atualizado com sucesso' }, status=200)
+    except Exception as error:
+        return JsonResponse( { 'message': str(error)  }, status=500)

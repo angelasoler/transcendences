@@ -17,7 +17,6 @@ export const ImageToBase64  =  async () => {
             resolve(undefined)
         }
     })
-
 }
 
 
