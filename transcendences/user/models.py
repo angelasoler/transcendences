@@ -18,7 +18,7 @@ class User(models.Model):
     avatar_path = models.CharField(max_length=150)
     created_at  = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     updated_at  = models.DateTimeField(auto_now=True, blank=True, null=True)
-    friends     = models.ManyToManyField('User', related_name='users', default=None, blank=True, null=True)
+    friends     = models.ManyToManyField('self', related_name='users', default=None, blank=True)
     wins        = models.IntegerField(default=0)
     loses       = models.IntegerField(default=0)
 
@@ -26,6 +26,11 @@ class User(models.Model):
         self.friends.add(friend)
 
         friend.friends.add(self)
+
+    def remove_friend(self, friend ) -> None:
+        if self.friends.filter(id=friend.id).exists():
+            self.friends.remove(friend)
+            friend.friends.remove(self)
 
     def to_hash(self):
       return {

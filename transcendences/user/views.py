@@ -202,7 +202,7 @@ def login_user(request):
     
     if (user is not None):
         login(request, user)
-        request.user.profile.is_active(True)
+        # request.user.profile.is_active(True)
         return JsonResponse({'message': 'Login realizado com sucesso'}, status=200)
 
     return JsonResponse({'error': 'Credenciais inválidas'}, status=403)
@@ -310,13 +310,21 @@ def user_friends(request):
                      status=200,
                      safe=False)
 
-# @csrf_protect
-# @login_required
-# def remove_friends(request):
-#     if request.method != 'GET':
-#         return JsonResponse({ 'message': ' Router Not found' }, status=404)
+@csrf_protect
+@login_required
+def remove_friends(request):
+    if request.method != 'POST':
+        return JsonResponse({ 'message': ' Router Not found' }, status=404) 
+
+    params    = json.loads(request.body)
+    friendID  = params.get('removeFriendID')
+    friend    = User.objects.get(pk=friendID)
     
-#     return 
+    try:
+        request.user.profile.remove_friend(friend)
+        return JsonResponse( { 'message': 'Amigo removido com sucesso' }, status=200)
+    except Exception as error:
+        return JsonResponse( { 'message': str(error)  }, status=500)
     
 @login_required
 def user_online_status(request):
