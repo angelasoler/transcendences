@@ -304,23 +304,32 @@ async function showModalProfileList() {
         cache: 'no-store',
     });
     if (response.ok) {
-        const data = await response.json();
+        
+        const data        = await response.json();
+
         const currentUser = document.getElementById('profileUsername').textContent;
 
         const modalContent = document.createElement('ul');
+        
         modalContent.classList.add('list-group');
+        
         modalContent.classList.add('list-group-flush');
-		let friends = data.find(user => user.username === currentUser)?.friends || [];
-		console.log(friends);
+		
+        let friends = data.find(user => user.username === currentUser)?.friends || [];
+		
+        console.log(friends);
+        
+        
         for (let user of data) {
-            if (currentUser === user.username) {
-                continue;
-			}
+
             const listItem = document.createElement('li');
+            
             listItem.classList.add('list-group-item');
 
             const internDiv = document.createElement('div');
+            
             internDiv.classList.add('d-flex');
+            
             internDiv.classList.add('justify-content-between');
 
             const is_active = document.createElement('div');
@@ -336,29 +345,28 @@ async function showModalProfileList() {
             internDiv.appendChild(is_active);
             internDiv.innerText = `${user.username}`
 
-            const buttonAddFriend = document.createElement('button');
-            buttonAddFriend.classList.add('btn');
-            buttonAddFriend.classList.add('btn-outline-success');
-			buttonAddFriend.dataset.friendId = user.id;
-            buttonAddFriend.innerText = "+";
-            buttonAddFriend.addEventListener('click', () => {addNewFriend(user)});
-            internDiv.appendChild(buttonAddFriend);
+            const button = document.createElement('button');
+            
+            button.classList.add('btn');
 
-            const buttonRemoveFriend = document.createElement('button');
-            buttonRemoveFriend.classList.add('btn');
-            buttonRemoveFriend.classList.add('btn-outline-danger');
-			buttonRemoveFriend.dataset.friendId = user.id;
-            buttonRemoveFriend.innerText = "-";
-            // buttonRemoveFriend.style.display = 'none';
-            buttonRemoveFriend.addEventListener('click', () => {removeFriend(user)});
-            internDiv.appendChild(buttonRemoveFriend);
+			button.dataset.friendId = user.id;
 
-			if (friends && friends.includes(user.username)) {
-				buttonAddFriend.style.display = 'none';
-			} else {
-				buttonRemoveFriend.style.display = 'none';
-			}
+            if (user.friend) {
+                button.classList.add('btn-outline-danger');
+                button.innerText = "+";
+                button.addEventListener('click',  removeFriend(user,  button) );
+
+            } else {
+                button.classList.add('btn-outline-success');
+                button.innerText = "+";
+                button.addEventListener('click', addNewFriend(user, button) );
+            }
+            
+            internDiv.appendChild(is_active);
+            internDiv.appendChild(button);
+
             listItem.appendChild(internDiv);
+            
             modalContent.appendChild(listItem);
         }
         document.getElementById('modalProfileList').appendChild(modalContent);
@@ -376,7 +384,7 @@ function closeModalProfileList() {
     document.getElementById('profilesCloseList').style.display = "none";
 }
 
-async function addNewFriend(friend) {
+async function addNewFriend(friend, button) {
     try {
         const response = await fetch('/api/user/add_friends', {
             method: 'POST',
@@ -390,17 +398,26 @@ async function addNewFriend(friend) {
         if (!response.ok) {
             throw new Error(`Erro na requisição: ${response.status}`);
         }
-		const addFriendButton = document.querySelector(`button[data-friend-id="${friend.id}"][class*="btn-outline-success"]`);
-		const removeFriendButton = document.querySelector(`button[data-friend-id="${friend.id}"][class*="btn-outline-danger"]`);
-		addFriendButton.style.display = "none";
-		removeFriendButton.style.display = "inline";
+
+
+        let buttonClone = button.cloneNode(true)
+
+		
+        buttonClone.classList.replace('btn-outline-success', 'btn-outline-danger');
+        
+        buttonClone.innerText = "-";
+
+        buttonClone.addEventListener('click', () => { removeFriend( friend, buttonClone ) })
+
+        button.parentNode.replaceChild(buttonClone, button)
+
         console.log("Amigo adicionado:", response.json());
     } catch (error) {
         console.error("Erro ao adicionar amigo:", error);
     }
 }
 
-async function removeFriend(friend) {
+async function removeFriend(friend, button) {
     try {
         const response = await fetch('/api/user/remove_friends', {
             method: 'POST',
@@ -414,11 +431,20 @@ async function removeFriend(friend) {
         if (!response.ok) {
             throw new Error(`Erro na requisição: ${response.status}`);
         }
-		const addFriendButton = document.querySelector(`button[data-friend-id="${friend.id}"][class*="btn-outline-success"]`);
-		const removeFriendButton = document.querySelector(`button[data-friend-id="${friend.id}"][class*="btn-outline-danger"]`);
-		addFriendButton.style.display = "inline";
-		removeFriendButton.style.display = "none";
-        console.log("Amigo removido:", response.json());
+
+
+        let buttonClone = button.cloneNode(true)
+
+        buttonClone.classList.replace('btn-outline-danger', 'btn-outline-success');
+        
+        buttonClone.innerText        = "+";
+
+        buttonClone.addEventListener('click', () => { addNewFriend( friend, buttonClone ) })
+
+        button.parentNode.replaceChild(buttonClone, button)
+
+
+
     } catch (error) {
         console.error("Erro ao remover amigo:", error);
     }

@@ -317,9 +317,7 @@ def profiles_list(request):
     if request.method != 'GET':
         return JsonResponse({ 'error': ' Router Not found' }, status=404)
 
-    return JsonResponse( list(map(lambda x: x.to_hash(), User.objects.all())),
-                        status=200,
-                        safe=False)
+    return JsonResponse( request.user.profile.friend_and_users_relation(), status=200, safe=False)
 
 @login_required
 def user_friends(request):

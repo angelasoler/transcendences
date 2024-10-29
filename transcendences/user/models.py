@@ -30,6 +30,26 @@ class User(models.Model):
         if self.friends.filter(id=friend.id).exists():
             self.friends.remove(friend)
             friend.friends.remove(self)
+            
+    
+    def friend_and_users_relation(self) -> list:
+      friends = self.friends.all()
+      
+      users   = User.objects.all()
+      
+      result  = []
+      
+      for user in users:
+
+        if user == self:
+          continue
+        
+        if user in friends:
+          result.append(dict(user.to_hash() | { 'friend': True }))
+        else:
+          result.append(dict(user.to_hash() | { 'friend': False }))
+          
+      return result
 
     def to_hash(self):
       return {
