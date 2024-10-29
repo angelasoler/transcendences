@@ -22,9 +22,9 @@
                 <div class="card-body">
                     <h5 class="card-title">Modo Online</h5>
                     <p class="card-text">Desafie jogadores de todo o mundo!</p>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#onlineGameModal">
-                        Jogar Online
-                    </button>
+					<button class="btn btn-primary" id="joinOnlineRoomButton">
+						Jogar Online
+					</button>
                 </div>
             </div>
         </div>
@@ -56,24 +56,6 @@
                 <div class="d-grid gap-2">
                     <button class="btn btn-primary" id="local-vs-friend">Jogar com Amigo</button>
                     <button class="btn btn-primary" data-route="local-tournament">Torneio</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Online -->
-<div class="modal fade" id="onlineGameModal" tabindex="-1" aria-modal="true" role="dialog">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Modo Online</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="d-grid gap-2">
-                    <button class="btn btn-primary" id="joinOnlineRoomButton">Entrar em Sala</button>
-                    <button class="btn btn-primary" data-route="online-tournament">Torneio</button>
                 </div>
             </div>
         </div>
