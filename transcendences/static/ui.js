@@ -306,7 +306,7 @@ async function showModalProfileList() {
 
         const modalContent = document.createElement('ul');
         modalContent.classList.add('list-group');
-        modalContent.classList.add('list-groupa-flush');
+        modalContent.classList.add('list-group-flush');
         for (let user of data) {
             if (user.username === data.username)
                 continue;
@@ -319,14 +319,16 @@ async function showModalProfileList() {
             buttonAddFriend.classList.add('btn');
             buttonAddFriend.classList.add('btn-outline-success');
             buttonAddFriend.innerText = "+";
+            buttonAddFriend.style.display = 'none';
             listItem.appendChild(buttonAddFriend);
 
             const buttonRemoveFriend = document.createElement('button');
             buttonRemoveFriend.classList.add('btn');
             buttonRemoveFriend.classList.add('btn-outline-danger');
             buttonRemoveFriend.innerText = "-";
+            buttonRemoveFriend.style.display = 'none';
             listItem.appendChild(buttonRemoveFriend);
-            
+
             modalContent.appendChild(listItem);
         }
         document.getElementById('modalProfileList').appendChild(modalContent);
@@ -334,18 +336,14 @@ async function showModalProfileList() {
         document.getElementById('profilesList').style.display = "none";
         document.getElementById('profilesCloseList').style.display = "inline";
     } else {
-        alert('Erro ao obter perfil do usuário.');
-        closeModalProfileList();
+        alert('Erro ao obter json de usuários.');
     }
 }
 
 function closeModalProfileList() {
 
-    const items = document.querySelectorAll('.list-group-flush');
-    items.forEach(item => {
-        item.remove();
-    });
-    document.getElementById('modalProfileList').removeChild(modalProfileList.firstChild);
+    const modalProfileList = document.getElementById('modalProfileList');
+    modalProfileList.removeChild(modalProfileList.firstElementChild);
     document.getElementById('profilesList').style.display = "inline";
     document.getElementById('profilesCloseList').style.display = "none";
 }

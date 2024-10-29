@@ -5,14 +5,17 @@ import { redirectToLogin } from "./ui.js";
 export const ImageToBase64  =  async () => {
     return new Promise((resolve, reject) => {
         const file    = document.getElementById('formFile').files[0];
- 
+
         const reader  = new FileReader()
         
         reader.onload = () => {
             resolve(reader.result)
         }
-
-        reader.readAsDataURL(file)
+        if (file) {
+            reader.readAsDataURL(file)
+        } else {
+            resolve(undefined)
+        }
     })
 }
 
