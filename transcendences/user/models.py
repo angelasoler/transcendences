@@ -72,7 +72,31 @@ class User(models.Model):
         manager=manager,
         avatar_path=kwargs.get('avatar')
       )
+      
+    @staticmethod
+    def update(**kwargs):
+      
+      user = kwargs.get('user')
 
+      if DjangoUser.objects.filter(username=kwargs.get('username')).exists() and user.username != kwargs.get('username'):
+        raise Exception('Esse username já existe')
+
+      if (DjangoUser.objects.filter(email=kwargs.get('email')).exists() and user.email != kwargs.get('email')):
+        raise Exception('Esse email já existe')
+      
+      user.username            = kwargs.get('username')
+      user.email               = kwargs.get('email')
+      user.first_name          = kwargs.get('first_name')
+      user.last_name           = kwargs.get('last_name')
+      user.profile.avatar_path = kwargs.get('avatar')
+
+      user.set_password(kwargs.get('password'))
+
+      user.save()
+      user.profile.save()
+
+      return user.profile
+    
     @staticmethod
     def find_by(**kwargs):
 
@@ -83,33 +107,6 @@ class User(models.Model):
         return DjangoUser.objects.get( username = kwargs.get('username'))
 
       return None
-
-    @staticmethod
-    def update(**kwargs):
-      id          = kwargs.get('id')
-      username    = kwargs.get('username')
-      first_name  = kwargs.get('first_name')
-      last_name   = kwargs.get('last_name')
-      email       = kwargs.get('email')
-      avatar      = kwargs.get('avatar')
-
-
-      user = User.objects.get(pk = id)
-
-      if (user is None):
-        raise 'user com o id: {} não encontrado'.format(id)
-
-      user.manager.username    = username                     if username   is not None else user.manager.username
-      user.manager.first_name  = first_name                   if first_name is not None else user.manager.first_name
-      user.manager.last_name   = last_name                    if last_name  is not None else user.manager.last_name
-      user.manager.email       = email                        if email      is not None else user.manager.email
-      user.avatar_path         = UserService.persist(avatar.file, avatar.name)  if avatar is not None else user.avatar_path
-
-      user.manager.save()
-      user.save()
-
-      return user
-
 
 # Create your models here.
 
