@@ -8,7 +8,7 @@ import { TournamentGame } from "./tournament_game.js";
 import { ProfileStats } from './profile_stats.js';
 import { attachFormSubmitListener, getCurrentMatch, displayMatches } from "./tournament.js";
 
-export const protectedRoutes = ['/profile', '/game', '/rooms', '/local-tournament', '/online-rooms', '/online-tournament'];
+export const protectedRoutes = ['/profile', '/game', '/rooms', '/online-rooms', '/online-tournament'];
 let roomsSocket;
 
 export const redirectToLogin = () => {
