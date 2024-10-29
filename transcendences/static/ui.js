@@ -303,32 +303,50 @@ async function showModalProfileList() {
     });
     if (response.ok) {
         const data = await response.json();
+        const currentUser = document.getElementById('profileUsername').textContent;
 
         const modalContent = document.createElement('ul');
         modalContent.classList.add('list-group');
         modalContent.classList.add('list-group-flush');
         for (let user of data) {
-            if (user.username === data.username)
+            if (currentUser === user.username)
                 continue;
             const listItem = document.createElement('li');
             listItem.classList.add('list-group-item');
-            let active = user.is_active ? `online` : `offline`;
-            listItem.innerText = `${user.id}    |    ${user.username}    |    ${active}    |`;
-            
+
+            const internDiv = document.createElement('div');
+            internDiv.classList.add('d-flex');
+            internDiv.classList.add('justify-content-between');
+
+            const is_active = document.createElement('div');
+            is_active.style.width = '20px';
+            is_active.style.height = '20px';
+            is_active.style.borderRadius = '50%';
+            is_active.style.display = 'inline-block';
+            is_active.style.backgroundColor = 'red';
+
+            if (user.is_active)
+                is_active.style.backgroundColor = 'green';
+        
+            internDiv.appendChild(is_active);
+            internDiv.innerText = `${user.username}`
+
             const buttonAddFriend = document.createElement('button');
             buttonAddFriend.classList.add('btn');
             buttonAddFriend.classList.add('btn-outline-success');
             buttonAddFriend.innerText = "+";
-            buttonAddFriend.style.display = 'none';
-            listItem.appendChild(buttonAddFriend);
+            buttonAddFriend.addEventListener('click', () => {addNewFriend(user)});
+            internDiv.appendChild(buttonAddFriend);
 
             const buttonRemoveFriend = document.createElement('button');
             buttonRemoveFriend.classList.add('btn');
             buttonRemoveFriend.classList.add('btn-outline-danger');
             buttonRemoveFriend.innerText = "-";
             buttonRemoveFriend.style.display = 'none';
-            listItem.appendChild(buttonRemoveFriend);
+            buttonRemoveFriend.addEventListener('click', () => {removeFriend(user)});
+            internDiv.appendChild(buttonRemoveFriend);
 
+            listItem.appendChild(internDiv);
             modalContent.appendChild(listItem);
         }
         document.getElementById('modalProfileList').appendChild(modalContent);
@@ -341,9 +359,33 @@ async function showModalProfileList() {
 }
 
 function closeModalProfileList() {
-
-    const modalProfileList = document.getElementById('modalProfileList');
-    modalProfileList.removeChild(modalProfileList.firstElementChild);
+    document.getElementById('modalProfileList').firstElementChild.remove()
     document.getElementById('profilesList').style.display = "inline";
     document.getElementById('profilesCloseList').style.display = "none";
+}
+
+async function addNewFriend(friend) {
+    try {
+        const response = await fetch('/api/user/add_friends', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            credentials: 'include',
+            body: JSON.stringify({'newFriendID' : friend.id})
+        });
+        if (!response.ok) {
+            throw new Error(`Erro na requisição: ${response.status}`);
+        }
+        document.getElementsByClassName('.btn-outline-success').style.display = "none";
+        document.getElementsByClassName('.btn-outline-danger').style.display = "inline";
+        console.log("Amigo adicionado:", response.json());
+    } catch (error) {
+        console.error("Erro ao adicionar amigo:", error);
+    }
+}
+
+async function removeFriend(friend) {
+    
 }

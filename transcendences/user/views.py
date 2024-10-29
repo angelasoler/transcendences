@@ -273,16 +273,19 @@ def update_user(request):
         return JsonResponse( { 'message': 'Usuario atualizado com sucesso', 'user': user.to_hash() }, status=200)
     except Exception as error:
         return JsonResponse( { 'message': str(error)  }, status=500)
-
+    
+@csrf_protect
 @login_required
 def user_add_friend(request):
     if request.method != 'POST':
         return JsonResponse({ 'message': ' Router Not found' }, status=404) 
-    
-    friends = request.POST.getlist('newFriends')
+
+    params    = json.loads(request.body)
+    friendID  = params.get('newFriendID')
+    friend    = User.objects.get(pk=friendID)
     
     try:
-        request.user.profile.add_friends(friends)
+        request.user.profile.add_friend(friend)
         return JsonResponse( { 'message': 'Amigos adicionados com sucesso' }, status=200)
     except Exception as error:
         return JsonResponse( { 'message': str(error)  }, status=500)
@@ -291,13 +294,25 @@ def user_add_friend(request):
 def profiles_list(request):
     if request.method != 'GET':
         return JsonResponse({ 'error': ' Router Not found' }, status=404)
-    print(request)
-    print(request.user)
-#list(map(lambda x: x.to_hash(), User.objects.all()))
-#    for user in User.objects.all() :
-#        print(user.to_hash())
 
-    print(User.objects.all())
-        
-    listUser = [user.to_hash() for user in User.objects.all() if not user == request.user]
-    return JsonResponse( listUser, status=200, safe=False)
+    return JsonResponse( list(map(lambda x: x.to_hash(), User.objects.all())),
+                        status=200,
+                        safe=False)
+
+@login_required
+def user_friends(request):
+    if request.method != 'GET':
+        return JsonResponse({ 'message': ' Router Not found' }, status=404)
+    return JsonResponse( list(map(lambda user: user.to_hash(),
+                     request.user.profile.friends.all())),
+                     status=200,
+                     safe=False)
+
+@csrf_protect
+@login_required
+def remove_friends(request):
+    if request.method != 'GET':
+        return JsonResponse({ 'message': ' Router Not found' }, status=404)
+    
+    return 
+    
