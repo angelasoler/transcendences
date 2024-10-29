@@ -1,4 +1,4 @@
-import {updateNavbarActiveLink, checkAuthStatus, closeModal} from "./utils.js";
+import {updateNavbarActiveLink, checkAuthStatus, closeModal, getCookie} from "./utils.js";
 import {navigateTo, handleRoute} from "./routes.js";
 import "./local_game.js";
 
@@ -38,5 +38,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     window.addEventListener('popstate', () => {
         handleRoute(window.location.pathname);
+    });
+
+    window.addEventListener('beforeunload', () => {
+        fetch('/api/user/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        }).catch((error) => {
+            console.error('Error logging out:', error);
+        });
     });
 });
