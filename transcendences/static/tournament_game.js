@@ -6,8 +6,8 @@ import { getCookie } from './utils.js';
 export class TournamentGame extends LocalMovementStrategy {
   constructor(tournamentId, currentMatch) {
       super();
-      this.player1 = currentMatch.player1;
-      this.player2 = currentMatch.player2;
+	  this.player1 = currentMatch.player1.length > 14 ? currentMatch.player1.substring(0, 11) + "..." : currentMatch.player1
+	  this.player2 = currentMatch.player2.length > 14 ? currentMatch.player2.substring(0, 11) + "..." : currentMatch.player2;
       this.tournamentId = tournamentId;
       this.currentMatch = currentMatch;
       console.log('currentMatch: ', this.currentMatch);
@@ -28,11 +28,9 @@ export class TournamentGame extends LocalMovementStrategy {
   checkGameEnd() {
       if (this.player1_score >= WINNING_SCORE) {
           this.updateBracket('player1');
-        //   this.displayWinnerMessage('win', 'Congratulations! You won the game.');
           this.isRunning = false;
       } else if (this.player2_score >= WINNING_SCORE) {
           this.updateBracket('player2');
-        //   this.displayWinnerMessage('lose', 'Sorry! You lost the game.');
           this.isRunning = false;
       }
   }

@@ -3,7 +3,7 @@ import { FontLoader, TextGeometry } from 'https://cdnjs.cloudflare.com/ajax/libs
 
 export { MovementStrategy };
 
-export const WINNING_SCORE = 10;
+export const WINNING_SCORE = 1;
 
 export function initGame(mvStrategy) {
     // Salva a atual instancia de MovementStrategy globalmente
@@ -47,7 +47,7 @@ class MovementStrategy {
         // Define initial speeds
         this.initialSpeed = 2; // Speed when the ball resets
         this.collisionSpeedX = 3; // Horizontal speed after paddle collision
-        this.maxBallSpeed = 4;    // Maximum speed of the ball
+        this.maxBallSpeed = 9;    // Maximum speed of the ball
 
         this.leftPaddle = {
             y: this.canvas.height / 2 - this.paddleHeight / 2,

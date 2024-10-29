@@ -5,11 +5,17 @@ export function attachFormSubmitListener() {
     const form = document.getElementById('local-tournament-form');
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const formData = new FormData(form);
-        const data = {
-            name: formData.get('tournamentName'),
-            players: formData.getAll('player')
-        };
+		function sanitizeInput(input) {
+			const element = document.createElement('div');
+			element.innerText = input;
+			return element.innerHTML;
+		}
+
+		const formData = new FormData(form);
+		const data = {
+			name: sanitizeInput(formData.get('tournamentName')),
+			players: formData.getAll('player').map(player => sanitizeInput(player))
+		};
 
         try {
             const response = await fetch('/api/create_tournament/', {
@@ -67,7 +73,7 @@ export function attachFormSubmitListener() {
     removePlayerButton.addEventListener('click', () => {
         const playersContainer = document.getElementById('playerInputs');
         const playerInputs = playersContainer.querySelectorAll('input[name="player"]');
-        const playersToRemove = Math.min(4, playerInputs.length - 4); // Remove up to 4 players, but not less than 4 total
+        const playersToRemove = Math.min(4, playerInputs.length - 4);
 
         for (let i = 0; i < playersToRemove; i++) {
             playersContainer.lastElementChild.remove();
@@ -87,95 +93,113 @@ export function attachFormSubmitListener() {
 }
 
 export async function displayMatches(tournamentId) {
-    try {
-        const response = await fetch(`/api/tournament/${tournamentId}/`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        const content = document.getElementById('content');
-        
-        // Fetch the tournament view
-        const viewResponse = await fetch('/static/views/tournament.html');
-        if (!viewResponse.ok) {
-            throw new Error(`HTTP error! status: ${viewResponse.status}`);
-        }
-        const viewHtml = await viewResponse.text();
-        content.innerHTML = viewHtml;
+	function truncateName(name, maxLength = 20) {
+		return name.length > maxLength ? name.slice(0, maxLength) + '...' : name;
+	}
 
-        // Center the content
-        content.style.display = 'flex';
-        content.style.flexDirection = 'column';
-        content.style.alignItems = 'center';
+	try {
+		const response = await fetch(`/api/tournament/${tournamentId}/`);
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+		const data = await response.json();
+		const content = document.getElementById('content');
+		
+		// Fetch the tournament view
+		const viewResponse = await fetch('/static/views/tournament.html');
+		if (!viewResponse.ok) {
+			throw new Error(`HTTP error! status: ${viewResponse.status}`);
+		}
+		const viewHtml = await viewResponse.text();
+		content.innerHTML = viewHtml;
 
-        // Populate the view with matches data
-        document.querySelector('#tournament h2').textContent = `Partidas ${data.name}`;
-        const matchesList = document.querySelector('#tournament .list-group');
-        matchesList.innerHTML = ''; // Clear existing content
+		content.style.display = 'flex';
+		content.style.flexDirection = 'column';
+		content.style.alignItems = 'center';
 
-        // Check if the tournament has a winner
-        if (data.winner) {
-            const winnerDiv = document.createElement('div');
-            winnerDiv.classList.add('winner');
-            winnerDiv.innerHTML = `<h2>Campeão: ${data.winner}</h2>`;
-            winnerDiv.style.textAlign = 'center'; // Center the winner text
-            matchesList.appendChild(winnerDiv);
-            document.getElementById('startTournamentButton').style.display = 'none';
-            document.getElementById('returnHomeButton').style.display = 'inline-block';
-            document.getElementById('returnHomeButton').addEventListener('click', () => {
-                window.location.href = '/';
-            });
-        }
+		// Populate the view with matches data
+		document.querySelector('#tournament h2').textContent = `Partidas ${truncateName(data.name)}`;
+		const matchesList = document.querySelector('#tournament .list-group');
+		matchesList.innerHTML = ''; // Clear existing content
 
-        const reversedRounds = data.rounds.slice().reverse(); // Reverse the rounds array
-        let nextMatchFound = false;
+		// Check if the tournament has a winner
+		if (data.winner) {
+			const winnerDiv = document.createElement('div');
+			winnerDiv.classList.add('winner');
 
-        reversedRounds.forEach((round, roundIndex) => {
-            const roundDiv = document.createElement('div');
-            roundDiv.classList.add('round');
+			const winnerHeader = document.createElement('h2');
+			const strongElement = document.createElement('strong');
+			strongElement.textContent = truncateName(data.winner);
+			winnerHeader.textContent = 'Campeão: ';
+			winnerHeader.appendChild(strongElement);
+			winnerDiv.appendChild(winnerHeader);
 
-            const roundHeader = document.createElement('h3');
-            roundHeader.textContent = `Round ${data.rounds.length - roundIndex}`;
-            roundHeader.style.textAlign = 'center'; // Center the round header
-            roundDiv.appendChild(roundHeader);
+			winnerDiv.style.textAlign = 'center';
+			matchesList.appendChild(winnerDiv);
+			document.getElementById('startTournamentButton').style.display = 'none';
+			document.getElementById('returnHomeButton').style.display = 'inline-block';
+			document.getElementById('returnHomeButton').addEventListener('click', () => {
+				window.location.href = '/';
+			});
+		}
 
-            const roundList = document.createElement('ul');
-            roundList.classList.add('list-group');
+		const reversedRounds = data.rounds.slice().reverse();
+		let nextMatchFound = false;
 
-            round.forEach(match => {
-                const matchItem = document.createElement('li');
-                matchItem.classList.add('list-group-item');
-                matchItem.style.textAlign = 'center'; // Center the match item text
+		reversedRounds.forEach((round, roundIndex) => {
+			const roundDiv = document.createElement('div');
+			roundDiv.classList.add('round');
 
-                if (match.player2 === 'Bye') {
-                    matchItem.textContent = `${match.player1} ganha um bye`;
-                } else if (match.winner) {
-                    matchItem.innerHTML = `<strong>${match.winner}</strong> derrotou ${match.winner === match.player1 ? match.player2 : match.player1}`;
-                } else {
-                    matchItem.textContent = `${match.player1} vs ${match.player2}`;
-                    if (!nextMatchFound) {
-                        matchItem.style.backgroundColor = '#ffff99'; // Highlight the next match
-                        matchItem.style.fontWeight = 'bold';
-                        nextMatchFound = true;
-                    }
-                }
+			const roundHeader = document.createElement('h3');
+			roundHeader.textContent = `Round ${data.rounds.length - roundIndex}`;
+			roundHeader.style.textAlign = 'center'; // Center the round header
+			roundDiv.appendChild(roundHeader);
 
-                roundList.appendChild(matchItem);
-            });
+			const roundList = document.createElement('ul');
+			roundList.classList.add('list-group');
 
-            roundDiv.appendChild(roundList);
-            matchesList.appendChild(roundDiv);
-        });
+			round.forEach(match => {
+				const matchItem = document.createElement('li');
+				matchItem.classList.add('list-group-item');
+				matchItem.style.textAlign = 'center'; // Center the match item text
 
-        // Show the content div
-        content.style.display = 'block';
+				const player1 = truncateName(match.player1);
+				const player2 = truncateName(match.player2);
 
-        // Add event listener to the start tournament button
-        document.getElementById('startTournamentButton').addEventListener('click', () => startNextGame(tournamentId));
-    } catch (error) {
-        console.error('Error loading matches:', error);
-        alert('An error occurred while fetching matches.');
-    }
+				if (match.player2 === 'Bye') {
+					matchItem.textContent = `${player1} ganha um bye`;
+				} else if (match.winner) {
+					const winner = truncateName(match.winner);
+					const loser = winner === player1 ? player2 : player1;
+					const strongElement = document.createElement('strong');
+					strongElement.textContent = winner;
+					matchItem.appendChild(strongElement);
+					matchItem.appendChild(document.createTextNode(` derrotou ${loser}`));
+				} else {
+					matchItem.textContent = `${player1} vs ${player2}`;
+					if (!nextMatchFound) {
+						matchItem.style.backgroundColor = '#ffff99'; // Highlight the next match
+						matchItem.style.fontWeight = 'bold';
+						nextMatchFound = true;
+					}
+				}
+
+				roundList.appendChild(matchItem);
+			});
+
+			roundDiv.appendChild(roundList);
+			matchesList.appendChild(roundDiv);
+		});
+
+		// Show the content div
+		content.style.display = 'block';
+
+		// Add event listener to the start tournament button
+		document.getElementById('startTournamentButton').addEventListener('click', () => startNextGame(tournamentId));
+	} catch (error) {
+		console.error('Error loading matches:', error);
+		alert('An error occurred while fetching matches.');
+	}
 }
 
 function startNextGame(tournamentId) {
@@ -191,7 +215,6 @@ function startNextGame(tournamentId) {
         if (data.error) {
             alert(data.error);
         } else {
-            const currentMatch = data.match;
             const gameMode = 'tournament';
             const gameUrl = `/game-canva?mode=${gameMode}&tournament_id=${tournamentId}`;
             window.history.pushState({}, '', gameUrl);
