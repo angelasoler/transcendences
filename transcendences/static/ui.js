@@ -353,13 +353,13 @@ async function showModalProfileList() {
 
             if (user.friend) {
                 button.classList.add('btn-outline-danger');
-                button.innerText = "+";
-                button.addEventListener('click',  removeFriend(user,  button) );
+                button.innerText = "-";
+                button.addEventListener('click', () => { removeFriend(user,  button) } );
 
             } else {
                 button.classList.add('btn-outline-success');
                 button.innerText = "+";
-                button.addEventListener('click', addNewFriend(user, button) );
+                button.addEventListener('click', () => { addNewFriend(user, button) } );
             }
             
             internDiv.appendChild(is_active);
