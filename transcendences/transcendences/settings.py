@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -89,7 +90,7 @@ TEMPLATES = [
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'transcedences',
+        'NAME': 'transcendences',
         'USER': 'admin',
         'PASSWORD': '123456',
         'HOST': 'db',
@@ -144,11 +145,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ASGI_APPLICATION = 'transcendences.asgi.application'
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
-    }
-}
+
 
 # CSRF configs
 CSRF_COOKIE_SECURE = False
@@ -159,3 +156,15 @@ CSRF_COOKIE_HTTPONLY = False
 REDIS_HOST = 'redis'
 REDIS_PORT = 6379
 REDIS_DB = 0
+
+# Redis configuration for Channels (if you're using Channels)
+REDIS_URL = os.environ.get('REDIS_URL')
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [REDIS_URL],
+        },
+    },
+}

@@ -5,10 +5,9 @@ from django.contrib.auth.models import User as DjangoUser
 
 from .service import UserService
 
-
-#Garantindo que os emails sejam unicos
-DjangoUser._meta.get_field('email')._unique    = True
-#Garantindo que os emails sejam unicos
+# Garantindo que os emails sejam unicos
+DjangoUser._meta.get_field('email')._unique = True
+# Garantindo que os emails sejam unicos
 DjangoUser._meta.get_field('first_name')._null = True
 #Garantindo que os emails sejam unicos
 DjangoUser._meta.get_field('last_name')._null  = True
@@ -62,12 +61,12 @@ class User(models.Model):
         raise Exception('Esse email já existe')
 
       manager = DjangoUser.objects.create_user(
-        kwargs.get('username'), 
-        kwargs.get('email'), 
+        kwargs.get('username'),
+        kwargs.get('email'),
         kwargs.get('password'),
         first_name = kwargs.get('first_name'),
         last_name  = kwargs.get('last_name' )
-      )      
+      )
 
       return User.objects.create(
         manager=manager,
@@ -76,14 +75,14 @@ class User(models.Model):
 
     @staticmethod
     def find_by(**kwargs):
-      
+
       if (kwargs.get('email') is not None):
         return DjangoUser.objects.get( email = kwargs.get('email'))
-      
+
       if (kwargs.get('username') is not None):
         return DjangoUser.objects.get( username = kwargs.get('username'))
-      
-      return None      
+
+      return None
 
     @staticmethod
     def update(**kwargs):
@@ -96,10 +95,10 @@ class User(models.Model):
 
 
       user = User.objects.get(pk = id)
-      
+
       if (user is None):
         raise 'user com o id: {} não encontrado'.format(id)
-      
+
       user.manager.username    = username                     if username   is not None else user.manager.username
       user.manager.first_name  = first_name                   if first_name is not None else user.manager.first_name
       user.manager.last_name   = last_name                    if last_name  is not None else user.manager.last_name

@@ -1,3 +1,4 @@
+postgres/data/
 transcendences/staticfiles
 venv/
 env/
@@ -7,3 +8,5 @@ notes/
 transcendences/requirement.txt
 */migrations/*
 ./postgres/data/
+__pycache__/
+*.py[cod]
