@@ -202,6 +202,7 @@ def login_user(request):
     
     if (user is not None):
         login(request, user)
+        request.user.profile.is_active(True)
         return JsonResponse({'message': 'Login realizado com sucesso'}, status=200)
 
     return JsonResponse({'error': 'Credenciais inválidas'}, status=403)
@@ -225,6 +226,7 @@ def profile_user(request):
 @login_required
 def logout_user(request):
     if request.method == 'POST':
+        request.user.profile.is_active(False)
         logout(request)
         return JsonResponse({'message': 'Logout realizado com sucesso'})
     return JsonResponse({'error': 'Método não permitido'}, status=405)
@@ -294,3 +296,16 @@ def profiles_list(request):
         
     listUser = [user.to_hash() for user in User.objects.all() if not str(user.manager.username) == str(request.user)]
     return JsonResponse( listUser, status=200, safe=False)
+
+@login_required
+def user_online_status(request):
+    if request.method != 'POST':
+        return JsonResponse({ 'error': ' Router Not found' }, status=404)
+    
+    status = request.POST.get('status')
+    
+    try:
+        request.user.profile.update_status(status)
+        return JsonResponse( { 'message': 'Status atualizado com sucesso' }, status=200)
+    except Exception as error:
+        return JsonResponse( { 'message': str(error)  }, status=500)
