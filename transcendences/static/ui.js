@@ -146,6 +146,7 @@ export const displaySection = async (route) => {
             document.getElementById('loginForm').addEventListener('submit', loginUser);
             break;
         case 'register':
+        case 'update':
             document.getElementById('registerForm').addEventListener('submit', registerUser);
             break;
         case 'logout':
@@ -218,6 +219,7 @@ async function fetchViews(sectionId) {
         switch (sectionId) {
             case 'login':
             case 'register':
+            case 'update':
                 response = await fetch(`/${sectionId}/`);
                 break;
             default:

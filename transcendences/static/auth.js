@@ -32,8 +32,11 @@ export const registerUser = async (event) => {
     const avatar       = await ImageToBase64()
     
     try {
+
+        let verb = window.location.pathname.endsWith('update') ? 'PATCH' : 'POST'
+
         const response = await fetch('/api/user/create', {
-            method: 'POST',
+            method: verb,
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
             body:  JSON.stringify({ username, email, password, firstname, lastname, avatar })
         });
