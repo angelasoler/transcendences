@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.db import transaction
 from django.conf import settings
+from django.utils.html import escape
 from .decorators import ajax_login_required
 from .models import Room
 import uuid
@@ -56,40 +57,40 @@ def game_room(request, room_name):
 
 @csrf_protect
 def create_tournament(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        print("Received data:", data)  # Debug statement
-        tournament_name = data.get('name')
-        players = data.get('players')
+	if request.method == 'POST':
+		data = json.loads(request.body)
+		print("Received data:", data)  # Debug statement
+		tournament_name = escape(data.get('name'))
+		players = [escape(player) for player in data.get('players', [])]
 
-        if not tournament_name or not players:
-            return JsonResponse({'error': 'Invalid data', 'success': False}, status=400)
+		if not tournament_name or not players:
+			return JsonResponse({'error': 'Invalid data', 'success': False}, status=400)
 
-        # Shuffle players to randomize matches
-        random.shuffle(players)
+		# Shuffle players to randomize matches
+		random.shuffle(players)
 
-        # Add a "bye" if the number of players is odd
-        if len(players) % 2 != 0:
-            players.append('Bye')
+		# Add a "bye" if the number of players is odd
+		if len(players) % 2 != 0:
+			players.append('Bye')
 
-        # Create matches grouped by round
-        rounds = []
-        current_round = []
-        for i in range(0, len(players), 2):
-            current_round.append({'player1': players[i], 'player2': players[i + 1]})
-        rounds.append(current_round)
+		# Create matches grouped by round
+		rounds = []
+		current_round = []
+		for i in range(0, len(players), 2):
+			current_round.append({'player1': players[i], 'player2': players[i + 1]})
+		rounds.append(current_round)
 
-        tournament_id = str(uuid.uuid4())
-        tournament_data = {
-            'name': tournament_name,
-            'rounds': rounds
-        }
+		tournament_id = str(uuid.uuid4())
+		tournament_data = {
+			'name': tournament_name,
+			'rounds': rounds
+		}
 
-        # Assuming you have a Redis client set up to store tournament data
-        redis_client.set(tournament_id, json.dumps(tournament_data))
+		# Assuming you have a Redis client set up to store tournament data
+		redis_client.set(tournament_id, json.dumps(tournament_data))
 
-        return JsonResponse({'tournament_id': tournament_id, 'success': True})
-    return JsonResponse({'error': 'Método não permitido', 'success': False}, status=405)
+		return JsonResponse({'tournament_id': tournament_id, 'success': True})
+	return JsonResponse({'error': 'Método não permitido', 'success': False}, status=405)
 
 def get_tournament_matches(request, tournament_id):
     tournament_data = redis_client.get(tournament_id)
