@@ -28,6 +28,8 @@ def create_match(request):
             return JsonResponse({'status': 'success'})
         except User.DoesNotExist:
             return JsonResponse({'error': 'Opponent not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 

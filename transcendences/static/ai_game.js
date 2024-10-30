@@ -1,4 +1,5 @@
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
+import { FontLoader, TextGeometry } from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
 import {LocalMovementStrategy} from './local_game.js';
 
 export class AIMovementStrategy extends LocalMovementStrategy {
@@ -34,6 +35,8 @@ export class AIMovementStrategy extends LocalMovementStrategy {
 		document.addEventListener('iaMoveUp', this.moveAIPaddleUp.bind(this));
 		document.addEventListener('iaMoveDown', this.moveAIPaddleDown.bind(this));
 		document.addEventListener('iaStop', this.stopAIPaddle.bind(this));
+
+		this.initThreeJS();
 	}
 
 	handleKeyDown(e) {

@@ -2,7 +2,9 @@ import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/thr
 import {MovementStrategy, WINNING_SCORE} from './game.js';
 import {navigateTo} from "./routes.js";
 import {closeModal, getCookie} from "./utils.js";
-import {redirectToLogin} from "./ui";
+import {redirectToLogin} from "./ui.js";
+
+
 
 export class OnlineMovementStrategy extends MovementStrategy {
     constructor(websocket) {
@@ -16,8 +18,6 @@ export class OnlineMovementStrategy extends MovementStrategy {
             up: false,
             down: false
         };
-
-        this.newMatch = null;
 
         // Variables for smoothing own paddle position
         this.serverPaddleY = null;
@@ -76,31 +76,43 @@ export class OnlineMovementStrategy extends MovementStrategy {
                 };
                 break;
             case 'game_start':
-                this.game_state = data.game_state;
-                this.start = true;
-                this.isRunning = true;
-                this.getUsername();
+                if (!this.start) { // Prevent multiple initializations
+                    this.game_state = data.game_state;
+                    this.player1 = data.game_state.player1_username;
+                    this.player2 = data.game_state.player2_username;
+                    this.initThreeJS();
+                    this.start = true;
+                    this.isRunning = true;
+                }
                 break;
             case 'game_update':
-                this.game_state = data;
-                this.serverPaddleY = this.player_side === 'left' ? data.paddle_left_y : data.paddle_right_y;
-                this.updateScoreboard();
+                if (this.fontLoaded) {
+                    this.game_state = data;
+                    this.serverPaddleY = this.player_side === 'left' ? data.paddle_left_y : data.paddle_right_y;
+                    this.updateScoreboard();
+                } else {
+                    console.warn('Received game_update before font was loaded. Ignoring.');
+                }
                 break;
             case 'game_end':
                 this.closeGame();
                 break;
             case 'game_over':
-                this.isRunning = false;
-                this.start = false;
-                const winner = data.winner;
-                const message = winner === this.player_side ? "Você venceu!" : "Você perdeu!";
-                this.displayWinnerMessage(winner === this.player_side ? 'win' : 'lose', message);
-                const result = {
-                    'username': this.player1,
-                    'opponent': this.player2,
-                    'winner': winner === 'left' ? this.player1 : this.player2,
-                };
-                this.sendResult(result);
+                if (this.isRunning) {
+                    this.isRunning = false;
+                    this.start = false;
+                    const winner = data.winner;
+                    const message = winner === this.player_side ? "Você venceu!" : "Você perdeu!";
+                    this.displayWinnerMessage(winner === this.player_side ? 'win' : 'lose', message);
+                    if (this.player_side === 'left') {
+                        const result = {
+                            'username': this.player1,
+                            'opponent': this.player2,
+                            'result': winner === 'left' ? this.player1 : this.player2,
+                        };
+                        this.sendResult(result);
+                    }
+                }
                 break;
         }
     }
@@ -136,11 +148,13 @@ export class OnlineMovementStrategy extends MovementStrategy {
         this.player2_score = gs.score_right;
 
         if (this.player1_score >= WINNING_SCORE) {
+            this.updateScoreboard();
             this.websocket.send(JSON.stringify({
                 type: 'game_over',
                 winner: 'left'
             }));
         } else if (this.player2_score >= WINNING_SCORE) {
+            this.updateScoreboard();
             this.websocket.send(JSON.stringify({
                 type: 'game_over',
                 winner: 'right'
@@ -219,7 +233,7 @@ export class OnlineMovementStrategy extends MovementStrategy {
         if (this.player_side === 'left') {
             this.leftPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight,
                 this.leftPaddle.y + paddleSpeed));
-        } else {
+        } else if (this.player_side === 'right'){
             this.rightPaddle.y = Math.max(0, Math.min(this.canvas.height - this.paddleHeight,
                 this.rightPaddle.y + paddleSpeed));
         }
@@ -271,7 +285,6 @@ export class OnlineMovementStrategy extends MovementStrategy {
     }
 
     closeGame() {
-        console.log('Game closed');
         this.isRunning = false;
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
@@ -279,60 +292,41 @@ export class OnlineMovementStrategy extends MovementStrategy {
         if (this.websocket) {
             this.websocket.close();
         }
+        this.enableScroll();
         document.removeEventListener('keydown', this.boundHandleKeyDown);
         document.removeEventListener('keyup', this.boundHandleKeyUp);
         window.removeEventListener('beforeunload', this.boundCloseGame);
         window.removeEventListener('popstate', this.boundCloseGame);
     }
 
-    async sendResult(result) {
-        this.newMatch.result = result;
-        const createdMatch = await createMatch(this.newMatch);
-        console.log('Nova partida criada:', createdMatch);
-    }
+    async createMatch(matchData) {
+        try {
+            const csrftoken = getCookie('csrftoken');
+            const response = await fetch('/api/matches/create/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                credentials: 'include',
+                body: JSON.stringify(matchData),
+            });
 
-    async getUsername() {
-        const response = await fetch('/api/user/profile', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-store',
-            },
-            cache: 'no-store',
-        });
-        if (response.ok) {
-            const data = await response.json();
-            if (this.player_side === 'left') {
-                this.player1 = data.username;
-            } else if (this.player_side === 'right') {
-                this.player2 = data.username;
+            if (!response.ok) {
+                const errorText = await response.text(); // Fetch error details
+                console.error('Erro ao criar nova partida:', response.status, errorText);
+                return null; // Early exit on error
             }
-        } else {
-            alert('Erro ao obter nome do usuário.');
+
+            const createdMatch = await response.json();
+            return createdMatch; // Return the created match
+        } catch (error) {
+            console.error('Erro ao criar nova partida:', error);
+            return null;
         }
     }
-}
-
-async function createMatch(matchData) {
-    try {
-        const csrftoken = getCookie('csrftoken');
-        const response = await fetch('/api/matches/create', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken
-            },
-            body: JSON.stringify(matchData),
-        });
-
-        if (!response.ok)
-            console.error('Erro ao criar nova partida', response.status);
-
-        const createdMatch = await response.json();
-        console.log('Partida criada com sucesso:', createdMatch);
-    } catch (error) {
-        console.error('Erro ao criar nova partida:', error);
-        return null;
+    async sendResult(result) {
+        const createdMatch = await this.createMatch(result);
     }
 }
 

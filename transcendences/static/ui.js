@@ -36,7 +36,6 @@ function hasQueryString() {
 }
 
 export const loadView = (route) => {
-    console.log("load View route: ", route);
     if (protectedRoutes.includes(route)) {
         fetch('/api/user/check_auth')
             .then(response => {
@@ -83,10 +82,7 @@ const joinOrCreateRemoteRoom = (e) => {
                 return response.text().then(text => { throw new Error(text) });
             }
         }
-        // Attempt to parse JSON
-        return response.json().catch(() => {
-            throw new Error('Invalid JSON response');
-        });
+        return response.json();
     })
     .then(data => {
         if (data.game_id) {
@@ -101,7 +97,6 @@ const joinOrCreateRemoteRoom = (e) => {
             redirectToLogin();
         } else {
             console.error('Erro ao criar a sala: ', error);
-            return response.text().then(text => { throw new Error(text) });
         }
     });
 }
@@ -114,7 +109,6 @@ export const displaySection = async (route) => {
     }
 
     let section = route.startsWith('/') ? route.slice(1) : route;
-    console.log("displaySection section: ", section);
     document.querySelectorAll('section').forEach(s => s.style.display = 'none');
     let MovementStrategy;
     closeModal();
@@ -167,6 +161,11 @@ export const displaySection = async (route) => {
             break;
         case 'game-canva':
             if (gameMode === 'online') {
+                document.getElementById('controls-message').textContent = 'Player se move com ↑/↓ (setas)';
+            } else {
+                document.getElementById('controls-message').textContent = 'Player 1 se move com W/S | Player 2 se move com ↑/↓ (setas)';
+            }
+            if (gameMode === 'online') {
                 document.getElementById('room-name-display').textContent = `Sala ${gameId.substring(0, 8)}`;
                 let websocket = initRemoteGame(gameId);
                 MovementStrategy = new OnlineMovementStrategy(websocket);
@@ -208,9 +207,6 @@ function initRemoteGame(gameId) {
     const wsUrl = `${wsScheme}://${window.location.host}/ws/pong/${gameId}/`;
     const websocket = new WebSocket(wsUrl);
 
-    websocket.onopen = (event) => {
-        console.log('Conectado ao jogo', gameId);
-    };
     return websocket;
 }
 

@@ -25,9 +25,9 @@ def not_found(request, exception=None):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('user.urls')),
     path('', include('game.urls')),
     path('', include('matches.urls')),
+    path('', include('user.urls')),
     re_path(r'^.*$', not_found, name='catch_all')
 ]
 
