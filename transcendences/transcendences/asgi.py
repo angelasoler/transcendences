@@ -13,14 +13,17 @@ import django
 from django.core.asgi import get_asgi_application
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
+from user.middleware import RequestSizeLimitMiddleware
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'transcendences.settings')
-django.setup()
+
+# Initialize the Django ASGI application
+django_asgi_app = get_asgi_application()
 
 import game.routing
 
 application = ProtocolTypeRouter({
-    'http': get_asgi_application(),
+    'http': RequestSizeLimitMiddleware(django_asgi_app),
     'websocket': AuthMiddlewareStack(
         URLRouter(
             game.routing.websocket_urlpatterns

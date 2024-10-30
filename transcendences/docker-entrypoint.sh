@@ -12,14 +12,13 @@ while ! nc -z $DB_HOST $DB_PORT; do
   sleep 1
 done
 
+echo "PostgreSQL is up. Applying migrations..."
+
 python manage.py makemigrations
 
 python manage.py migrate
 
-# Collect static files
-python manage.py collectstatic --noinput
+echo "Starting Daphne server..."
 
 # Start Daphne server
 daphne -b 0.0.0.0 -p 8000 transcendences.asgi:application
-
-exec "$@"
