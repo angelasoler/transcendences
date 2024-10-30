@@ -307,31 +307,24 @@ async function showModalProfileList() {
         const currentUser = document.getElementById('profileUsername').textContent;
 
         const modalContent = document.createElement('ul');
-        
         modalContent.classList.add('list-group');
-        
         modalContent.classList.add('list-group-flush');
 		
         let friends = data.find(user => user.username === currentUser)?.friends || [];
-		
-        console.log(friends);
-        
         
         for (let user of data) {
-			console.log(user.is_online);
             const listItem = document.createElement('li');
             
             listItem.classList.add('list-group-item');
 
             const internDiv = document.createElement('div');
-            
             internDiv.classList.add('d-flex');
-            
+            internDiv.classList.add('align-items-center');
             internDiv.classList.add('justify-content-between');
 
             const is_online = document.createElement('div');
-            is_online.style.width = '20px';
-            is_online.style.height = '20px';
+            is_online.style.width = '10px';
+            is_online.style.height = '10px';
             is_online.style.borderRadius = '50%';
             is_online.style.display = 'inline-block';
             is_online.style.backgroundColor = 'red';
@@ -340,12 +333,18 @@ async function showModalProfileList() {
                 is_online.style.backgroundColor = 'green';
         
             internDiv.appendChild(is_online);
-            internDiv.innerText = `${user.username}`
+            internDiv.insertBefore(is_online, internDiv.firstChild);
+
+            const username = document.createElement('span')
+            username.innerText = `${user.username}`
+            internDiv.appendChild(username)
+
+            const email = document.createElement('span')
+            email.innerText = `${user.email}`
+            internDiv.appendChild(email)
 
             const button = document.createElement('button');
-            
             button.classList.add('btn');
-
 			button.dataset.friendId = user.id;
 
             if (user.friend) {
@@ -358,14 +357,6 @@ async function showModalProfileList() {
                 button.innerText = "+";
                 button.addEventListener('click', () => { addNewFriend(user, button) } );
             }
-            
-            const span = document.createElement('span')
-            
-            span.innerText = `${user.username}`
-            
-            internDiv.appendChild(span)
-            
-
             internDiv.appendChild(button);
 
             listItem.appendChild(internDiv);
@@ -404,14 +395,9 @@ async function addNewFriend(friend, button) {
 
 
         let buttonClone = button.cloneNode(true)
-
-		
         buttonClone.classList.replace('btn-outline-success', 'btn-outline-danger');
-        
         buttonClone.innerText = "-";
-
         buttonClone.addEventListener('click', () => { removeFriend( friend, buttonClone ) })
-
         button.parentNode.replaceChild(buttonClone, button)
 
         console.log("Amigo adicionado:", response.json());
@@ -435,7 +421,6 @@ async function removeFriend(friend, button) {
             throw new Error(`Erro na requisição: ${response.status}`);
         }
 
-
         let buttonClone = button.cloneNode(true)
 
         buttonClone.classList.replace('btn-outline-danger', 'btn-outline-success');
@@ -445,7 +430,6 @@ async function removeFriend(friend, button) {
         buttonClone.addEventListener('click', () => { addNewFriend( friend, buttonClone ) })
 
         button.parentNode.replaceChild(buttonClone, button)
-
 
 
     } catch (error) {
