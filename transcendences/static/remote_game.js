@@ -2,6 +2,7 @@ import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/thr
 import {MovementStrategy, WINNING_SCORE} from './game.js';
 import {navigateTo} from "./routes.js";
 import {closeModal, getCookie} from "./utils.js";
+import {redirectToLogin} from "./ui";
 
 export class OnlineMovementStrategy extends MovementStrategy {
     constructor(websocket) {
@@ -15,6 +16,8 @@ export class OnlineMovementStrategy extends MovementStrategy {
             up: false,
             down: false
         };
+
+        this.newMatch = null;
 
         // Variables for smoothing own paddle position
         this.serverPaddleY = null;
@@ -76,6 +79,7 @@ export class OnlineMovementStrategy extends MovementStrategy {
                 this.game_state = data.game_state;
                 this.start = true;
                 this.isRunning = true;
+                this.getUsername();
                 break;
             case 'game_update':
                 this.game_state = data;
@@ -91,6 +95,12 @@ export class OnlineMovementStrategy extends MovementStrategy {
                 const winner = data.winner;
                 const message = winner === this.player_side ? "Você venceu!" : "Você perdeu!";
                 this.displayWinnerMessage(winner === this.player_side ? 'win' : 'lose', message);
+                const result = {
+                    'username': this.player1,
+                    'opponent': this.player2,
+                    'winner': winner === 'left' ? this.player1 : this.player2,
+                };
+                this.sendResult(result);
                 break;
         }
     }
@@ -275,10 +285,31 @@ export class OnlineMovementStrategy extends MovementStrategy {
         window.removeEventListener('popstate', this.boundCloseGame);
     }
 
-    async sendResult() {
-        this.newMatch.result = ''
+    async sendResult(result) {
+        this.newMatch.result = result;
         const createdMatch = await createMatch(this.newMatch);
         console.log('Nova partida criada:', createdMatch);
+    }
+
+    async getUsername() {
+        const response = await fetch('/api/user/profile', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-store',
+            },
+            cache: 'no-store',
+        });
+        if (response.ok) {
+            const data = await response.json();
+            if (this.player_side === 'left') {
+                this.player1 = data.username;
+            } else if (this.player_side === 'right') {
+                this.player2 = data.username;
+            }
+        } else {
+            alert('Erro ao obter nome do usuário.');
+        }
     }
 }
 

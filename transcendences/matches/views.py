@@ -14,12 +14,14 @@ def create_match(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         opponent_username = data.get('opponent')
-        result = data.get('result')  # 'win' ou 'loss'
+        this_username = data.get('username')
+        result = data.get('result')  # 'username'
         try:
             opponent = User.objects.get(username=opponent_username)
-            winner = request.user if result == 'win' else opponent
+            user = User.objects.get(username=this_username)
+            winner = user if result == this_username else opponent
             Match.objects.create(
-                player1=request.user,
+                player1=user,
                 player2=opponent,
                 winner=winner
             )
