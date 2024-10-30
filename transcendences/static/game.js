@@ -31,7 +31,8 @@ class MovementStrategy {
         this.canvas = document.getElementById('gameCanvas');
         this.player1_score = 0;
         this.player2_score = 0;
-        this.player1 = 'Player1';
+        // this.player1 = 'Player1';
+        this.player1 = 'Romário';
         this.player2 = 'Player2';
 
         this.isRunning = true;
@@ -189,11 +190,13 @@ class MovementStrategy {
 
     loadFont() {
         const loader = new FontLoader();
-        loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+        loader.load('/static/fonts/Cousine Nerd Font Propo_Regular.json', (font) => {
             this.font = font;
             this.fontLoaded = true; // Set flag to indicate font is loaded
             this.addPlayersName();
             this.updateScoreboard();
+        }, undefined, (error) => {
+            console.error('Erro ao carregar a fonte:', error);
         });
     }
 
