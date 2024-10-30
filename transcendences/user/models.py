@@ -20,6 +20,7 @@ class User(models.Model):
     friends     = models.ManyToManyField('self', related_name='users', default=None, blank=True)
     wins        = models.IntegerField(default=0)
     loses       = models.IntegerField(default=0)
+    is_online   = models.BooleanField(default=False)
 
     def add_friend(self, friend ) -> None:
         self.friends.add(friend)
@@ -59,8 +60,13 @@ class User(models.Model):
         'last_name':  self.manager.last_name,
         'created_at': self.created_at,
         'updated_at': self.updated_at,
-        'is_active' : self.manager.is_active
+        'is_online' : self.is_online
       }
+      
+    def set_status(self, status: bool) -> None:
+      self.is_online = status
+      
+      self.save()
 
     @transaction.atomic
     def add_friends( self, list_of_friends : list ) -> bool:

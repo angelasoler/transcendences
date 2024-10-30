@@ -303,6 +303,7 @@ async function showModalProfileList() {
         },
         cache: 'no-store',
     });
+
     if (response.ok) {
         
         const data        = await response.json();
@@ -321,7 +322,7 @@ async function showModalProfileList() {
         
         
         for (let user of data) {
-
+			console.log(user.is_online);
             const listItem = document.createElement('li');
             
             listItem.classList.add('list-group-item');
@@ -332,16 +333,19 @@ async function showModalProfileList() {
             
             internDiv.classList.add('justify-content-between');
 
-            const is_active = document.createElement('div');
-            is_active.style.width = '20px';
-            is_active.style.height = '20px';
-            is_active.style.borderRadius = '50%';
-            is_active.style.display = 'inline-block';
-            is_active.style.backgroundColor = 'red';
+            const is_online = document.createElement('div');
+            is_online.style.width = '20px';
+            is_online.style.height = '20px';
+            is_online.style.borderRadius = '50%';
+            is_online.style.display = 'inline-block';
+            is_online.style.backgroundColor = 'red';
 
-            if (user.is_active)
-                is_active.style.backgroundColor = 'green';
+            if (user.is_online)
+                is_online.style.backgroundColor = 'green';
         
+            internDiv.appendChild(is_online);
+            internDiv.innerText = `${user.username}`
+
             const button = document.createElement('button');
             
             button.classList.add('btn');

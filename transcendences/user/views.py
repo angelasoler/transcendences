@@ -124,6 +124,7 @@ def	connect_42_user(request, response_data):
     
     if user is not None:
         login(request, user)
+        user.profile.set_status(True)
         return redirect('home')
     
     photo_url  = response_data['image']['link']
@@ -206,7 +207,7 @@ def login_user(request):
     
     if (user is not None):
         login(request, user)
-        # request.user.profile.is_active(True)
+        request.user.profile.set_status(True)
         return JsonResponse({'message': 'Login realizado com sucesso'}, status=200)
 
     return JsonResponse({'error': 'Credenciais inválidas'}, status=403)
@@ -230,7 +231,7 @@ def profile_user(request):
 @login_required
 def logout_user(request):
     if request.method == 'POST':
-        request.user.profile.is_active(False)
+        request.user.profile.set_status(False);
         logout(request)
         return JsonResponse({'message': 'Logout realizado com sucesso'})
     return JsonResponse({'error': 'Método não permitido'}, status=405)
@@ -316,6 +317,8 @@ def user_add_friend(request):
 def profiles_list(request):
     if request.method != 'GET':
         return JsonResponse({ 'error': ' Router Not found' }, status=404)
+
+    print(request.user.profile)
 
     return JsonResponse( request.user.profile.friend_and_users_relation(), status=200, safe=False)
 
