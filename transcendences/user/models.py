@@ -100,9 +100,6 @@ class User(models.Model):
       if DjangoUser.objects.filter(email=kwargs.get('email')).exists():
         raise Exception('Esse email já existe')
 
-      if DjangoUser.objects.filter(email=kwargs.get('email')).len >= 30:
-          raise Exception('Tamanho máximo 30 caracteres')
-
       manager = DjangoUser.objects.create_user(
         kwargs.get('username'),
         kwargs.get('email'),
