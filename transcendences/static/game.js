@@ -3,7 +3,7 @@ import { FontLoader, TextGeometry } from 'https://cdnjs.cloudflare.com/ajax/libs
 
 export { MovementStrategy };
 
-export const WINNING_SCORE = 1;
+export const WINNING_SCORE = 10;
 
 export function initGame(mvStrategy) {
     // Salva a atual instancia de MovementStrategy globalmente
@@ -42,12 +42,12 @@ class MovementStrategy {
         this.paddleHeight = 100;
         this.paddleWidth = 10;
         this.ballRadius = 8;
-        this.paddleSpeed = 5;
+        this.paddleSpeed = 3;
 
         // Define initial speeds
-        this.initialSpeed = 2; // Speed when the ball resets
-        this.collisionSpeedX = 3; // Horizontal speed after paddle collision
-        this.maxBallSpeed = 9;    // Maximum speed of the ball
+        this.initialSpeed = 1; // Speed when the ball resets
+        this.collisionSpeedX = 2; // Horizontal speed after paddle collision
+        this.maxBallSpeed = 3;    // Maximum speed of the ball
 
         this.leftPaddle = {
             y: this.canvas.height / 2 - this.paddleHeight / 2,
@@ -61,7 +61,7 @@ class MovementStrategy {
 
         this.ball = {
             pos: new THREE.Vector2(this.canvas.width / 2, this.canvas.height / 2),
-            speed: new THREE.Vector2(3, 3),
+            speed: new THREE.Vector2(2, 0),
         };
 
         this.scoreDigits = {
@@ -69,10 +69,11 @@ class MovementStrategy {
             opponent: []
         };
 
-        this.initThreeJS();
+        this.fontLoaded = false; // Flag to indicate font loading status
     }
 
     initThreeJS() {
+        this.disableScrollOnGame();
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(
             50, this.canvas.width / this.canvas.height,
@@ -190,26 +191,17 @@ class MovementStrategy {
         const loader = new FontLoader();
         loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
             this.font = font;
+            this.fontLoaded = true; // Set flag to indicate font is loaded
+            this.addPlayersName();
             this.updateScoreboard();
         });
     }
 
-    updateScoreboard() {
-        const scoreMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    
-        // Calculate the total width of the scores
-        const playerScoreWidth = this.player1_score.toString().length * 30;
-        const opponentScoreWidth = this.player2_score.toString().length * 30;
-
-        // Calculate the offsets to center the scores
-        const playerScoreOffset = -playerScoreWidth / 2 - 50;
-        const opponentScoreOffset = -opponentScoreWidth / 2 + 50;
-
-        // Update player score text
-        this.updateScore(this.player1_score, playerScoreOffset, scoreMaterial, 'player');
-        
-        // Update opponent score text
-        this.updateScore(this.player2_score, opponentScoreOffset, scoreMaterial, 'opponent');
+    addPlayersName() {
+        if (!this.fontLoaded) {
+            console.error('Cannot add player names: font not loaded');
+            return;
+        }
 
         // Add player names
         const playerNameMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
@@ -237,6 +229,29 @@ class MovementStrategy {
         const opponentNameMesh = new THREE.Mesh(opponentNameGeometry, playerNameMaterial);
         opponentNameMesh.position.set(150 - opponentNameOffset / 2, 165, 0); // Adjust position as needed
         this.scene.add(opponentNameMesh);
+    }
+
+    updateScoreboard() {
+        if (!this.fontLoaded) {
+            console.error('Cannot update scoreboard: font not loaded');
+            return;
+        }
+
+        const scoreMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    
+        // Calculate the total width of the scores
+        const playerScoreWidth = this.player1_score.toString().length * 30;
+        const opponentScoreWidth = this.player2_score.toString().length * 30;
+
+        // Calculate the offsets to center the scores
+        const playerScoreOffset = -playerScoreWidth / 2 - 50;
+        const opponentScoreOffset = -opponentScoreWidth / 2 + 50;
+
+        // Update player score text
+        this.updateScore(this.player1_score, playerScoreOffset, scoreMaterial, 'player');
+        
+        // Update opponent score text
+        this.updateScore(this.player2_score, opponentScoreOffset, scoreMaterial, 'opponent');
     }
 
     updateScore(score, xOffset, material, type) {
@@ -279,6 +294,21 @@ class MovementStrategy {
 
         // Render the scene
         this.renderer.render(this.scene, this.camera);
+    }
+
+    disableScrollOnGame() {
+        window.addEventListener('keydown', this.preventArrowScroll);
+    }
+
+    enableScroll() {
+        window.removeEventListener('keydown', this.preventArrowScroll);
+    }
+
+    preventArrowScroll(event) {
+        const keysToPrevent = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'];
+        if (keysToPrevent.includes(event.key)) {
+            event.preventDefault();
+        }
     }
 
     handleScores() {

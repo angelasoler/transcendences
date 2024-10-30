@@ -144,17 +144,26 @@ class PongConsumer(AsyncWebsocketConsumer):
         player_key = f'game:{self.game_id}:players'
         await self.redis.sadd(player_key, self.player_id)
         # Set an expiration time of 1 hour (or any suitable time)
-        await self.redis.expire(player_key, 900)
+        await self.redis.expire(player_key, 3600)
 
         # Store channel name associated with player ID
         await self.redis.hset(f'game:{self.game_id}:channels', self.player_id, self.channel_name)
 
         # Set an expiration time for the channels hash
-        await self.redis.expire(f'game:{self.game_id}:channels', 900)
+        await self.redis.expire(f'game:{self.game_id}:channels', 3600)
+
+        # Store username in Redis
+        await self.redis.hset(f'game:{self.game_id}:usernames', self.player_id, self.user.username)
 
         # Determine player side
         player_count = await self.redis.scard(player_key)
         self.player_side = 'left' if player_count == 1 else 'right'
+
+        # Assign player role in Redis
+        if self.player_side == 'left':
+            await self.redis.set(f'game:{self.game_id}:left_player', self.player_id)
+        elif self.player_side == 'right':
+            await self.redis.set(f'game:{self.game_id}:right_player', self.player_id)
 
         # Send initial game data to the player
         await self.send(json.dumps({
@@ -195,6 +204,16 @@ class PongConsumer(AsyncWebsocketConsumer):
         return player_count
 
     async def start_game(self):
+        # Retrieve player IDs
+        left_player_id = await self.redis.get(f'game:{self.game_id}:left_player', encoding='utf-8')
+        right_player_id = await self.redis.get(f'game:{self.game_id}:right_player', encoding='utf-8')
+
+        # Retrieve usernames from Redis
+        usernames_key = f'game:{self.game_id}:usernames'
+        usernames = await self.redis.hgetall(usernames_key, encoding='utf-8')
+
+        left_player_username = usernames.get(left_player_id, 'Player1')
+        right_player_username = usernames.get(right_player_id, 'Player2')
 
         # Initialize game state
         game_state = {
@@ -208,6 +227,8 @@ class PongConsumer(AsyncWebsocketConsumer):
             'paddle_right_speed': 0,
             'score_left': 0,
             'score_right': 0,
+            'player1_username': left_player_username,
+            'player2_username': right_player_username,
         }
         self.collision_speed_x = 7  # Adjust based on your game settings
         await self.save_game_state(game_state)

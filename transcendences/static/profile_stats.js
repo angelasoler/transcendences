@@ -2,7 +2,7 @@ class StatsService {
     async getStatistics() {
         try {
             // Fetch para obter as partidas
-            const matchesResponse = await fetch('/api/matches', {
+            const matchesResponse = await fetch('/api/matches/', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -11,10 +11,11 @@ class StatsService {
             
             if (!matchesResponse.ok) throw new Error('Erro ao obter partidas');
             
-            const matches = await matchesResponse.json();
+            const matchesData = await matchesResponse.json();
+            const matches = matchesData.matches; // Extract the array
     
             // Fetch para obter as estatísticas
-            const statsResponse = await fetch('/api/stats', {
+            const statsResponse = await fetch('/api/matches/stats/', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -61,18 +62,21 @@ class StatsView {
     updateCounters(stats) {
         this.elements.totalWins.textContent = stats.wins;
         this.elements.totalLosses.textContent = stats.losses;
-        const winRateCalc = (stats.wins / (stats.wins + stats.losses) * 100).toFixed(1);
+        const total = stats.wins + stats.losses;
+        const winRateCalc = total > 0 ? (stats.wins / total * 100).toFixed(1) : '0.0';
         this.elements.winRate.textContent = `${winRateCalc}%`;
     }
 
     updateMatchHistory(matches) {
         this.elements.matchHistory.innerHTML = '';
         matches.forEach(match => {
+            const resultText = match.result === 'Win' ? 'Vitória' : 'Derrota';
+            const badgeClass = match.result === 'Win' ? 'bg-success' : 'bg-danger';
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${new Date(match.date).toLocaleDateString()}</td>
                 <td>${this.escapeHtml(match.opponent)}</td>
-                <td><span class="badge ${match.result === 'Vitória' ? 'bg-success' : 'bg-danger'}">${match.result}</span></td>
+                <td><span class="badge ${badgeClass}">${resultText}</span></td>
             `;
             this.elements.matchHistory.appendChild(row);
         });
@@ -125,19 +129,37 @@ export class ProfileStats {
     }
 
     bindEvents() {
-        document.querySelector('[data-route="profile"]')?.addEventListener('click', () => {
+        if (!this.profileClickHandler) {
+            this.profileClickHandler = this.handleProfileClick.bind(this);
+        }
+
+        const profileLink = document.querySelector('[data-route="profile"]');
+        if (profileLink && !profileLink.dataset.bound) {
+            profileLink.addEventListener('click', this.profileClickHandler);
+            profileLink.dataset.bound = 'true';  // Mark this link as bound to avoid duplicate listeners
+        }
+    }
+
+    handleProfileClick() {
+        if (this.statsView.elements.statsSection) {
             this.statsView.elements.statsSection.classList.add('d-none');
+        }
+        if (this.statsView.elements.profileSection) {
             this.statsView.elements.profileSection.classList.remove('d-none');
-        });
+        }
     }
 
     async loadStatistics() {
         try {
             const data = await this.statsService.getStatistics();
             
-            this.statsView.updateCounters(data.stats);
-            this.statsView.updateMatchHistory(data.matches);
-            this.statsView.createPieChart(data.stats);
+            if (data) {
+                this.statsView.updateCounters(data.stats);
+                this.statsView.updateMatchHistory(data.matches);
+                this.statsView.createPieChart(data.stats);
+            } else {
+                this.statsView.showError('Erro ao carregar estatísticas. Tente novamente mais tarde.');
+            }
         } catch (error) {
             console.error('Erro ao carregar estatísticas:', error);
             this.statsView.showError('Erro ao carregar estatísticas. Tente novamente mais tarde.');

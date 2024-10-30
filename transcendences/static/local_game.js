@@ -1,4 +1,5 @@
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
+import { FontLoader, TextGeometry } from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
 import {MovementStrategy, gameLoop, WINNING_SCORE} from './game.js';
 import {navigateTo} from "./routes.js";
 import {closeModal} from "./utils.js";
@@ -25,6 +26,7 @@ export class LocalMovementStrategy extends MovementStrategy {
         window.addEventListener('beforeunload', this.boundCloseGame);
         window.addEventListener('popstate', this.boundCloseGame);
     	this.handleReturnToHomeClick = this.handleReturnToHomeClick.bind(this);
+		this.initThreeJS();
 	}
 
 	handleKeyDown(e) {
@@ -77,7 +79,6 @@ export class LocalMovementStrategy extends MovementStrategy {
 		} else if (this.ball.pos.x > this.canvas.width) {
 			this.player1_score += 1;
 		}
-		console.log('Pontos:', this.player1_score, this.player2_score);
 		this.updateScoreboard();
 		this.resetBall();
 		this.checkGameEnd();
@@ -152,11 +153,11 @@ export class LocalMovementStrategy extends MovementStrategy {
     }
 
 	closeGame() {
-		console.log('Game closed');
 		this.isRunning = false;
 		if (this.animationFrameId) {
 				cancelAnimationFrame(this.animationFrameId);
 		}
+		this.enableScroll();
 		document.removeEventListener('keydown', this.boundHandleKeyDown);
 		document.removeEventListener('keyup', this.boundHandleKeyUp);
 		window.removeEventListener('beforeunload', this.boundCloseGame);
