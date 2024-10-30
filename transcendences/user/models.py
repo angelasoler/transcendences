@@ -55,12 +55,13 @@ class User(models.Model):
     def to_hash(self):
       return {
         'id' : self.id,
-        'username' : self.manager.username,
-        'first_name': self.manager.first_name,
-        'last_name':  self.manager.last_name,
-        'created_at': self.created_at,
-        'updated_at': self.updated_at,
-        'is_online' : self.is_online
+        'username'    : self.manager.username,
+        'email'       : self.manager.email,
+        'first_name'  : self.manager.first_name,
+        'last_name'   : self.manager.last_name,
+        'created_at'  : self.created_at,
+        'updated_at'  : self.updated_at,
+        'is_online'   : self.is_online
       }
       
     def set_status(self, status: bool) -> None:
