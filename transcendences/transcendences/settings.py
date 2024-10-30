@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 import dj_database_url
+import logging.config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,8 +34,8 @@ CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app']
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-
-DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
+# Tamanho de todos os campos do registro com 30 caracteres + arquivo de exatos 5MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 6990762
 
 UID='u-s4t2ud-44c91892f89e696d8bbdaaea10be0978b4ac76e67496178d5b215404f3132edf'
 SECRET='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'
@@ -166,5 +167,36 @@ CHANNEL_LAYERS = {
         'CONFIG': {
             'hosts': [REDIS_URL],
         },
+    },
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} {name}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'debug.log'),
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'user.middleware': {  # Ensure this matches your middleware's logger name
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        # Add other loggers as needed
     },
 }
