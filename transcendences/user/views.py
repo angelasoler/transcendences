@@ -32,6 +32,8 @@ import json
 
 import urllib
 
+from django.core.exceptions import ValidationError
+
 # Create your views here.
 
 API_USER = 'https://api.intra.42.fr/v2/me'
@@ -239,16 +241,19 @@ def logout_user(request):
 def create_user(request):
     
     if request.method != 'POST' and request.method != 'PATCH':
-        return JsonResponse({ 'message': ' Router Not found' }, status=404) 
-        
-    params = json.loads(request.body)
-    
-    if params.get('avatar') is not None:
-        avatar = UserService.persist(params['avatar'])
-    else:
-        avatar = UserService.persistFile( open('/app/user/static/homer.png', 'rb'), 'homer.png')
-    params = json.loads(request.body)
+        return JsonResponse({ 'message': ' Router Not found' }, status=404)
+
     try:
+        params = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON payload.'}, status=400)
+
+    try:
+        if params.get('avatar') is not None:
+            avatar = UserService.persist(params['avatar'])
+        else:
+            avatar = UserService.persistFile(open('/app/user/static/homer.png', 'rb'), 'homer.png')
+
         if request.method == 'POST':
             user = User.create(
                 username   = params.get('username'), 
@@ -272,7 +277,9 @@ def create_user(request):
                 last_name  = params.get('lastname')
             )
             return JsonResponse( { 'message': 'Usuario Atualizado com sucesso', 'user': user.to_hash() }, status=200)
-            
+    except ValidationError as ve:
+        error_message = ' '.join(ve.messages)
+        return JsonResponse({'error': error_message}, status=400)
     except Exception as error:
         return JsonResponse( { 'error': str(error) }, status=500)
         

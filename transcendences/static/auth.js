@@ -39,6 +39,9 @@ export const registerUser = async (event) => {
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
             body:  JSON.stringify({ username, email, password, firstname, lastname, avatar })
         });
+        // if (!response.ok) {
+        //     return response.text().then(text => { throw new Error(text) });
+        // }
         const result = await response.json();
         if (response.ok) {
             alert(result.message);
