@@ -31,8 +31,7 @@ class MovementStrategy {
         this.canvas = document.getElementById('gameCanvas');
         this.player1_score = 0;
         this.player2_score = 0;
-        // this.player1 = 'Player1';
-        this.player1 = 'Romário';
+        this.player1 = 'Player1';
         this.player2 = 'Player2';
 
         this.isRunning = true;
