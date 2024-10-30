@@ -359,8 +359,6 @@ async function showModalProfileList() {
                 button.addEventListener('click', () => { addNewFriend(user, button) } );
             }
             
-            internDiv.appendChild(is_active);
-            
             const span = document.createElement('span')
             
             span.innerText = `${user.username}`
