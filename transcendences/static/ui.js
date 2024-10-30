@@ -342,9 +342,6 @@ async function showModalProfileList() {
             if (user.is_active)
                 is_active.style.backgroundColor = 'green';
         
-            internDiv.appendChild(is_active);
-            internDiv.innerText = `${user.username}`
-
             const button = document.createElement('button');
             
             button.classList.add('btn');
@@ -363,6 +360,14 @@ async function showModalProfileList() {
             }
             
             internDiv.appendChild(is_active);
+            
+            const span = document.createElement('span')
+            
+            span.innerText = `${user.username}`
+            
+            internDiv.appendChild(span)
+            
+
             internDiv.appendChild(button);
 
             listItem.appendChild(internDiv);
