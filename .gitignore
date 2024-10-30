@@ -15,4 +15,7 @@ static/*
 */static/*
 *static/*
 *static*
+# exception don't ignore static folder on transcendes folder
+!transcendences/static/
+!transcendences/static/**
 transcendences/debug.log
