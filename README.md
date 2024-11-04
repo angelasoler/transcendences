@@ -1,16 +1,51 @@
 # Transcendences
 
-Run:
+**Transcendences** é uma aplicação web para jogar Pong, desenvolvida com foco em conectividade e acessibilidade. O projeto utiliza contêineres Docker e permite o acesso local e remoto, tornando-o facilmente acessível para diferentes ambientes.
 
-`docker compose up --build`
+## Como Executar
 
-Then access:
+1. Para iniciar a aplicação, execute o seguinte comando:
+    ```bash
+    make
+    ```
 
-- Local:
+2. Acesse a aplicação:
+   - **Local**: [http://0.0.0.0:8000/](http://0.0.0.0:8000/)
+   - **Remoto**: [https://quality-grown-dassie.ngrok-free.app/](https://quality-grown-dassie.ngrok-free.app/)
+  
+## Funcionalidades Principais:
 
-`http://0.0.0.0:8000/`
+**Modos de Jogo:**
 
-- Remote:
+Single Game: Permite partidas individuais, tanto localmente quanto remotamente.
+Torneios: Disponível no modo remoto, possibilita a organização de torneios entre múltiplos jogadores.
+Inteligência Artificial (IA): Implementa uma IA para que os jogadores possam competir contra.
+Remote: Permite jogar partidas com oponentes remotamente.
 
-on `localhost:4040` you would find the link where the app is expose
+**Autenticação de Usuário:**
+
+Registro e Login Convencionais: Usuários podem criar contas e acessar o jogo utilizando credenciais tradicionais.
+OAuth com API da 42: Integração com a API da 42 para autenticação simplificada, permitindo que estudantes da instituição utilizem suas credenciais existentes.
+Gráficos Imersivos: Utiliza a biblioteca Three.js para renderizar gráficos 3D, proporcionando uma experiência visual mais rica e envolvente.
+
+Essas funcionalidades combinam elementos clássicos do Pong com tecnologias modernas, resultando em uma plataforma de jogo interativa e acessível.
+
+
+## Tecnologias
+
+- **JavaScript**, **BootStrap**, **DJango**, **PostgreSQL**
+- **Docker** para contêineres e **Docker Compose**
+- **ngrok** para tunelamento remoto
+
+## Estrutura de Arquivos
+
+- **Dockerfile**: Configuração do ambiente da aplicação
+- **docker-compose.yml**: Configuração de serviços Docker
+- **Makefile**: Executa os comando docker compose
+- **requirements.txt**: Dependências Python
+
+## Licença
+
+Distribuído sob a licença MIT.
+
 
