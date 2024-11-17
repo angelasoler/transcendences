@@ -15,21 +15,21 @@
   
 ## Funcionalidades Principais:
 
-**Modos de Jogo:**
+<h3>Modos de Jogo:**</h3>
 
-Single Game: Permite partidas individuais, tanto localmente quanto remotamente.
+**Single Game:** Permite partidas individuais, tanto localmente quanto remotamente.
 
-Torneios: Disponível no modo remoto, possibilita a organização de torneios entre múltiplos jogadores.
+**Torneios:** Disponível no modo remoto, possibilita a organização de torneios entre múltiplos jogadores.
 
-Inteligência Artificial (IA): Implementa uma IA para que os jogadores possam competir contra.
+**Inteligência Artificial (IA):** Implementa uma IA para que os jogadores possam competir contra.
 
-Remote: Permite jogar partidas com oponentes remotamente.
+**Remote:** Permite jogar partidas com oponentes remotamente.
 
-**Autenticação de Usuário:**
+<h3>Autenticação de Usuário:</h3>
 
-Registro e Login Convencionais: Usuários podem criar contas e acessar o jogo utilizando credenciais tradicionais.
+**Registro e Login Convencionais:** Usuários podem criar contas e acessar o jogo utilizando credenciais tradicionais.
 
-OAuth com API da 42: Integração com a API da 42 para autenticação simplificada, permitindo que estudantes da instituição utilizem suas credenciais existentes.
+**OAuth com API da 42:** Integração com a API da 42 para autenticação simplificada, permitindo que estudantes da instituição utilizem suas credenciais existentes.
 
 
 ## Tecnologias
