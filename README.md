@@ -18,8 +18,11 @@
 **Modos de Jogo:**
 
 Single Game: Permite partidas individuais, tanto localmente quanto remotamente.
+
 Torneios: Disponível no modo remoto, possibilita a organização de torneios entre múltiplos jogadores.
+
 Inteligência Artificial (IA): Implementa uma IA para que os jogadores possam competir contra.
+
 Remote: Permite jogar partidas com oponentes remotamente.
 
 **Autenticação de Usuário:**
