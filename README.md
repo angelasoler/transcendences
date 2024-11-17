@@ -15,7 +15,7 @@
   
 ## Funcionalidades Principais:
 
-<h3>Modos de Jogo:**</h3>
+<h3>Modos de Jogo:</h3>
 
 **Single Game:** Permite partidas individuais, tanto localmente quanto remotamente.
 
