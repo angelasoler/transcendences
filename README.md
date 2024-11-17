@@ -28,10 +28,8 @@ Remote: Permite jogar partidas com oponentes remotamente.
 **Autenticação de Usuário:**
 
 Registro e Login Convencionais: Usuários podem criar contas e acessar o jogo utilizando credenciais tradicionais.
-OAuth com API da 42: Integração com a API da 42 para autenticação simplificada, permitindo que estudantes da instituição utilizem suas credenciais existentes.
-Gráficos Imersivos: Utiliza a biblioteca Three.js para renderizar gráficos 3D, proporcionando uma experiência visual mais rica e envolvente.
 
-Essas funcionalidades combinam elementos clássicos do Pong com tecnologias modernas, resultando em uma plataforma de jogo interativa e acessível.
+OAuth com API da 42: Integração com a API da 42 para autenticação simplificada, permitindo que estudantes da instituição utilizem suas credenciais existentes.
 
 
 ## Tecnologias
